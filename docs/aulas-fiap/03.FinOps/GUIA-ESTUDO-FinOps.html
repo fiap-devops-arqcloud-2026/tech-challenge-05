@@ -1,0 +1,495 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>FinOps — Guia de estudo · Hackathon Fase 5</title><style>
+    :root{
+      --bg:#eef2f8; --surface:#ffffff; --surface-2:#e7eef7; --panel:#f5f8fc;
+      --ink:#132339; --ink-soft:#4c5f79; --ink-faint:#7787a0;
+      --line:#d3ddea; --line-soft:#e2e9f2;
+      --accent:#2f6ae0; --accent-ink:#1c4aa8; --accent-wash:#e7eefb;
+      --brass:#b26a10; --brass-wash:#f6ecdd;
+      --ok:#2c8159; --warn:#a9741a; --no:#7a869a;
+      --serif:Georgia,"Iowan Old Style","Palatino Linotype","Times New Roman",serif;
+      --sans:"Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+      --mono:"Cascadia Code",Consolas,"SFMono-Regular",ui-monospace,monospace;
+    }
+    @media (prefers-color-scheme:dark){:root{
+      --bg:#0c1725; --surface:#152539; --surface-2:#101f31; --panel:#132234;
+      --ink:#e6edf6; --ink-soft:#a4b6cc; --ink-faint:#7488a2;
+      --line:#26394f; --line-soft:#1d2d40;
+      --accent:#6c9cf1; --accent-ink:#9cbdf8; --accent-wash:#16273f;
+      --brass:#e0a552; --brass-wash:#241c11; --ok:#59bf8c; --warn:#e0a552; --no:#7f8aa0;
+    }}
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.6;-webkit-font-smoothing:antialiased}
+    .wrap{max-width:900px;margin:0 auto;padding:clamp(20px,4vw,52px) clamp(16px,4vw,32px)}
+    .masthead{border-bottom:2px solid var(--ink);padding-bottom:22px;margin-bottom:34px}
+    .eyebrow{font-family:var(--mono);font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:var(--accent-ink);margin:0 0 12px}
+    .masthead h1{font-family:var(--serif);font-weight:700;font-size:clamp(1.9rem,5.6vw,3rem);line-height:1.05;margin:0;text-wrap:balance}
+    .masthead .sub{font-size:clamp(1rem,2.4vw,1.18rem);color:var(--ink-soft);margin:.5em 0 0;max-width:62ch}
+    .meta{font-family:var(--mono);font-size:.74rem;color:var(--ink-faint);margin-top:16px;display:flex;flex-wrap:wrap;gap:6px 18px}
+    h2{font-family:var(--serif);font-weight:700;font-size:clamp(1.4rem,3.4vw,1.9rem);margin:52px 0 6px;text-wrap:balance}
+    .section-rule{height:3px;width:56px;background:var(--accent);border-radius:2px;margin:14px 0 24px}
+    p{max-width:68ch}
+    .lead{color:var(--ink-soft);margin:0 0 22px;max-width:66ch}
+    strong{color:var(--ink)}
+    a{color:var(--accent-ink);text-underline-offset:3px}
+    .intro{display:grid;gap:16px;grid-template-columns:1fr 1fr}
+    @media(max-width:620px){.intro{grid-template-columns:1fr}}
+    .intro .box{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px 22px}
+    .intro .box h3{margin:0 0 8px;font-size:1.05rem;font-family:var(--sans);font-weight:700}
+    .intro .box p{margin:0;font-size:.96rem;color:var(--ink-soft);max-width:none}
+    .intro .box.hi{border-color:var(--brass);background:var(--brass-wash)}
+    .glossary{background:var(--panel);border:1px solid var(--line-soft);border-radius:14px;padding:clamp(16px,3vw,26px);display:grid;grid-template-columns:1fr 1fr;gap:2px 26px}
+    @media(max-width:640px){.glossary{grid-template-columns:1fr}}
+    .term{padding:11px 0;border-bottom:1px solid var(--line-soft)}
+    .term .k{font-family:var(--mono);font-weight:700;color:var(--accent-ink);font-size:.92rem}
+    .term .full{font-style:italic;color:var(--ink-faint);font-size:.86rem;margin-left:6px}
+    .term .d{display:block;color:var(--ink-soft);font-size:.94rem;margin-top:2px}
+    .lessons{display:flex;flex-direction:column;gap:18px}
+    .lesson{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:clamp(18px,3vw,26px);transition:border-color .18s ease}
+    .lesson:hover{border-color:var(--accent)}
+    .lesson-head{display:flex;gap:16px;align-items:flex-start;margin-bottom:16px}
+    .num{font-family:var(--serif);font-size:2.1rem;font-weight:700;line-height:1;color:var(--accent);min-width:1.6em;font-variant-numeric:tabular-nums}
+    .lesson-head h3{margin:2px 0 8px;font-size:clamp(1.12rem,2.6vw,1.3rem);font-family:var(--sans);font-weight:700;line-height:1.25}
+    .badge{display:inline-block;font-family:var(--mono);font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:20px;border:1px solid currentColor}
+    .badge.ok{color:var(--ok)}
+    .badge.warn{color:var(--warn)}
+    .badge.no{color:var(--no)}
+    .facets{margin:0;display:grid;gap:14px}
+    .facets > div{display:grid;grid-template-columns:150px 1fr;gap:4px 18px;align-items:baseline}
+    @media(max-width:600px){.facets > div{grid-template-columns:1fr}}
+    .facets dt{font-family:var(--mono);font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--accent-ink);margin:0}
+    .facets dd{margin:0;color:var(--ink-soft);font-size:.97rem}
+    .facets dd.proj{color:var(--ink)}
+    .facets .use{color:var(--brass)}
+    code{font-family:var(--mono);font-size:.86em;background:var(--accent-wash);color:var(--accent-ink);padding:1px 6px;border-radius:5px}
+    .flow{margin:0;padding:0;list-style:none;counter-reset:flow;display:grid;gap:12px}
+    .flow li{counter-increment:flow;display:grid;grid-template-columns:38px 1fr;gap:13px;align-items:start;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:15px 17px}
+    .flow li::before{content:counter(flow);display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:var(--accent-wash);color:var(--accent-ink);font-family:var(--mono);font-size:.78rem;font-weight:700}
+    .flow strong{display:block;margin-bottom:2px}
+    .flow span{color:var(--ink-soft);font-size:.95rem}
+    .tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+    table{border-collapse:collapse;width:100%;min-width:680px;font-size:.92rem}
+    th,td{text-align:left;padding:11px 15px;border-bottom:1px solid var(--line-soft)}
+    thead th{background:var(--surface-2);font-family:var(--mono);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft)}
+    tbody tr:last-child td{border-bottom:none}
+    td .s{font-family:var(--mono);font-size:.78rem;font-weight:700}
+    td .s.ok{color:var(--ok)}
+    td .s.warn{color:var(--warn)}
+    td .s.no{color:var(--no)}
+    td .num2{font-family:var(--serif);font-weight:700;color:var(--accent)}
+    .note{margin-top:20px;padding:16px 18px;border-left:4px solid var(--brass);background:var(--brass-wash);color:var(--ink-soft)}
+    .note strong{display:block;margin-bottom:3px}
+    .sources{display:grid;grid-template-columns:1fr 1fr;gap:8px 22px;margin:0;padding:0;list-style:none}
+    .sources li{border-bottom:1px solid var(--line-soft);padding:8px 0;font-size:.92rem}
+    @media(max-width:640px){.sources{grid-template-columns:1fr}}
+    footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--line);color:var(--ink-faint);font-size:.86rem}
+    :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+    @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+  /* Extensões Fase 4 — mesmas em todos os guias */
+.wrap{overflow-wrap:anywhere}.badge{letter-spacing:.03em;margin:2px 3px 2px 0;text-decoration:none;max-width:100%}.badge.obrigatorio{color:#a3323d;background:#fff0f1}.badge.bonus{color:#21613d;background:#edf8ef}.badge.sugestao{color:#1c4aa8;background:#e7eefb}.badge.complemento-badge{color:#725000;background:#fff5dc}.legend,.toc{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px 22px;margin:20px 0}.legend p{font-size:.9rem;color:var(--ink-soft);margin-bottom:0}.toc ol{columns:2;column-gap:32px;padding-left:20px}.toc li{break-inside:avoid;margin-bottom:7px}.complemento{border-left:4px solid var(--accent);background:var(--accent-wash);padding:16px 20px;margin:20px 0}.complemento>strong{display:block}.source,figcaption{font-size:.86rem;color:var(--ink-soft)}pre{white-space:pre;overflow:auto;max-width:100%;padding:18px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);line-height:1.55}pre code{padding:0;background:none;color:var(--ink)}figure{margin:22px 0}.source-list{margin-top:18px}summary{cursor:pointer;color:var(--accent-ink);font-weight:600}details{margin:12px 0;padding:12px 16px;border:1px solid var(--line);border-radius:8px}.skip{position:absolute;top:-100px;left:12px}.skip:focus{top:12px;background:var(--surface);padding:10px;z-index:100}.diagram{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:20px 0}.diagram .node{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;flex:1;min-width:130px}.lesson p:last-child{margin-bottom:0}section{scroll-margin-top:20px}h3{line-height:1.35}.warning{border-left:4px solid var(--brass);padding:14px 18px;background:var(--brass-wash)}@media(max-width:640px){.toc ol{columns:1}.meta{font-size:.7rem}.lesson-head{gap:10px}.sources{grid-template-columns:1fr}}@media(prefers-color-scheme:dark){.badge.obrigatorio{color:#ffb3bc;background:#381f29}.badge.bonus{color:#a7e4bb;background:#173123}.badge.sugestao{color:#b5cdff;background:#16273f}.badge.complemento-badge{color:#f1d592;background:#302817}}@media print{body{background:white;color:black}.wrap{max-width:none;padding:0}.toc,.skip{display:none}.lesson,.complemento{break-inside:avoid}.tablewrap{overflow:visible}table{min-width:0}pre{white-space:pre-wrap}.badge{background:none!important;color:black!important}a{color:black}details>*{display:block}}
+
+/* Extensões Hackathon Fase 5 — mesmas em todos os guias */
+.badge.duvida{color:#5b3fa8;background:#f1ecfd}
+.maplinks{font-size:.93rem;margin:16px 0 0;max-width:none}
+.maplinks a{font-weight:600}
+.guide-nav{display:flex;flex-wrap:wrap;gap:6px;margin-top:16px}
+.guide-nav a{font-family:var(--mono);font-size:.72rem;text-decoration:none;padding:4px 11px;border:1px solid var(--line);border-radius:20px;color:var(--ink-soft);background:var(--surface)}
+.guide-nav a:hover{border-color:var(--accent);color:var(--accent-ink)}
+.guide-nav a[aria-current]{border-color:var(--accent);color:var(--accent-ink);background:var(--accent-wash);font-weight:700}
+.guide-nav a.maplink{border-color:var(--brass);color:var(--brass)}
+a.rid{font-family:var(--mono);font-size:.86em;font-weight:700;text-decoration:none;white-space:nowrap}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0}
+.split.three{grid-template-columns:1fr 1fr 1fr}
+@media(max-width:760px){.split,.split.three{grid-template-columns:1fr}}
+.split .col{background:var(--surface);border:1px solid var(--line);border-top:4px solid var(--line);border-radius:14px;padding:16px 18px}
+.split .col.obr{border-top-color:#c2414f}
+.split .col.bon{border-top-color:#2f8a55}
+.split .col.sug{border-top-color:var(--accent)}
+.split .col h3{margin:0 0 4px;font-size:1.02rem;font-family:var(--sans)}
+.split .col > p{font-size:.88rem;color:var(--ink-faint);margin:0 0 8px}
+.split ul{list-style:none;margin:0;padding:0;max-width:none}
+.split li{padding:9px 0;border-bottom:1px solid var(--line-soft);font-size:.93rem;color:var(--ink-soft);margin:0}
+.split li:last-child{border-bottom:none}
+.split li .badge{display:table;margin:0 0 5px}
+.split li strong{color:var(--ink)}
+.split li .li-note{display:block;color:var(--ink-soft);font-size:.88rem;margin-top:2px}
+.hk{border-left:4px solid var(--brass);background:var(--brass-wash);padding:16px 20px;margin:20px 0;border-radius:0 12px 12px 0}
+.hk > strong:first-child{display:block;margin-bottom:6px;color:var(--brass)}
+.hk p{margin:6px 0}
+.hk ul,.hk ol{margin:6px 0;padding-left:20px}
+.hk p:last-child,.hk ul:last-child{margin-bottom:0}
+figure.example{margin:18px 0}
+figure.example figcaption{font-family:var(--mono);font-size:.74rem;letter-spacing:.03em;margin-bottom:6px;color:var(--brass)}
+figure.example pre{margin:0}
+h4{font-size:1.04rem;margin:26px 0 8px;font-family:var(--sans)}
+.math{font-family:var(--mono);font-size:.9rem;background:var(--panel);border:1px solid var(--line-soft);border-radius:10px;padding:12px 16px;margin:12px 0;overflow-x:auto}
+.memo{margin-top:18px;padding:12px 16px;border:1px dashed var(--line);border-radius:10px;background:var(--panel)}
+.memo strong:first-child{color:var(--accent-ink)}
+.tablewrap + .source{margin-top:8px}
+td code,li code{white-space:nowrap}
+@media(max-width:640px){td code,li code{white-space:normal}}
+@media(prefers-color-scheme:dark){.badge.duvida{color:#cdbdff;background:#272042}.split .col.obr{border-top-color:#e06a78}.split .col.bon{border-top-color:#59bf8c}}
+@media print{.guide-nav,.maplinks{display:none}.hk{break-inside:avoid}}
+</style></head>
+<body><a class="skip" href="#conteudo">Ir ao conteúdo</a><main class="wrap" id="conteudo"><header class="masthead"><p class="eyebrow">FIAP · Hackathon Fase 5 · Guia de estudo 03</p><h1>FinOps</h1><p class="sub">Seis aulas sobre cultura de responsabilidade financeira, tagueamento, rightsizing, compromissos de uso e previsão de custos.</p><div class="meta"><span>Gerado em 2026-11-11 · Claude</span><span>6 arquivo(s) · 89 páginas</span><span>Introdutório a intermediário</span><span>Desafio: SolidaryTech</span></div><p class="maplinks"><a href="../../requisitos/REQUISITOS.html">🗺️ Mapa de requisitos — obrigatórios × bônus</a> · <a href="../../requisitos/README.md">versão Markdown</a> · <a href="../POSTECH%20-%20DCLT%20-%20Hackathon%20-%20Fase%205.pdf">enunciado do Hackathon (PDF)</a></p><details class="source-list"><summary>Arquivos-fonte usados integralmente</summary><ul class="sources"><li><a href="POSTECH%20-%20FinOps%20-%20Aula%201.pdf">POSTECH - FinOps - Aula 1.pdf</a><br><span class="source">20 páginas · leitura integral do texto</span></li><li><a href="POSTECH%20-%20FinOps%20-%20Aula%202.pdf">POSTECH - FinOps - Aula 2.pdf</a><br><span class="source">13 páginas · leitura integral do texto</span></li><li><a href="POSTECH%20-%20FinOps%20-%20Aula%203.pdf">POSTECH - FinOps - Aula 3.pdf</a><br><span class="source">14 páginas · leitura integral do texto</span></li><li><a href="POSTECH%20-%20FinOps%20-%20Aula%204.pdf">POSTECH - FinOps - Aula 4.pdf</a><br><span class="source">15 páginas · leitura integral do texto</span></li><li><a href="POSTECH%20-%20FinOps%20-%20Aula%205.pdf">POSTECH - FinOps - Aula 5.pdf</a><br><span class="source">13 páginas · leitura integral do texto</span></li><li><a href="POSTECH%20-%20FinOps%20-%20Aula%206.pdf">POSTECH - FinOps - Aula 6.pdf</a><br><span class="source">14 páginas · leitura integral do texto</span></li></ul></details><nav class="guide-nav" aria-label="Guias da Fase 5"><a href="../00.Welcome%20to%20Multicloud%2C%20custos%20e%20IA/GUIA-ESTUDO-Welcome-to-Multicloud-custos-e-IA.html">00 · Welcome</a><a href="../01.Multicloud%20e%20Seguran%C3%A7a/GUIA-ESTUDO-Multicloud-e-Seguranca.html">01 · Multicloud e Segurança</a><a href="../02.SRE%20%28Site%20Reliability%20Engineering%29/GUIA-ESTUDO-SRE-Site-Reliability-Engineering.html">02 · SRE</a><a href="../03.FinOps/GUIA-ESTUDO-FinOps.html" aria-current="page">03 · FinOps</a><a href="../04.IT%20Service%20Management%20e%20AIOPs/GUIA-ESTUDO-IT-Service-Management-e-AIOps.html">04 · ITSM e AIOps</a><a href="../../requisitos/REQUISITOS.html" class="maplink">🗺️ Mapa de requisitos</a></nav></header>
+<aside class="legend" aria-label="Legenda dos selos"><span class="badge obrigatorio">🔴 Obrigatório</span> <span class="badge bonus">🟢 Bônus / diferencial</span> <span class="badge sugestao">🔵 Sugestão</span> <span class="badge complemento-badge">📘 Complemento</span><p><strong>Obrigatório</strong> é o que o enunciado do Hackathon exige. <strong>Bônus</strong> é diferencial: vai além do mínimo pedido, usa a alternativa não escolhida ou aplica algo do material oficial que o enunciado não exige — <em>o PDF não promete pontos extras</em>. <strong>Sugestão</strong> é recomendação autoral para facilitar a entrega. <strong>Complemento</strong> é explicação ou exemplo autoral, não é texto nem exigência da FIAP. Páginas seguem a contagem física do PDF, a partir de 1.</p></aside>
+<nav class="toc" aria-label="Sumário"><strong>Neste guia</strong><ol><li><a href="#visao-geral">Cada centavo conta — e precisa ter dono</a></li><li><a href="#obrigatorio-bonus">Obrigatório × Bônus neste módulo</a></li><li><a href="#mapa">Mapa de conceitos e vocabulário</a></li><li><a href="#aula-1">Aula 1 — Cultura e a fase Informar</a></li><li><a href="#aula-2">Aula 2 — Fase Otimizar, parte 1</a></li><li><a href="#aula-3">Aula 3 — Fase Otimizar, parte 2: arquiteturas nativas</a></li><li><a href="#aula-4">Aula 4 — Fase Operar</a></li><li><a href="#aula-5">Aula 5 — FinOps para IA, IA para FinOps</a></li><li><a href="#aula-6">Aula 6 — FinOps Assessment</a></li><li><a href="#kit">Kit FinOps da SolidaryTech</a></li><li><a href="#aplicacao">Da aula à entrega: o que verificar</a></li><li><a href="#outros-modulos">Como este módulo se conecta aos outros</a></li><li><a href="#revisao">Revisão rápida e autoavaliação</a></li><li><a href="#limites">Fidelidade, fontes e pontos a confirmar</a></li><li><a href="#conexao">Conexão com o Hackathon Fase 5</a></li></ol></nav>
+<section id="visao-geral"><h2>Cada centavo conta — e precisa ter dono</h2><div class="section-rule"></div>
+<div class="intro"><div class="box"><h3>Em miúdos</h3><p>Na nuvem, o custo muda a cada minuto e qualquer pessoa do time pode aumentá-lo com um clique ou uma linha de código. FinOps é a cultura de tratar esse custo como responsabilidade de todos: primeiro enxergar quem gasta o quê, depois gastar melhor e, por fim, automatizar para que isso continue acontecendo.</p></div><div class="box hi"><h3>No Hackathon</h3><p>A frente 2 pede quatro coisas: <strong>tags obrigatórias</strong> em todos os recursos via Terraform (<code>Project=SolidaryTech</code>, <code>Environment=Production</code>, <code>CostCenter=NGO-Core</code>), <strong>rightsizing</strong> de requests/limits a partir de métricas reais, um <strong>Forecast</strong> de custos mensais e <strong>pelo menos uma recomendação</strong> de otimização nativa. O relatório traz Forecast e evidência das tags, e o pitch vende as estratégias financeiras à diretoria.</p></div></div>
+<p>Ordem de estudo recomendada: <strong>Aula 1</strong> (princípios e a fase Informar — onde moram as tags), <strong>Aula 2</strong> (Otimizar: desperdício, rightsizing e compromissos — matéria-prima da recomendação), <strong>Aula 4</strong> (Operar: automação, MDCO e unit economics), <strong>Aula 3</strong> (arquitetura nativa e 12-Factor aplicados ao código), <strong>Aula 6</strong> (FinOps Assessment) e <strong>Aula 5</strong> (IA para FinOps). No fim, o <a href="#kit">Kit FinOps da SolidaryTech</a> traz política de tags, rightsizing, Forecast e recomendações prontos para adaptar.</p>
+<p><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-19">OBRIGATÓRIO · REQ-OBR-19</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-20">OBRIGATÓRIO · REQ-OBR-20</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-21">OBRIGATÓRIO · REQ-OBR-21</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-22">OBRIGATÓRIO · REQ-OBR-22</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-43">OBRIGATÓRIO · REQ-OBR-43</a></p>
+<aside class="warning"><strong>Limite do material disponível.</strong> Foram lidos os seis PDFs completos (89 páginas). As aulas usam muitos exemplos do Google Cloud, enquanto o código do Hackathon é acoplado à AWS; o guia traduz os conceitos para o ambiente provável. Faixas de desconto e números de mercado são afirmações das aulas. Preços citados nos exemplos são ilustrativos — use a calculadora de preços da região escolhida.</aside>
+</section>
+
+<section id="obrigatorio-bonus"><h2>Obrigatório × Bônus neste módulo</h2><div class="section-rule"></div>
+<p class="lead">O 🔴 de FinOps é pequeno e muito verificável: tags, YAML, Forecast e recomendação. O 🟢 transforma esses itens em uma prática FinOps de verdade.</p>
+<div class="split three">
+<div class="col obr"><h3>🔴 Obrigatório</h3><p>O enunciado cobra; este módulo ensina.</p><ul>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-19">OBRIGATÓRIO · REQ-OBR-19</a> <strong>Política de tags no Terraform</strong></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-20">OBRIGATÓRIO · REQ-OBR-20</a> <strong>Rightsizing de requests/limits</strong></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-21">OBRIGATÓRIO · REQ-OBR-21</a> <strong>Forecast de custos mensais</strong></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-22">OBRIGATÓRIO · REQ-OBR-22</a> <strong>≥ 1 recomendação de otimização nativa</strong></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-29">OBRIGATÓRIO · REQ-OBR-29</a> <strong>Repositório: Terraform com tags FinOps</strong></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-30">OBRIGATÓRIO · REQ-OBR-30</a> <strong>Repositório: YAML com requests/limits</strong></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-43">OBRIGATÓRIO · REQ-OBR-43</a> <strong>Seção FinOps: Forecast + evidência de tags</strong></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-35">OBRIGATÓRIO · REQ-OBR-35</a> <strong>Demo: Terraform rodando / recursos com tags</strong> <span class="li-note">Tags aparecem na demo.</span></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-33">OBRIGATÓRIO · REQ-OBR-33</a> <strong>Pitch executivo para a diretoria</strong> <span class="li-note">As estratégias financeiras entram no pitch.</span></li>
+</ul></div>
+<div class="col bon"><h3>🟢 Bônus / diferencial</h3><p>Vai além do mínimo; sem pontos extras prometidos.</p><ul>
+<li><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-22">BÔNUS · REQ-BON-22</a> <strong>Tags adicionais de alocação</strong></li>
+<li><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-28">BÔNUS · REQ-BON-28</a> <strong>Policy-as-code para tags e guardrails</strong></li>
+<li><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-20">BÔNUS · REQ-BON-20</a> <strong>Mais de uma recomendação de otimização</strong></li>
+<li><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-21">BÔNUS · REQ-BON-21</a> <strong>Implementar a recomendação, não só indicar</strong></li>
+<li><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-23">BÔNUS · REQ-BON-23</a> <strong>Budgets, alertas e anomalias de custo</strong></li>
+<li><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-25">BÔNUS · REQ-BON-25</a> <strong>Custo por serviço no cluster (Kubecost/OpenCost)</strong></li>
+<li><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-26">BÔNUS · REQ-BON-26</a> <strong>Unit economics: custo por doação</strong></li>
+<li><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-27">BÔNUS · REQ-BON-27</a> <strong>Custo estimado no Pull Request</strong></li>
+<li><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-24">BÔNUS · REQ-BON-24</a> <strong>FinOps Assessment da SolidaryTech</strong></li>
+<li><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-02">BÔNUS · REQ-BON-02</a> <strong>Autoscaling para picos imprevisíveis</strong></li>
+<li><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-18">BÔNUS · REQ-BON-18</a> <strong>Desligamento gracioso no donation-service</strong></li>
+<li><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-03">BÔNUS · REQ-BON-03</a> <strong>DynamoDB: Query em GSI no lugar de Scan</strong></li>
+<li><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-04">BÔNUS · REQ-BON-04</a> <strong>ElastiCache — só com uso real</strong></li>
+</ul></div>
+<div class="col sug"><h3>🔵 Sugestões</h3><p>Recomendações autorais, não exigências.</p><ul>
+<li><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-08">SUGESTÃO · SUG-08</a> <strong>Tags via default_tags do provider</strong></li>
+<li><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-09">SUGESTÃO · SUG-09</a> <strong>Tags também no que o cluster cria</strong></li>
+<li><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-10">SUGESTÃO · SUG-10</a> <strong>Forecast em dois tempos e três cenários</strong></li>
+<li><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-11">SUGESTÃO · SUG-11</a> <strong>Proteger a conta do próprio grupo</strong></li>
+<li><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-03">SUGESTÃO · SUG-03</a> <strong>Schema do banco sem passo manual</strong></li>
+<li><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-06">SUGESTÃO · SUG-06</a> <strong>Tráfego sintético contínuo</strong></li>
+<li><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-19">SUGESTÃO · SUG-19</a> <strong>Falar a língua da diretoria</strong></li>
+</ul></div>
+</div>
+</section>
+
+<section id="mapa"><h2>Mapa de conceitos e vocabulário</h2><div class="section-rule"></div>
+<div class="tablewrap"><table><thead><tr><th scope="col">Conceito</th><th scope="col">Em uma frase</th><th scope="col">Onde cai no Hackathon</th><th scope="col">Fonte</th></tr></thead><tbody>
+<tr><td>Informar · Otimizar · Operar</td><td>Enxergar e alocar · gastar melhor · automatizar e governar.</td><td>Estrutura da seção FinOps do relatório.</td><td><a href="POSTECH%20-%20FinOps%20-%20Aula%201.pdf#page=7">Aula 1, p. 7</a></td></tr>
+<tr><td>Engatinhar · Andar · Correr</td><td>Níveis de maturidade por capacidade, não da empresa inteira.</td><td>Autoavaliação honesta no relatório.</td><td><a href="POSTECH%20-%20FinOps%20-%20Aula%201.pdf#page=7">Aula 1, p. 7–11</a></td></tr>
+<tr><td>Estratégia de tagging</td><td>Quais tags, em quais recursos, com que padrão e como agregar.</td><td>Tags obrigatórias via Terraform.</td><td><a href="POSTECH%20-%20FinOps%20-%20Aula%201.pdf#page=8">Aula 1, p. 8</a></td></tr>
+<tr><td>Showback · chargeback</td><td>Mostrar o custo de cada dono · cobrar dele.</td><td>Custo por serviço da SolidaryTech.</td><td><a href="POSTECH%20-%20FinOps%20-%20Aula%201.pdf#page=8">Aula 1, p. 8 e 10</a></td></tr>
+<tr><td>Custo compartilhado</td><td>Ratear o que é comum: rede, cluster, observabilidade.</td><td>Plano de controle do EKS, NAT, stack de monitoramento.</td><td><a href="POSTECH%20-%20FinOps%20-%20Aula%201.pdf#page=12">Aula 1, p. 12</a></td></tr>
+<tr><td>Rightsizing</td><td>Ajustar CPU, memória e tipo de recurso ao uso real.</td><td>Requests/limits dos Pods.</td><td><a href="POSTECH%20-%20FinOps%20-%20Aula%202.pdf#page=5">Aula 2, p. 5</a></td></tr>
+<tr><td>Compromissos (RI, Savings Plans, CUDs)</td><td>Trocar flexibilidade por desconto (30–72% na aula).</td><td>Recomendação de otimização.</td><td><a href="POSTECH%20-%20FinOps%20-%20Aula%202.pdf#page=6">Aula 2, p. 6–8</a></td></tr>
+<tr><td>12-Factor App</td><td>Doze princípios para aplicações portáveis e elásticas.</td><td>Checklist do código dos três serviços.</td><td><a href="POSTECH%20-%20FinOps%20-%20Aula%203.pdf#page=6">Aula 3, p. 6–8</a></td></tr>
+<tr><td>MDCO</td><td>Otimizar só com métrica, meta e gatilho — não por calendário.</td><td>Meta de eficiência dos requests.</td><td><a href="POSTECH%20-%20FinOps%20-%20Aula%204.pdf#page=6">Aula 4, p. 6–8</a></td></tr>
+<tr><td>Unit Economics · North Star Metric</td><td>Custo por unidade de valor do negócio.</td><td>Custo por doação processada.</td><td><a href="POSTECH%20-%20FinOps%20-%20Aula%204.pdf#page=8">Aula 4, p. 8–10</a></td></tr>
+<tr><td>FinOps Assessment</td><td>Diagnóstico em cinco lentes, de 0 a 4, que gera roadmap.</td><td>Bônus para o pitch.</td><td><a href="POSTECH%20-%20FinOps%20-%20Aula%206.pdf#page=5">Aula 6, p. 5–9</a></td></tr>
+</tbody></table></div>
+<div class="glossary">
+<div class="term"><span class="k">Equipes Core</span><span class="d">Praticante FinOps, Engenharia, Finanças, Produto, Compras e Liderança (Aula 1, p. 6).</span></div>
+<div class="term"><span class="k">Equipes Aliadas</span><span class="d">Segurança, ITSM, ITAM, ITFM e Sustentabilidade (Aula 1, p. 6).</span></div>
+<div class="term"><span class="k">Cost Allocation Tags</span><span class="d">Na AWS, as tags só viram filtro no Cost Explorer depois de ativadas (Aula 1, p. 13).</span></div>
+<div class="term"><span class="k">Desperdício</span><span class="d">Recursos órfãos ou ociosos: VMs, discos, IPs e balanceadores sem uso (Aula 2, p. 5).</span></div>
+<div class="term"><span class="k">Scale to zero</span><span class="d">Serverless sem custo quando ocioso (Aula 3, p. 5).</span></div>
+<div class="term"><span class="k">Persistência poliglota</span><span class="d">Cada carga no banco mais adequado — SQL ou NoSQL (Aula 3, p. 6).</span></div>
+<div class="term"><span class="k">Guardrails</span><span class="d">Políticas que bloqueiam o que foge do orçamento ou da governança (Aula 4, p. 6).</span></div>
+<div class="term"><span class="k">GreenOps</span><span class="d">Menos recurso, menos custo e menos carbono (Aula 2, p. 6).</span></div>
+</div>
+</section>
+
+<section id="aula-1"><h2>Aula 1 — Cultura e a fase Informar</h2><div class="section-rule"></div><article class="lesson"><div class="lesson-head"><span class="num">01</span><div><h3>Ninguém economiza o que não enxerga</h3><span class="badge ok">Ficha de aula · 20 p.</span></div></div>
+<p><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-19">OBRIGATÓRIO · REQ-OBR-19</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-29">OBRIGATÓRIO · REQ-OBR-29</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-43">OBRIGATÓRIO · REQ-OBR-43</a><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-08">SUGESTÃO · SUG-08</a><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-09">SUGESTÃO · SUG-09</a></p>
+<dl class="facets"><div><dt>Em miúdos</dt><dd>FinOps une negócio, tecnologia e finanças para decidir juntos quanto vale gastar. O primeiro passo é enxergar: saber de quem é cada custo. Tag é a etiqueta que torna isso possível.</dd></div><div><dt>Tecnicamente</dt><dd>A FinOps Foundation (Linux Foundation) define seis princípios — colaboração; valor de negócio guiando a tecnologia; todos responsáveis pelo uso; dados acessíveis, oportunos e precisos; FinOps habilitado centralmente; aproveitar o custo variável — e três fases iterativas, medidas por capacidade em Engatinhar, Andar e Correr.</dd></div></dl>
+<p class="source">Fonte: <a href="POSTECH%20-%20FinOps%20-%20Aula%201.pdf#page=4">Aula 1, p. 4–8</a>.</p>
+<h4>As quatro capacidades da fase Informar</h4>
+<div class="tablewrap"><table><thead><tr><th scope="col">Capacidade</th><th scope="col">O que significa</th><th scope="col">Na SolidaryTech</th></tr></thead><tbody>
+<tr><td>Identificação de dados</td><td>Saber de onde vêm os dados de custo, uso e eficiência.</td><td>Cost Explorer, exportação de custos e métricas do Prometheus.</td></tr>
+<tr><td>Alocação</td><td>Estratégia de alocação, de tagging e de custo compartilhado.</td><td>As três tags obrigatórias + rateio do que é comum aos serviços.</td></tr>
+<tr><td>Capacitação por dados</td><td>Relatórios e análises que as equipes usam de fato.</td><td>Painel de custo por tag e por serviço.</td></tr>
+<tr><td>Visibilidade oportuna</td><td>Informação contínua para decisões rápidas.</td><td>Custos diários, não só a fatura do mês.</td></tr>
+</tbody></table></div>
+<p class="source">Fonte: <a href="POSTECH%20-%20FinOps%20-%20Aula%201.pdf#page=8">Aula 1, p. 8–9</a>.</p>
+<p>A tabela de maturidade da aula (p. 10–11) é um bom espelho: no Engatinhar, tags são inconsistentes e a previsão é manual; no Andar, ao menos 80% dos custos estão alocados e as equipes têm orçamento; no Correr, mais de 90% estão alocados, as tags são aplicadas automaticamente e a previsão é granular por serviço. Custos compartilhados podem ser rateados de forma proporcional, igualitária ou fixa (p. 12).</p>
+<p>Na AWS, a estratégia combina contas (segregação máxima) e Cost Allocation Tags (granularidade). O passo que muitos esquecem: <strong>ativar</strong> as tags no gerenciamento de custos — só então elas viram filtro no Cost Explorer (p. 13). A aula também mostra projetos e labels no Google Cloud e grupos de recursos com herança por Azure Policy (p. 12–14).</p>
+<aside class="hk"><strong>🎯 No Hackathon</strong>
+<ul><li><strong>“Rigorosa” significa automática e verificável:</strong> as tags nascem no código, para todos os recursos, sem exceção manual. O jeito mais simples na AWS é declará-las uma vez no provider <a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-08">SUGESTÃO · SUG-08</a>.</li>
+<li><strong>Ative as tags de alocação</strong> — também dá para fazer por código, sem clicar no console. Elas podem levar algumas horas para aparecer no Cost Explorer: deixe isso pronto antes da gravação.</li>
+<li><strong>O que o Terraform não cria, o Terraform não tagueia:</strong> load balancers e volumes criados pelo cluster e as instâncias dos node groups precisam de configuração própria <a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-09">SUGESTÃO · SUG-09</a>.</li>
+<li><strong>Seja honesto na maturidade:</strong> um grupo em 2 meses tende a ficar entre Engatinhar e Andar. Dizer isso com dados vale mais que afirmar “Correr”.</li></ul></aside>
+<p class="memo"><strong>Para memorizar:</strong> informar → otimizar → operar; maturidade é por capacidade; tag só vale se for consistente, automática e ativada.</p>
+</article></section>
+
+<section id="aula-2"><h2>Aula 2 — Fase Otimizar, parte 1</h2><div class="section-rule"></div><article class="lesson"><div class="lesson-head"><span class="num">02</span><div><h3>Pagar menos pelo que usa, usar menos do que paga</h3><span class="badge ok">Ficha de aula · 13 p.</span></div></div>
+<p><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-20">OBRIGATÓRIO · REQ-OBR-20</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-22">OBRIGATÓRIO · REQ-OBR-22</a><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-20">BÔNUS · REQ-BON-20</a><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-21">BÔNUS · REQ-BON-21</a><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-02">BÔNUS · REQ-BON-02</a></p>
+<dl class="facets"><div><dt>Em miúdos</dt><dd>Otimizar é equilibrar custo, desempenho e confiabilidade. Há dois botões: o preço (negociar compromissos) e o uso (desligar o que sobra e dimensionar certo o que fica).</dd></div><div><dt>Tecnicamente</dt><dd>A aula organiza a fase em otimização de cargas (desperdício, gestão de ambientes, redimensionamento e escala), otimização de taxas (compromissos), licenciamento, GreenOps e arquitetura nativa. Ferramentas nativas apontam oportunidades — na AWS, Trusted Advisor e Compute Optimizer.</dd></div></dl>
+<p class="source">Fonte: <a href="POSTECH%20-%20FinOps%20-%20Aula%202.pdf#page=4">Aula 2, p. 4–6</a>.</p>
+<div class="tablewrap"><table><thead><tr><th scope="col">Alavanca</th><th scope="col">Exemplos da aula</th><th scope="col">Tradução SolidaryTech</th></tr></thead><tbody>
+<tr><td>Desperdício</td><td>VMs, discos, IPs e balanceadores órfãos.</td><td>Volumes de PVC e load balancers que sobram de testes.</td></tr>
+<tr><td>Gestão de cargas</td><td>Desligar não produtivo fora do horário; ciclo de vida e expurgo de dados.</td><td>Destruir/recriar o ambiente de testes; expirar backups antigos.</td></tr>
+<tr><td>Redimensionamento</td><td>CPU, memória, disco e família de processador adequados.</td><td>Requests e limits dos Pods; tamanho dos nós e do banco.</td></tr>
+<tr><td>Escala</td><td>Elasticidade horizontal, vertical e serverless.</td><td>HPA para os picos da TV; consumidor serverless da fila.</td></tr>
+<tr><td>Compromissos</td><td>RIs, Savings Plans, CUDs: 30–72% de desconto por 1 ou 3 anos.</td><td>Savings Plan só para a capacidade-base estável.</td></tr>
+<tr><td>GreenOps</td><td>Carbon-aware computing e pegada de carbono.</td><td>Menos recurso ocioso = menos custo e menos carbono.</td></tr>
+</tbody></table></div>
+<p class="source">Fonte: <a href="POSTECH%20-%20FinOps%20-%20Aula%202.pdf#page=5">Aula 2, p. 5–8</a>.</p>
+<p>O ponto central dos compromissos é trocar flexibilidade por previsibilidade: o desconto só compensa se houver boa previsão de demanda, senão paga-se capacidade não usada (p. 6–7). Savings Plans comprometem um valor por hora e são o modelo mais flexível na AWS; Reserved Instances dão os maiores descontos, mas presas a tipo, região e sistema (p. 7–8).</p>
+<aside class="hk"><strong>🎯 No Hackathon</strong>
+<ul><li><strong>Rightsizing no Kubernetes</strong> é o redimensionamento da aula aplicado a contêineres: medir o uso real de CPU e memória e ajustar os requests e limits no YAML, pelo fluxo GitOps. Exemplo completo no <a href="#kit">Kit</a>.</li>
+<li><strong>A recomendação obrigatória</strong> pode sair desta aula: Savings Plan para a base estável, Spot para cargas tolerantes, desligamento fora de horário ou ciclo de vida dos backups. Indicar uma é o mínimo; mais de uma, ou aplicá-la de fato, é diferencial <a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-20">BÔNUS · REQ-BON-20</a><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-21">BÔNUS · REQ-BON-21</a>.</li>
+<li><strong>Cuidado com compromisso em projeto de 2 meses:</strong> recomende Savings Plans para a operação real da ONG, não para o ambiente do grupo.</li></ul></aside>
+<p class="memo"><strong>Para memorizar:</strong> otimização de taxa = pagar menos; otimização de uso = usar menos; compromisso exige previsão.</p>
+</article></section>
+
+<section id="aula-3"><h2>Aula 3 — Fase Otimizar, parte 2: arquiteturas nativas</h2><div class="section-rule"></div><article class="lesson"><div class="lesson-head"><span class="num">03</span><div><h3>Arquitetura é a maior alavanca de custo</h3><span class="badge ok">Ficha de aula · 14 p.</span></div></div>
+<p><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-18">BÔNUS · REQ-BON-18</a><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-04">BÔNUS · REQ-BON-04</a><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-03">BÔNUS · REQ-BON-03</a><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-03">SUGESTÃO · SUG-03</a></p>
+<dl class="facets"><div><dt>Em miúdos</dt><dd>Levar um sistema para a nuvem sem redesenhá-lo (“lift &amp; shift”) costuma copiar as ineficiências antigas. Microsserviços, serverless, aplicações sem estado e o banco certo para cada dado deixam a conta proporcional ao uso.</dd></div><div><dt>Tecnicamente</dt><dd>Microsserviços dão transparência de custo por funcionalidade; serverless cobra por uso e chega a zero; aplicações stateless escalam horizontalmente. Armazenamento de objetos usa ciclo de vida (quente → frio); persistência poliglota escolhe SQL ou NoSQL conforme o caso; cache e CDN aliviam bancos e reduzem transferência.</dd></div></dl>
+<p class="source">Fonte: <a href="POSTECH%20-%20FinOps%20-%20Aula%203.pdf#page=4">Aula 3, p. 4–6</a>.</p>
+<h4>Os 12 fatores aplicados ao código da SolidaryTech</h4>
+<div class="tablewrap"><table><thead><tr><th scope="col">Fator (aula, p. 7–8)</th><th scope="col">Situação no repositório-fonte</th><th scope="col">Ação</th></tr></thead><tbody>
+<tr><td>3 · Configuração no ambiente</td><td>Atende: <code>PORT</code>, <code>DATABASE_URL</code>, <code>AWS_SQS_URL</code> vêm de variáveis.</td><td>Injetar por ConfigMap/Secret via GitOps.</td></tr>
+<tr><td>4 · Serviços de apoio por URL</td><td>Atende: banco e fila por URL.</td><td>Trocar endpoints no DR só por configuração.</td></tr>
+<tr><td>6 · Processos sem estado</td><td>Atende: estado em PostgreSQL e DynamoDB.</td><td>Permite HPA e réplicas.</td></tr>
+<tr><td>9 · Descartabilidade</td><td>Parcial: o <code>donation-service</code> não trata SIGTERM.</td><td>Desligamento gracioso <a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-18">BÔNUS · REQ-BON-18</a>.</td></tr>
+<tr><td>11 · Logs como fluxo</td><td>Atende: logs na saída padrão.</td><td>Coleta pelo agente para o Loki.</td></tr>
+<tr><td>12 · Processos administrativos</td><td>Atenção: o README manda rodar os <code>init.sql</code> à mão.</td><td>Job ou migração no fluxo GitOps <a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-03">SUGESTÃO · SUG-03</a>.</td></tr>
+</tbody></table></div>
+<p class="source">Fonte: <a href="POSTECH%20-%20FinOps%20-%20Aula%203.pdf#page=6">Aula 3, p. 6–8</a>.</p>
+<p>O teorema CAP (p. 8–9) lembra que, com partição de rede, escolhe-se consistência ou disponibilidade: a aula classifica PostgreSQL como CA e DynamoDB como AP, e explica por que o Spanner se comporta quase como CA graças à rede privada do Google.</p>
+<aside class="hk"><strong>🎯 No Hackathon</strong>
+<ul><li><strong>A SolidaryTech já é poliglota:</strong> PostgreSQL para doações e ONGs (transações), DynamoDB para voluntários (chave-valor em escala) — exatamente o conceito da aula.</li>
+<li><strong>Ciclo de vida nos backups:</strong> mover cópias antigas do bucket de DR para camada fria e expirá-las após a retenção é recomendação nativa barata e fácil de mostrar <a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-22">OBRIGATÓRIO · REQ-OBR-22</a>.</li>
+<li><strong>Cache só com uso:</strong> o README cita ElastiCache, mas nenhum serviço usa cache hoje; provisionar sem uso é desperdício <a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-04">BÔNUS · REQ-BON-04</a>.</li>
+<li><strong>Evento já existe:</strong> o <code>donation-service</code> publica no SQS; um consumidor serverless seria pago só quando houver doação.</li></ul></aside>
+<p class="memo"><strong>Para memorizar:</strong> lift &amp; shift copia ineficiência; stateless escala; o banco certo para cada dado; descartabilidade é pré-requisito de Spot e de autoscaling.</p>
+</article></section>
+
+<section id="aula-4"><h2>Aula 4 — Fase Operar</h2><div class="section-rule"></div><article class="lesson"><div class="lesson-head"><span class="num">04</span><div><h3>De dados a ação: automação, MDCO e custo por unidade</h3><span class="badge ok">Ficha de aula · 15 p.</span></div></div>
+<p><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-19">OBRIGATÓRIO · REQ-OBR-19</a><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-28">BÔNUS · REQ-BON-28</a><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-23">BÔNUS · REQ-BON-23</a><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-26">BÔNUS · REQ-BON-26</a><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-11">SUGESTÃO · SUG-11</a></p>
+<dl class="facets"><div><dt>Em miúdos</dt><dd>Operar é fazer o FinOps acontecer sem depender de lembrete: regras automáticas, alertas quando algo foge do normal e decisões guiadas por métricas de negócio.</dd></div><div><dt>Tecnicamente</dt><dd>A aula lista automações por fase: tags via IaC e regras de showback (Informar); desligar ambientes, ajustar desperdício e renovar descontos (Otimizar); guardrails, detecção de anomalias e acompanhamento das equipes (Operar).</dd></div></dl>
+<p class="source">Fonte: <a href="POSTECH%20-%20FinOps%20-%20Aula%204.pdf#page=5">Aula 4, p. 5–6</a>.</p>
+<h4>MDCO — “não faça nada até ter uma métrica”</h4>
+<p>A otimização orientada por métricas se apoia em medição automatizada, metas que funcionam como gatilho (não “gráficos bonitos”), metas factíveis e decisões disparadas por dados, não por calendário. Exemplo da aula: se a utilização de uma reserva cai abaixo de 90%, um alerta dispara a troca; no estágio Correr, a meta de cobertura de descontos fica perto de 80% (p. 6–8).</p>
+<h4>Unit Economics e a métrica Estrela do Norte</h4>
+<p>O estágio mais maduro gerencia custo em relação a uma métrica de valor com baixa entropia — custo por cliente, por transação, por usuário ativo. Isso separa gasto “bom” (que acompanha o crescimento) de gasto “ruim” (ineficiência) e permite escolhas conscientes no triângulo custo, qualidade e velocidade (p. 8–10).</p>
+<p class="source">Fonte: <a href="POSTECH%20-%20FinOps%20-%20Aula%204.pdf#page=6">Aula 4, p. 6–10</a>.</p>
+<aside class="hk"><strong>🎯 No Hackathon</strong>
+<ul><li><strong>Tags via IaC são a automação nº 1 da aula</strong> — a mesma exigência do enunciado.</li>
+<li><strong>Estrela do Norte da SolidaryTech:</strong> custo de infraestrutura por doação processada. Use-a no Forecast e no pitch <a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-26">BÔNUS · REQ-BON-26</a>.</li>
+<li><strong>Uma meta MDCO simples:</strong> “uso de CPU ≥ 60% do request em p95”; abaixo disso por uma semana, abrir ajuste de rightsizing.</li>
+<li><strong>Guardrails e anomalias</strong> são diferenciais: política que barra recurso sem tag e alerta de custo fora do padrão <a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-28">BÔNUS · REQ-BON-28</a><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-23">BÔNUS · REQ-BON-23</a>.</li>
+<li><strong>Aplique em casa:</strong> o grupo também tem uma fatura de 2 meses para controlar <a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-11">SUGESTÃO · SUG-11</a>.</li></ul></aside>
+<p class="memo"><strong>Para memorizar:</strong> automação por fase; métrica, meta e gatilho; custo unitário diz se o gasto é bom ou ruim.</p>
+</article></section>
+
+<section id="aula-5"><h2>Aula 5 — FinOps para IA, IA para FinOps</h2><div class="section-rule"></div><article class="lesson"><div class="lesson-head"><span class="num">05</span><div><h3>A IA que vigia a fatura — e a fatura da IA</h3><span class="badge ok">Ficha de aula · 13 p.</span></div></div>
+<p><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-21">OBRIGATÓRIO · REQ-OBR-21</a><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-23">BÔNUS · REQ-BON-23</a><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-10">SUGESTÃO · SUG-10</a></p>
+<dl class="facets"><div><dt>Em miúdos</dt><dd>A IA ajuda o FinOps a achar gastos estranhos, prever o mês e responder perguntas em linguagem natural. Ao mesmo tempo, cargas de IA criam custos novos e voláteis que também precisam de dono.</dd></div><div><dt>Tecnicamente</dt><dd>IA para FinOps: detecção de anomalias em tempo real no lugar de alarmes fixos, forecasting com machine learning, conversa com os dados, recomendações de descontos e revisão de código ineficiente. FinOps para IA: separar treinamento de inferência, comparar custo-benefício de GPUs e TPUs e, em agentes, ratear tokens por agente e por usuário, usar cache de prompts, roteamento entre modelos e guardrails contra abuso.</dd></div></dl>
+<p class="source">Fonte: <a href="POSTECH%20-%20FinOps%20-%20Aula%205.pdf#page=4">Aula 5, p. 4–8</a>.</p>
+<aside class="hk"><strong>🎯 No Hackathon</strong>
+<ul><li><strong>Forecast com ML exige histórico:</strong> com poucas semanas de dados, a previsão automática da nuvem é frágil. Combine-a com uma estimativa por componente e explique o método <a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-10">SUGESTÃO · SUG-10</a>.</li>
+<li><strong>Anomalia de custo é AIOps para o dinheiro:</strong> o mesmo raciocínio da frente 3, aplicado à fatura <a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-23">BÔNUS · REQ-BON-23</a>.</li>
+<li><strong>Recursos de IA do APM também custam:</strong> se o plano for pago, eles entram no Forecast (visão Cloud+).</li></ul></aside>
+<p class="memo"><strong>Para memorizar:</strong> IA ajuda a detectar, prever e recomendar; cargas de IA pedem tags e rateio próprios.</p>
+</article></section>
+
+<section id="aula-6"><h2>Aula 6 — FinOps Assessment</h2><div class="section-rule"></div><article class="lesson"><div class="lesson-head"><span class="num">06</span><div><h3>Onde estamos e para onde vamos</h3><span class="badge ok">Ficha de aula · 14 p.</span></div></div>
+<p><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-24">BÔNUS · REQ-BON-24</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-33">OBRIGATÓRIO · REQ-OBR-33</a></p>
+<dl class="facets"><div><dt>Em miúdos</dt><dd>O assessment é um diagnóstico em grupo: escolher poucas capacidades importantes, dar notas com base em evidências e transformar as lacunas em um plano de ação.</dd></div><div><dt>Tecnicamente</dt><dd>Etapas: preparação (escopo, grupo e pontuação alvo), metodologia (cinco lentes, escala de 0 a 4, perguntas de descoberta), coleta de dados, resultados e roadmap. A FinOps Foundation oferece uma planilha pronta; recomenda-se repetir trimestralmente com o mesmo escopo.</dd></div></dl>
+<p class="source">Fonte: <a href="POSTECH%20-%20FinOps%20-%20Aula%206.pdf#page=5">Aula 6, p. 5–8</a>.</p>
+<div class="tablewrap"><table><thead><tr><th scope="col">Lente</th><th scope="col">Pergunta de descoberta (síntese)</th></tr></thead><tbody>
+<tr><td>Conhecimento</td><td>O grupo conhece os termos e processos desta capacidade?</td></tr>
+<tr><td>Processo</td><td>Os processos existem, valem e são seguidos?</td></tr>
+<tr><td>Métricas</td><td>A capacidade é medida com KPIs relevantes e automáticos?</td></tr>
+<tr><td>Adoção</td><td>O grupo usa a capacidade como padrão no dia a dia?</td></tr>
+<tr><td>Automação</td><td>As tarefas repetitivas rodam sozinhas, com consistência?</td></tr>
+</tbody></table></div>
+<p class="source">Fonte: <a href="POSTECH%20-%20FinOps%20-%20Aula%206.pdf#page=6">Aula 6, p. 6</a>.</p>
+<p>Entre as capacidades sugeridas como escopo estão alocação de custos, custo por unidade, orçamentos e previsões, gestão de anomalias, otimização de workloads, uso de descontos, custos compartilhados, gestão de recursos, KPIs e automação (p. 8–9).</p>
+<aside class="hk"><strong>🎯 No Hackathon</strong>
+<p>Um mini-assessment com quatro capacidades — alocação, previsão, otimização de workloads e custo por unidade — cabe num slide do pitch: notas atuais, nota-alvo e as três ações do roadmap. É diferencial que mostra método, não só ferramentas <a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-24">BÔNUS · REQ-BON-24</a>.</p></aside>
+<p class="memo"><strong>Para memorizar:</strong> poucas capacidades, cinco lentes, nota por evidência, roadmap e repetição.</p>
+</article></section>
+
+<section id="kit"><h2>Kit FinOps da SolidaryTech</h2><div class="section-rule"></div>
+<aside class="complemento"><strong>📘 Complemento — exemplos autorais para adaptar</strong><p>Códigos e números abaixo são ilustrativos e não foram executados. Confira nomes de recursos e preços na documentação e na calculadora da região escolhida.</p></aside>
+<h4>1. Política de tags no Terraform</h4>
+<figure class="example"><figcaption>📘 Exemplo autoral — tags obrigatórias declaradas uma vez e ativadas por código</figcaption><pre><code>provider "aws" {
+  region = var.region
+  default_tags {
+    tags = {
+      Project     = "SolidaryTech"
+      Environment = "Production"
+      CostCenter  = "NGO-Core"
+      ManagedBy   = "Terraform"   # extra (bônus)
+    }
+  }
+}
+
+# torna as tags filtráveis no Cost Explorer, sem clicar no console
+resource "aws_ce_cost_allocation_tag" "obrigatorias" {
+  for_each = toset(["Project", "Environment", "CostCenter"])
+  tag_key  = each.key
+  status   = "Active"
+}</code></pre></figure>
+<p><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-19">OBRIGATÓRIO · REQ-OBR-19</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-29">OBRIGATÓRIO · REQ-OBR-29</a><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-08">SUGESTÃO · SUG-08</a> Checklist do que escapa das <code>default_tags</code>: instâncias dos node groups (tags no launch template), load balancers criados pelo controlador do cluster, volumes de PVC criados pelo driver de armazenamento e recursos criados fora do provider principal <a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-09">SUGESTÃO · SUG-09</a>. Para a evidência, mostre o Cost Explorer agrupado por <code>Project</code> e uma listagem de recursos filtrada pelas três tags.</p>
+<h4>2. Rightsizing medido, aplicado via GitOps</h4>
+<figure class="example"><figcaption>📘 Exemplo autoral — PromQL para medir e YAML para ajustar</figcaption><pre><code># p95 de CPU (cores) do donation-service em 7 dias
+quantile_over_time(0.95,
+  sum by (pod) (rate(container_cpu_usage_seconds_total{namespace="solidarytech",
+      container="donation-service"}[5m]))[7d:5m])
+
+# pico de memória (working set) em 7 dias
+max_over_time(container_memory_working_set_bytes{namespace="solidarytech",
+    container="donation-service"}[7d])
+
+# deployment.yaml (repositório GitOps) — valores definidos a partir das medições
+resources:
+  requests:
+    cpu: "100m"        # ≈ p95 medido + folga
+    memory: "96Mi"     # ≈ pico medido + folga
+  limits:
+    cpu: "250m"
+    memory: "192Mi"</code></pre></figure>
+<div class="tablewrap"><table><thead><tr><th scope="col">Serviço</th><th scope="col">Request antes</th><th scope="col">Uso p95 medido</th><th scope="col">Request depois</th><th scope="col">Efeito</th></tr></thead><tbody>
+<tr><td>donation-service</td><td>valor inicial</td><td>medir sob carga</td><td>p95 + folga</td><td>nós a menos ou mais folga para picos</td></tr>
+<tr><td>ngo-service</td><td>valor inicial</td><td>medir sob carga</td><td>p95 + folga</td><td>idem</td></tr>
+<tr><td>volunteer-service</td><td>valor inicial</td><td>medir sob carga</td><td>p95 + folga</td><td>idem</td></tr>
+</tbody></table></div>
+<p><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-20">OBRIGATÓRIO · REQ-OBR-20</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-30">OBRIGATÓRIO · REQ-OBR-30</a><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-06">SUGESTÃO · SUG-06</a> Meça com tráfego representativo, faça a mudança por Pull Request no repositório GitOps (o ArgoCD aplica) e mostre a tabela antes/depois no relatório. Corte com cuidado: o SLO de latência do <a href="../02.SRE%20%28Site%20Reliability%20Engineering%29/GUIA-ESTUDO-SRE-Site-Reliability-Engineering.html">02 — SRE — Site Reliability Engineering</a> é o limite.</p>
+<h4>3. Forecast mensal (estrutura)</h4>
+<div class="tablewrap"><table><thead><tr><th scope="col">Bloco</th><th scope="col">Itens</th><th scope="col">Base do número</th></tr></thead><tbody>
+<tr><td>Computação</td><td>Plano de controle do Kubernetes, nós, armazenamento dos nós</td><td>Calculadora de preços + quantidade após rightsizing</td></tr>
+<tr><td>Dados</td><td>PostgreSQL gerenciado, DynamoDB, fila SQS, backups</td><td>Tamanho, leituras/escritas e retenção</td></tr>
+<tr><td>Rede</td><td>NAT, balanceador, transferência entre regiões</td><td>Tráfego estimado; cópias de DR</td></tr>
+<tr><td>Observabilidade e SaaS</td><td>Stack de monitoramento, APM, ferramenta de incidentes</td><td>Planos contratados (mesmo gratuitos) — visão Cloud+</td></tr>
+<tr><td>DR</td><td>Ambiente secundário e réplicas</td><td>Faixas da aula de DR: Pilot Light 5–10%, Warm Standby 30–50% da produção</td></tr>
+<tr><td>Cenários</td><td>Normal × campanha na TV × com DR acionado</td><td>Autoscaling e tráfego de pico</td></tr>
+<tr><td>Custo unitário</td><td>Custo total ÷ doações do mês</td><td>Volume de doações do Prometheus</td></tr>
+</tbody></table></div>
+<p><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-21">OBRIGATÓRIO · REQ-OBR-21</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-43">OBRIGATÓRIO · REQ-OBR-43</a><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-10">SUGESTÃO · SUG-10</a><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-26">BÔNUS · REQ-BON-26</a> Mostre a projeção de alguns meses, com tendência e custo por doação. A dúvida sobre horizonte e ferramenta está em <a class="rid" href="../../requisitos/REQUISITOS.html#q-16">Q-16</a>.</p>
+<h4>4. Cardápio de recomendações (escolha pelo menos uma)</h4>
+<div class="tablewrap"><table><thead><tr><th scope="col">Recomendação</th><th scope="col">Tipo</th><th scope="col">Condição ou risco</th><th scope="col">Base</th></tr></thead><tbody>
+<tr><td>Savings Plan para a capacidade-base</td><td>Taxa</td><td>Exige demanda estável por 1–3 anos.</td><td>Aula 2, p. 6–7</td></tr>
+<tr><td>Spot para cargas tolerantes</td><td>Taxa</td><td>Só com desligamento gracioso e réplicas suficientes.</td><td>Welcome, p. 2; Aula 3, p. 7</td></tr>
+<tr><td>Ciclo de vida no bucket de backups</td><td>Uso</td><td>Respeitar a retenção do PCN.</td><td>Aula 3, p. 5–6</td></tr>
+<tr><td>Desligar não produção fora do horário</td><td>Uso</td><td>Não se aplica à produção da ONG.</td><td>Aula 2, p. 5; Aula 4, p. 5</td></tr>
+<tr><td>Endpoints de gateway para S3 e DynamoDB</td><td>Arquitetura</td><td>Evita cobrança de NAT nesse tráfego.</td><td><a href="../01.Multicloud%20e%20Seguran%C3%A7a/GUIA-ESTUDO-Multicloud-e-Seguranca.html">Multicloud, Aula 6</a></td></tr>
+<tr><td>Query em índice no lugar de Scan</td><td>Arquitetura</td><td>Mudança de código e de Terraform.</td><td>Comentário no <code>volunteer-service</code></td></tr>
+</tbody></table></div>
+<p><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-22">OBRIGATÓRIO · REQ-OBR-22</a><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-20">BÔNUS · REQ-BON-20</a><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-21">BÔNUS · REQ-BON-21</a></p>
+<h4>5. Roteiro da seção FinOps do relatório</h4>
+<ol class="flow">
+<li><div><strong>Informar</strong><span>Política de tags, evidência de recursos tagueados e custo por tag.</span></div></li>
+<li><div><strong>Otimizar</strong><span>Tabela de rightsizing e recomendações com economia estimada.</span></div></li>
+<li><div><strong>Operar</strong><span>Alertas, políticas e a métrica de custo por doação.</span></div></li>
+<li><div><strong>Forecast</strong><span>Projeção mensal por cenário, incluindo DR e SaaS.</span></div></li>
+</ol>
+</section>
+
+<section id="aplicacao"><h2>Da aula à entrega: o que verificar</h2><div class="section-rule"></div>
+<ol class="flow">
+<li><div><strong>Tags no código</strong><span>Três tags obrigatórias em todos os recursos, ativadas para alocação.</span></div></li>
+<li><div><strong>Cobertura real</strong><span>Lista de recursos sem tag vazia — inclusive o que o cluster cria.</span></div></li>
+<li><div><strong>Métricas de uso</strong><span>Tráfego sintético e consultas de CPU/memória por contêiner.</span></div></li>
+<li><div><strong>Rightsizing por GitOps</strong><span>Pull Request com os novos requests/limits, sincronizado pelo ArgoCD.</span></div></li>
+<li><div><strong>Forecast</strong><span>Planilha ou tabela por bloco e cenário, com custo por doação.</span></div></li>
+<li><div><strong>Recomendação</strong><span>Pelo menos uma, com economia estimada e condição.</span></div></li>
+<li><div><strong>Evidências</strong><span>Tags na demo; Forecast e prints na seção FinOps; estratégias no pitch.</span></div></li>
+</ol>
+<p><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-28">OBRIGATÓRIO · REQ-OBR-28</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-35">OBRIGATÓRIO · REQ-OBR-35</a><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-17">SUGESTÃO · SUG-17</a></p>
+<div class="tablewrap"><table><thead><tr><th scope="col">Erro comum</th><th scope="col">Como evitar</th><th scope="col">Base</th></tr></thead><tbody>
+<tr><td>Tags só em alguns módulos.</td><td>Declarar no provider e verificar a cobertura.</td><td>Aula 1, p. 8 e 10</td></tr>
+<tr><td>Esquecer de ativar as tags de alocação.</td><td>Ativar (por código) antes da gravação.</td><td>Aula 1, p. 13</td></tr>
+<tr><td>Rightsizing “no chute”.</td><td>Medir p95 e pico com carga representativa.</td><td>Aula 2, p. 5</td></tr>
+<tr><td>Editar requests direto no cluster.</td><td>Mudar no Git; o ArgoCD aplica.</td><td>Enunciado, p. 4</td></tr>
+<tr><td>Forecast só com a fatura do mês.</td><td>Estimativa por componente + custos reais + cenários.</td><td>Aula 5, p. 5</td></tr>
+<tr><td>Recomendar compromisso sem previsão.</td><td>Aplicar só à base estável e justificar.</td><td>Aula 2, p. 6–7</td></tr>
+<tr><td>Spot para o Hot Path sem preparo.</td><td>Desligamento gracioso e réplicas antes.</td><td>Aula 3, p. 7</td></tr>
+<tr><td>Ignorar SaaS e DR no Forecast.</td><td>Incluir APM, incidentes e ambiente secundário.</td><td>Multicloud, Aula 8, p. 8</td></tr>
+</tbody></table></div>
+</section>
+
+<section id="outros-modulos"><h2>Como este módulo se conecta aos outros</h2><div class="section-rule"></div>
+<div class="tablewrap"><table><thead><tr><th scope="col">Guia</th><th scope="col">Conexão</th></tr></thead><tbody>
+<tr><td><a href="../00.Welcome%20to%20Multicloud%2C%20custos%20e%20IA/GUIA-ESTUDO-Welcome-to-Multicloud-custos-e-IA.html">00 — Welcome to Multicloud, custos e IA</a></td><td>Anuncia Rightsizing, Spot, Savings Plans, Kubecost e Cost Explorer com tagueamento rigoroso.</td></tr>
+<tr><td><a href="../02.SRE%20%28Site%20Reliability%20Engineering%29/GUIA-ESTUDO-SRE-Site-Reliability-Engineering.html">02 — SRE — Site Reliability Engineering</a></td><td>O SLO é o limite do rightsizing; o error budget em reais conversa com o custo.</td></tr>
+<tr><td><a href="../01.Multicloud%20e%20Seguran%C3%A7a/GUIA-ESTUDO-Multicloud-e-Seguranca.html">01 — Multicloud e Segurança</a></td><td>Unit Economics, FOCUS e o custo do DR por padrão (Aulas 5 e 8).</td></tr>
+<tr><td><a href="../04.IT%20Service%20Management%20e%20AIOPs/GUIA-ESTUDO-IT-Service-Management-e-AIOps.html">04 — IT Service Management e AIOps</a></td><td>FinOps lista ITSM entre as equipes aliadas; anomalia de custo é um incidente de outra natureza.</td></tr>
+</tbody></table></div>
+</section>
+
+<section id="revisao"><h2>Revisão rápida e autoavaliação</h2><div class="section-rule"></div>
+<p>Responda antes de abrir. Perguntas autorais, baseadas nas páginas indicadas.</p>
+<details><summary>1. Quais são as três fases do FinOps?</summary><p>Informar, Otimizar e Operar, percorridas em ciclo. Aula 1, p. 7.</p></details>
+<details><summary>2. Maturidade “Correr” é obrigatória em todas as capacidades?</summary><p>Não: prioriza-se o que traz mais valor ao negócio. Aula 1, p. 9.</p></details>
+<details><summary>3. Por que uma tag aplicada pode não aparecer no Cost Explorer?</summary><p>Porque precisa ser ativada como tag de alocação de custo. Aula 1, p. 13.</p></details>
+<details><summary>4. Qual a diferença entre otimização de taxa e de uso?</summary><p>Taxa: pagar menos pelo mesmo recurso (compromissos, Spot). Uso: usar menos (desligar, redimensionar). Aula 2, p. 5–6; Multicloud, Aula 8, p. 5.</p></details>
+<details><summary>5. Quando um Savings Plan é má ideia?</summary><p>Quando não há previsão de demanda estável — paga-se capacidade não usada. Aula 2, p. 6–7.</p></details>
+<details><summary>6. Qual fator do 12-Factor permite usar Spot com segurança?</summary><p>Descartabilidade: inicialização rápida e desligamento gracioso. Aula 3, p. 7.</p></details>
+<details><summary>7. O que é MDCO?</summary><p>Otimizar com base em métricas, metas e gatilhos, e não em calendário fixo. Aula 4, p. 6–8.</p></details>
+<details><summary>8. Qual seria a métrica Estrela do Norte da SolidaryTech?</summary><p>Custo de infraestrutura por doação processada — de baixa entropia e ligada ao valor. Aula 4, p. 9 (complemento).</p></details>
+<details><summary>9. Como a IA ajuda o Forecast?</summary><p>Modelos de ML interpretam padrões e imperfeições dos dados — desde que haja histórico suficiente. Aula 5, p. 5.</p></details>
+<details><summary>10. Quais são as cinco lentes do FinOps Assessment?</summary><p>Conhecimento, processo, métricas, adoção e automação, com notas de 0 a 4. Aula 6, p. 5–6.</p></details>
+</section>
+
+<section id="limites"><h2>Fidelidade, fontes e pontos a confirmar</h2><div class="section-rule"></div>
+<p>Leitura integral do texto dos seis PDFs em 2026-11-11. Links externos das aulas não foram acessados e os vídeos não estão na pasta.</p>
+<div class="tablewrap"><table><thead><tr><th scope="col">ID</th><th scope="col">O que o original apresenta</th><th scope="col">Tratamento adotado</th></tr></thead><tbody>
+<tr><td>FIN-L01 · Limitação</td><td>Figuras com telas do Google Cloud (Aula 5, p. 5–6) e logos (Aula 1, p. 5–7).</td><td>Conceitos traduzidos para o ambiente AWS provável do Hackathon.</td></tr>
+<tr><td>FIN-L02 · Limitação</td><td>Faixas de desconto (30–72%) e metas de cobertura da tabela de maturidade.</td><td>Citadas como afirmação da aula; conferir condições vigentes antes de usar no Forecast.</td></tr>
+<tr><td>FIN-Q01 · [INCERTO]</td><td>Aula 1: título “Cultura e a Fase "informar?”” com aspas trocadas; Aula 4: título com caracteres duplicados na extração.</td><td>Lidos como “Cultura e a fase Informar” e “Fase Operar”.</td></tr>
+<tr><td>FIN-Q02 · [INCERTO]</td><td>O resumo da Aula 2 cita níveis de maturidade da fase Otimizar e o da Aula 4 cita o FinOps Assessment, temas detalhados em outras aulas (1 e 6).</td><td>Conteúdo atribuído à aula onde de fato aparece.</td></tr>
+<tr><td>FIN-Q03 · [INCERTO]</td><td>Enunciado pede Forecast de custos mensais sem horizonte nem ferramenta.</td><td>Registrado em <a class="rid" href="../../requisitos/REQUISITOS.html#q-16">Q-16</a>.</td></tr>
+</tbody></table></div>
+</section>
+
+<section id="conexao"><h2>Conexão com o Hackathon Fase 5</h2><div class="section-rule"></div>
+<p>As exigências vêm do enunciado; o vínculo com as aulas é mapeamento didático. Estudar o tema não comprova atendimento. Status da implementação: <strong>Pendente</strong>.</p>
+<div class="tablewrap"><table><thead><tr><th scope="col">ID</th><th scope="col">Selo</th><th scope="col">Como este módulo ajuda a cumprir</th></tr></thead><tbody>
+<tr><td>REQ-OBR-19</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-19">OBRIGATÓRIO · REQ-OBR-19</a></td><td>Aulas 1 e 4: estratégia de tagging, ativação e automação via IaC.</td></tr>
+<tr><td>REQ-OBR-20</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-20">OBRIGATÓRIO · REQ-OBR-20</a></td><td>Aula 2: redimensionamento a partir do uso real.</td></tr>
+<tr><td>REQ-OBR-21</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-21">OBRIGATÓRIO · REQ-OBR-21</a></td><td>Aulas 1, 4 e 5: previsão, custo unitário e ML com ressalvas.</td></tr>
+<tr><td>REQ-OBR-22</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-22">OBRIGATÓRIO · REQ-OBR-22</a></td><td>Aulas 2 e 3: taxa, uso e arquitetura nativa.</td></tr>
+<tr><td>REQ-OBR-29</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-29">OBRIGATÓRIO · REQ-OBR-29</a></td><td>Kit: política de tags no Terraform.</td></tr>
+<tr><td>REQ-OBR-30</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-30">OBRIGATÓRIO · REQ-OBR-30</a></td><td>Kit: requests/limits medidos e versionados.</td></tr>
+<tr><td>REQ-OBR-43</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-43">OBRIGATÓRIO · REQ-OBR-43</a></td><td>Kit: roteiro Informar, Otimizar, Operar e Forecast.</td></tr>
+<tr><td>REQ-OBR-35</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-35">OBRIGATÓRIO · REQ-OBR-35</a></td><td>Evidência de recursos com tags na demo.</td></tr>
+<tr><td>REQ-OBR-33</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-33">OBRIGATÓRIO · REQ-OBR-33</a></td><td>Aulas 4 e 6: custo por doação e roadmap para a diretoria.</td></tr>
+<tr><td>REQ-OBR-28</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-28">OBRIGATÓRIO · REQ-OBR-28</a></td><td>Roteiro de verificação de tags, YAML e Forecast.</td></tr>
+<tr><td>REQ-BON-22</td><td><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-22">BÔNUS · REQ-BON-22</a></td><td>Aula 1: alocação por serviço e por dono.</td></tr>
+<tr><td>REQ-BON-28</td><td><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-28">BÔNUS · REQ-BON-28</a></td><td>Aula 4: guardrails automáticos.</td></tr>
+<tr><td>REQ-BON-20</td><td><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-20">BÔNUS · REQ-BON-20</a></td><td>Aula 2: alavancas de taxa e de uso.</td></tr>
+<tr><td>REQ-BON-21</td><td><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-21">BÔNUS · REQ-BON-21</a></td><td>Aula 2: da recomendação à economia medida.</td></tr>
+<tr><td>REQ-BON-23</td><td><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-23">BÔNUS · REQ-BON-23</a></td><td>Aulas 4 e 5: orçamento e anomalias.</td></tr>
+<tr><td>REQ-BON-25</td><td><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-25">BÔNUS · REQ-BON-25</a></td><td>Aula 1: alocação e custo compartilhado no cluster.</td></tr>
+<tr><td>REQ-BON-26</td><td><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-26">BÔNUS · REQ-BON-26</a></td><td>Aula 4: métrica Estrela do Norte.</td></tr>
+<tr><td>REQ-BON-27</td><td><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-27">BÔNUS · REQ-BON-27</a></td><td>Aula 4: custo antes do deploy.</td></tr>
+<tr><td>REQ-BON-24</td><td><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-24">BÔNUS · REQ-BON-24</a></td><td>Aula 6: cinco lentes e roadmap.</td></tr>
+<tr><td>REQ-BON-02</td><td><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-02">BÔNUS · REQ-BON-02</a></td><td>Aula 2: escala sob demanda.</td></tr>
+<tr><td>REQ-BON-18</td><td><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-18">BÔNUS · REQ-BON-18</a></td><td>Aula 3: descartabilidade.</td></tr>
+<tr><td>REQ-BON-03</td><td><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-03">BÔNUS · REQ-BON-03</a></td><td>Aula 3: banco certo e acesso eficiente.</td></tr>
+<tr><td>REQ-BON-04</td><td><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-04">BÔNUS · REQ-BON-04</a></td><td>Aula 3: cache só quando alivia um recurso caro.</td></tr>
+<tr><td>SUG-08</td><td><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-08">SUGESTÃO · SUG-08</a></td><td>Aula 4: tags automáticas desde a criação.</td></tr>
+<tr><td>SUG-09</td><td><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-09">SUGESTÃO · SUG-09</a></td><td>Aula 1: custos que nativamente escapam da alocação.</td></tr>
+<tr><td>SUG-10</td><td><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-10">SUGESTÃO · SUG-10</a></td><td>Aulas 1 e 5: previsão por uso passado e ML.</td></tr>
+<tr><td>SUG-11</td><td><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-11">SUGESTÃO · SUG-11</a></td><td>Aulas 2 e 4: desligar o que não é produção.</td></tr>
+<tr><td>SUG-03</td><td><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-03">SUGESTÃO · SUG-03</a></td><td>Aula 3: fator 12, processos administrativos.</td></tr>
+<tr><td>SUG-06</td><td><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-06">SUGESTÃO · SUG-06</a></td><td>Aula 2: rightsizing exige uso real.</td></tr>
+<tr><td>SUG-19</td><td><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-19">SUGESTÃO · SUG-19</a></td><td>Aula 4: valor de negócio guiando decisões.</td></tr>
+<tr><td>SUG-17</td><td><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-17">SUGESTÃO · SUG-17</a></td><td>Evidências FinOps antes de gravar.</td></tr>
+</tbody></table></div>
+</section>
+
+<footer><a href="#conteudo">Voltar ao início</a><p>Fontes locais lidas em 2026-11-11. Síntese didática com referências por página; exemplos de código e números da SolidaryTech são ilustrativos, autorais e não foram executados. Requisitos: enunciado do Hackathon Fase 5, p. 2–7. Material autocontido, sem dependências externas.</p></footer></main></body></html>
