@@ -1,0 +1,523 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>IT Service Management e AIOps — Guia de estudo · Hackathon Fase 5</title><style>
+    :root{
+      --bg:#eef2f8; --surface:#ffffff; --surface-2:#e7eef7; --panel:#f5f8fc;
+      --ink:#132339; --ink-soft:#4c5f79; --ink-faint:#7787a0;
+      --line:#d3ddea; --line-soft:#e2e9f2;
+      --accent:#2f6ae0; --accent-ink:#1c4aa8; --accent-wash:#e7eefb;
+      --brass:#b26a10; --brass-wash:#f6ecdd;
+      --ok:#2c8159; --warn:#a9741a; --no:#7a869a;
+      --serif:Georgia,"Iowan Old Style","Palatino Linotype","Times New Roman",serif;
+      --sans:"Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+      --mono:"Cascadia Code",Consolas,"SFMono-Regular",ui-monospace,monospace;
+    }
+    @media (prefers-color-scheme:dark){:root{
+      --bg:#0c1725; --surface:#152539; --surface-2:#101f31; --panel:#132234;
+      --ink:#e6edf6; --ink-soft:#a4b6cc; --ink-faint:#7488a2;
+      --line:#26394f; --line-soft:#1d2d40;
+      --accent:#6c9cf1; --accent-ink:#9cbdf8; --accent-wash:#16273f;
+      --brass:#e0a552; --brass-wash:#241c11; --ok:#59bf8c; --warn:#e0a552; --no:#7f8aa0;
+    }}
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.6;-webkit-font-smoothing:antialiased}
+    .wrap{max-width:900px;margin:0 auto;padding:clamp(20px,4vw,52px) clamp(16px,4vw,32px)}
+    .masthead{border-bottom:2px solid var(--ink);padding-bottom:22px;margin-bottom:34px}
+    .eyebrow{font-family:var(--mono);font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:var(--accent-ink);margin:0 0 12px}
+    .masthead h1{font-family:var(--serif);font-weight:700;font-size:clamp(1.9rem,5.6vw,3rem);line-height:1.05;margin:0;text-wrap:balance}
+    .masthead .sub{font-size:clamp(1rem,2.4vw,1.18rem);color:var(--ink-soft);margin:.5em 0 0;max-width:62ch}
+    .meta{font-family:var(--mono);font-size:.74rem;color:var(--ink-faint);margin-top:16px;display:flex;flex-wrap:wrap;gap:6px 18px}
+    h2{font-family:var(--serif);font-weight:700;font-size:clamp(1.4rem,3.4vw,1.9rem);margin:52px 0 6px;text-wrap:balance}
+    .section-rule{height:3px;width:56px;background:var(--accent);border-radius:2px;margin:14px 0 24px}
+    p{max-width:68ch}
+    .lead{color:var(--ink-soft);margin:0 0 22px;max-width:66ch}
+    strong{color:var(--ink)}
+    a{color:var(--accent-ink);text-underline-offset:3px}
+    .intro{display:grid;gap:16px;grid-template-columns:1fr 1fr}
+    @media(max-width:620px){.intro{grid-template-columns:1fr}}
+    .intro .box{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px 22px}
+    .intro .box h3{margin:0 0 8px;font-size:1.05rem;font-family:var(--sans);font-weight:700}
+    .intro .box p{margin:0;font-size:.96rem;color:var(--ink-soft);max-width:none}
+    .intro .box.hi{border-color:var(--brass);background:var(--brass-wash)}
+    .glossary{background:var(--panel);border:1px solid var(--line-soft);border-radius:14px;padding:clamp(16px,3vw,26px);display:grid;grid-template-columns:1fr 1fr;gap:2px 26px}
+    @media(max-width:640px){.glossary{grid-template-columns:1fr}}
+    .term{padding:11px 0;border-bottom:1px solid var(--line-soft)}
+    .term .k{font-family:var(--mono);font-weight:700;color:var(--accent-ink);font-size:.92rem}
+    .term .full{font-style:italic;color:var(--ink-faint);font-size:.86rem;margin-left:6px}
+    .term .d{display:block;color:var(--ink-soft);font-size:.94rem;margin-top:2px}
+    .lessons{display:flex;flex-direction:column;gap:18px}
+    .lesson{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:clamp(18px,3vw,26px);transition:border-color .18s ease}
+    .lesson:hover{border-color:var(--accent)}
+    .lesson-head{display:flex;gap:16px;align-items:flex-start;margin-bottom:16px}
+    .num{font-family:var(--serif);font-size:2.1rem;font-weight:700;line-height:1;color:var(--accent);min-width:1.6em;font-variant-numeric:tabular-nums}
+    .lesson-head h3{margin:2px 0 8px;font-size:clamp(1.12rem,2.6vw,1.3rem);font-family:var(--sans);font-weight:700;line-height:1.25}
+    .badge{display:inline-block;font-family:var(--mono);font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:20px;border:1px solid currentColor}
+    .badge.ok{color:var(--ok)}
+    .badge.warn{color:var(--warn)}
+    .badge.no{color:var(--no)}
+    .facets{margin:0;display:grid;gap:14px}
+    .facets > div{display:grid;grid-template-columns:150px 1fr;gap:4px 18px;align-items:baseline}
+    @media(max-width:600px){.facets > div{grid-template-columns:1fr}}
+    .facets dt{font-family:var(--mono);font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--accent-ink);margin:0}
+    .facets dd{margin:0;color:var(--ink-soft);font-size:.97rem}
+    .facets dd.proj{color:var(--ink)}
+    .facets .use{color:var(--brass)}
+    code{font-family:var(--mono);font-size:.86em;background:var(--accent-wash);color:var(--accent-ink);padding:1px 6px;border-radius:5px}
+    .flow{margin:0;padding:0;list-style:none;counter-reset:flow;display:grid;gap:12px}
+    .flow li{counter-increment:flow;display:grid;grid-template-columns:38px 1fr;gap:13px;align-items:start;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:15px 17px}
+    .flow li::before{content:counter(flow);display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:var(--accent-wash);color:var(--accent-ink);font-family:var(--mono);font-size:.78rem;font-weight:700}
+    .flow strong{display:block;margin-bottom:2px}
+    .flow span{color:var(--ink-soft);font-size:.95rem}
+    .tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+    table{border-collapse:collapse;width:100%;min-width:680px;font-size:.92rem}
+    th,td{text-align:left;padding:11px 15px;border-bottom:1px solid var(--line-soft)}
+    thead th{background:var(--surface-2);font-family:var(--mono);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft)}
+    tbody tr:last-child td{border-bottom:none}
+    td .s{font-family:var(--mono);font-size:.78rem;font-weight:700}
+    td .s.ok{color:var(--ok)}
+    td .s.warn{color:var(--warn)}
+    td .s.no{color:var(--no)}
+    td .num2{font-family:var(--serif);font-weight:700;color:var(--accent)}
+    .note{margin-top:20px;padding:16px 18px;border-left:4px solid var(--brass);background:var(--brass-wash);color:var(--ink-soft)}
+    .note strong{display:block;margin-bottom:3px}
+    .sources{display:grid;grid-template-columns:1fr 1fr;gap:8px 22px;margin:0;padding:0;list-style:none}
+    .sources li{border-bottom:1px solid var(--line-soft);padding:8px 0;font-size:.92rem}
+    @media(max-width:640px){.sources{grid-template-columns:1fr}}
+    footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--line);color:var(--ink-faint);font-size:.86rem}
+    :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+    @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+  /* Extensões Fase 4 — mesmas em todos os guias */
+.wrap{overflow-wrap:anywhere}.badge{letter-spacing:.03em;margin:2px 3px 2px 0;text-decoration:none;max-width:100%}.badge.obrigatorio{color:#a3323d;background:#fff0f1}.badge.bonus{color:#21613d;background:#edf8ef}.badge.sugestao{color:#1c4aa8;background:#e7eefb}.badge.complemento-badge{color:#725000;background:#fff5dc}.legend,.toc{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px 22px;margin:20px 0}.legend p{font-size:.9rem;color:var(--ink-soft);margin-bottom:0}.toc ol{columns:2;column-gap:32px;padding-left:20px}.toc li{break-inside:avoid;margin-bottom:7px}.complemento{border-left:4px solid var(--accent);background:var(--accent-wash);padding:16px 20px;margin:20px 0}.complemento>strong{display:block}.source,figcaption{font-size:.86rem;color:var(--ink-soft)}pre{white-space:pre;overflow:auto;max-width:100%;padding:18px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);line-height:1.55}pre code{padding:0;background:none;color:var(--ink)}figure{margin:22px 0}.source-list{margin-top:18px}summary{cursor:pointer;color:var(--accent-ink);font-weight:600}details{margin:12px 0;padding:12px 16px;border:1px solid var(--line);border-radius:8px}.skip{position:absolute;top:-100px;left:12px}.skip:focus{top:12px;background:var(--surface);padding:10px;z-index:100}.diagram{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:20px 0}.diagram .node{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;flex:1;min-width:130px}.lesson p:last-child{margin-bottom:0}section{scroll-margin-top:20px}h3{line-height:1.35}.warning{border-left:4px solid var(--brass);padding:14px 18px;background:var(--brass-wash)}@media(max-width:640px){.toc ol{columns:1}.meta{font-size:.7rem}.lesson-head{gap:10px}.sources{grid-template-columns:1fr}}@media(prefers-color-scheme:dark){.badge.obrigatorio{color:#ffb3bc;background:#381f29}.badge.bonus{color:#a7e4bb;background:#173123}.badge.sugestao{color:#b5cdff;background:#16273f}.badge.complemento-badge{color:#f1d592;background:#302817}}@media print{body{background:white;color:black}.wrap{max-width:none;padding:0}.toc,.skip{display:none}.lesson,.complemento{break-inside:avoid}.tablewrap{overflow:visible}table{min-width:0}pre{white-space:pre-wrap}.badge{background:none!important;color:black!important}a{color:black}details>*{display:block}}
+
+/* Extensões Hackathon Fase 5 — mesmas em todos os guias */
+.badge.duvida{color:#5b3fa8;background:#f1ecfd}
+.maplinks{font-size:.93rem;margin:16px 0 0;max-width:none}
+.maplinks a{font-weight:600}
+.guide-nav{display:flex;flex-wrap:wrap;gap:6px;margin-top:16px}
+.guide-nav a{font-family:var(--mono);font-size:.72rem;text-decoration:none;padding:4px 11px;border:1px solid var(--line);border-radius:20px;color:var(--ink-soft);background:var(--surface)}
+.guide-nav a:hover{border-color:var(--accent);color:var(--accent-ink)}
+.guide-nav a[aria-current]{border-color:var(--accent);color:var(--accent-ink);background:var(--accent-wash);font-weight:700}
+.guide-nav a.maplink{border-color:var(--brass);color:var(--brass)}
+a.rid{font-family:var(--mono);font-size:.86em;font-weight:700;text-decoration:none;white-space:nowrap}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0}
+.split.three{grid-template-columns:1fr 1fr 1fr}
+@media(max-width:760px){.split,.split.three{grid-template-columns:1fr}}
+.split .col{background:var(--surface);border:1px solid var(--line);border-top:4px solid var(--line);border-radius:14px;padding:16px 18px}
+.split .col.obr{border-top-color:#c2414f}
+.split .col.bon{border-top-color:#2f8a55}
+.split .col.sug{border-top-color:var(--accent)}
+.split .col h3{margin:0 0 4px;font-size:1.02rem;font-family:var(--sans)}
+.split .col > p{font-size:.88rem;color:var(--ink-faint);margin:0 0 8px}
+.split ul{list-style:none;margin:0;padding:0;max-width:none}
+.split li{padding:9px 0;border-bottom:1px solid var(--line-soft);font-size:.93rem;color:var(--ink-soft);margin:0}
+.split li:last-child{border-bottom:none}
+.split li .badge{display:table;margin:0 0 5px}
+.split li strong{color:var(--ink)}
+.split li .li-note{display:block;color:var(--ink-soft);font-size:.88rem;margin-top:2px}
+.hk{border-left:4px solid var(--brass);background:var(--brass-wash);padding:16px 20px;margin:20px 0;border-radius:0 12px 12px 0}
+.hk > strong:first-child{display:block;margin-bottom:6px;color:var(--brass)}
+.hk p{margin:6px 0}
+.hk ul,.hk ol{margin:6px 0;padding-left:20px}
+.hk p:last-child,.hk ul:last-child{margin-bottom:0}
+figure.example{margin:18px 0}
+figure.example figcaption{font-family:var(--mono);font-size:.74rem;letter-spacing:.03em;margin-bottom:6px;color:var(--brass)}
+figure.example pre{margin:0}
+h4{font-size:1.04rem;margin:26px 0 8px;font-family:var(--sans)}
+.math{font-family:var(--mono);font-size:.9rem;background:var(--panel);border:1px solid var(--line-soft);border-radius:10px;padding:12px 16px;margin:12px 0;overflow-x:auto}
+.memo{margin-top:18px;padding:12px 16px;border:1px dashed var(--line);border-radius:10px;background:var(--panel)}
+.memo strong:first-child{color:var(--accent-ink)}
+.tablewrap + .source{margin-top:8px}
+td code,li code{white-space:nowrap}
+@media(max-width:640px){td code,li code{white-space:normal}}
+@media(prefers-color-scheme:dark){.badge.duvida{color:#cdbdff;background:#272042}.split .col.obr{border-top-color:#e06a78}.split .col.bon{border-top-color:#59bf8c}}
+@media print{.guide-nav,.maplinks{display:none}.hk{break-inside:avoid}}
+</style></head>
+<body><a class="skip" href="#conteudo">Ir ao conteúdo</a><main class="wrap" id="conteudo"><header class="masthead"><p class="eyebrow">FIAP · Hackathon Fase 5 · Guia de estudo 04</p><h1>IT Service Management e AIOps</h1><p class="sub">Oito aulas de AIOps na prática: IA nas operações, pipelines, governança da automação e o ciclo de vida do incidente.</p><div class="meta"><span>Gerado em 2026-11-11 · Claude</span><span>8 arquivo(s) · 168 páginas</span><span>Intermediário</span><span>Desafio: SolidaryTech</span></div><p class="maplinks"><a href="../../requisitos/REQUISITOS.html">🗺️ Mapa de requisitos — obrigatórios × bônus</a> · <a href="../../requisitos/README.md">versão Markdown</a> · <a href="../POSTECH%20-%20DCLT%20-%20Hackathon%20-%20Fase%205.pdf">enunciado do Hackathon (PDF)</a></p><details class="source-list"><summary>Arquivos-fonte usados integralmente</summary><ul class="sources"><li><a href="POSTECH%20-%20IT%20Service%20Management%20e%20AIOPs%20-%20Aula%201.pdf">POSTECH - IT Service Management e AIOPs - Aula 1.pdf</a><br><span class="source">18 páginas · leitura integral do texto</span></li><li><a href="POSTECH%20-%20IT%20Service%20Management%20e%20AIOPs%20-%20Aula%202.pdf">POSTECH - IT Service Management e AIOPs - Aula 2.pdf</a><br><span class="source">24 páginas · leitura integral do texto</span></li><li><a href="POSTECH%20-%20IT%20Service%20Management%20e%20AIOPs%20-%20Aula%203.pdf">POSTECH - IT Service Management e AIOPs - Aula 3.pdf</a><br><span class="source">23 páginas · leitura integral do texto</span></li><li><a href="POSTECH%20-%20IT%20Service%20Management%20e%20AIOPs%20-%20Aula%204.pdf">POSTECH - IT Service Management e AIOPs - Aula 4.pdf</a><br><span class="source">21 páginas · leitura integral do texto</span></li><li><a href="POSTECH%20-%20IT%20Service%20Management%20e%20AIOPs%20-%20Aula%205.pdf">POSTECH - IT Service Management e AIOPs - Aula 5.pdf</a><br><span class="source">23 páginas · leitura integral do texto</span></li><li><a href="POSTECH%20-%20IT%20Service%20Management%20e%20AIOPs%20-%20Aula%206.pdf">POSTECH - IT Service Management e AIOPs - Aula 6.pdf</a><br><span class="source">19 páginas · leitura integral do texto</span></li><li><a href="POSTECH%20-%20IT%20Service%20Management%20e%20AIOPs%20-%20Aula%207.pdf">POSTECH - IT Service Management e AIOPs - Aula 7.pdf</a><br><span class="source">20 páginas · leitura integral do texto</span></li><li><a href="POSTECH%20-%20IT%20Service%20Management%20e%20AIOPs%20-%20Aula%208.pdf">POSTECH - IT Service Management e AIOPs - Aula 8.pdf</a><br><span class="source">20 páginas · leitura integral do texto</span></li></ul></details><nav class="guide-nav" aria-label="Guias da Fase 5"><a href="../00.Welcome%20to%20Multicloud%2C%20custos%20e%20IA/GUIA-ESTUDO-Welcome-to-Multicloud-custos-e-IA.html">00 · Welcome</a><a href="../01.Multicloud%20e%20Seguran%C3%A7a/GUIA-ESTUDO-Multicloud-e-Seguranca.html">01 · Multicloud e Segurança</a><a href="../02.SRE%20%28Site%20Reliability%20Engineering%29/GUIA-ESTUDO-SRE-Site-Reliability-Engineering.html">02 · SRE</a><a href="../03.FinOps/GUIA-ESTUDO-FinOps.html">03 · FinOps</a><a href="../04.IT%20Service%20Management%20e%20AIOPs/GUIA-ESTUDO-IT-Service-Management-e-AIOps.html" aria-current="page">04 · ITSM e AIOps</a><a href="../../requisitos/REQUISITOS.html" class="maplink">🗺️ Mapa de requisitos</a></nav></header>
+<aside class="legend" aria-label="Legenda dos selos"><span class="badge obrigatorio">🔴 Obrigatório</span> <span class="badge bonus">🟢 Bônus / diferencial</span> <span class="badge sugestao">🔵 Sugestão</span> <span class="badge complemento-badge">📘 Complemento</span><p><strong>Obrigatório</strong> é o que o enunciado do Hackathon exige. <strong>Bônus</strong> é diferencial: vai além do mínimo pedido, usa a alternativa não escolhida ou aplica algo do material oficial que o enunciado não exige — <em>o PDF não promete pontos extras</em>. <strong>Sugestão</strong> é recomendação autoral para facilitar a entrega. <strong>Complemento</strong> é explicação ou exemplo autoral, não é texto nem exigência da FIAP. Páginas seguem a contagem física do PDF, a partir de 1.</p></aside>
+<nav class="toc" aria-label="Sumário"><strong>Neste guia</strong><ol><li><a href="#visao-geral">Do alerta ao aprendizado — com a IA no circuito</a></li><li><a href="#obrigatorio-bonus">Obrigatório × Bônus neste módulo</a></li><li><a href="#mapa">Mapa de conceitos e vocabulário</a></li><li><a href="#aula-1">Aula 1 — AIOps vs DevOps: o que muda?</a></li><li><a href="#aula-2">Aula 2 — Ciclo de desenvolvimento de IA: do modelo ao agente</a></li><li><a href="#aula-3">Aula 3 — Infraestrutura de IA: padrões arquiteturais e Terraform</a></li><li><a href="#aula-4">Aula 4 — Versionamento e validações no GitHub (MLOps)</a></li><li><a href="#aula-5">Aula 5 — Orquestrando modelos e agentes em múltiplos ambientes</a></li><li><a href="#aula-6">Aula 6 — Ferramentas MCP para agentes de IA</a></li><li><a href="#aula-7">Aula 7 — Integrando e gerenciando o ciclo de vida com padrões de infra</a></li><li><a href="#aula-8">Aula 8 — AIOps na prática: projetos e tendências</a></li><li><a href="#itil">📘 Complemento: o básico de ITIL 4 para desenhar o fluxo</a></li><li><a href="#kit">Kit ITSM + AIOps da SolidaryTech</a></li><li><a href="#aplicacao">Da aula à entrega: o que verificar</a></li><li><a href="#outros-modulos">Como este módulo se conecta aos outros</a></li><li><a href="#revisao">Revisão rápida e autoavaliação</a></li><li><a href="#limites">Fidelidade, fontes e pontos a confirmar</a></li><li><a href="#conexao">Conexão com o Hackathon Fase 5</a></li></ol></nav>
+<section id="visao-geral"><h2>Do alerta ao aprendizado — com a IA no circuito</h2><div class="section-rule"></div>
+<div class="intro"><div class="box"><h3>Em miúdos</h3><p>AIOps é colocar aprendizado de máquina para vigiar a operação: aprender o comportamento normal, apontar o que foge dele antes de virar pane, juntar alertas repetidos e sugerir — ou executar — a correção. ITSM é o processo que organiza tudo isso: quem é avisado, em que ordem, como o problema é registrado, resolvido, comunicado e transformado em aprendizado.</p></div><div class="box hi"><h3>No Hackathon</h3><p>A frente 3 pede duas coisas: <strong>ativar a IA do APM</strong> (Watchdog no Datadog ou Applied Intelligence no New Relic) para detectar anomalias automaticamente e <strong>desenhar o ciclo de vida de um incidente</strong> da SolidaryTech — da detecção por AIOps ou alerta até o PostMortem e a comunicação aos stakeholders. O desenho vai para a seção ITSM/AIOps do relatório.</p></div></div>
+<aside class="warning"><strong>O que este módulo cobre — e o que falta.</strong> As oito aulas (168 páginas) tratam sobretudo de AIOps, MLOps, infraestrutura e orquestração para IA, MCP e casos práticos. <strong>ITIL e ISO/IEC 20000</strong>, anunciados no Welcome da fase, <strong>não aparecem</strong> nas aulas, e <strong>Watchdog e Applied Intelligence</strong>, citados no enunciado, também não. Para desenhar o ciclo de incidente, este guia combina: as Aulas 4 e 5 de <a href="../02.SRE%20%28Site%20Reliability%20Engineering%29/GUIA-ESTUDO-SRE-Site-Reliability-Engineering.html">SRE</a> (ciclo de resposta, papéis, runbooks e post-mortem), as Aulas 1 e 8 deste módulo (AIOps integrado ao ITSM, governança da automação) e um <a href="#itil">complemento de ITIL 4</a> marcado como 📘. Dúvidas registradas em <a class="rid" href="../../requisitos/REQUISITOS.html#q-12">Q-12</a> e <a class="rid" href="../../requisitos/REQUISITOS.html#q-11">Q-11</a>.</aside>
+<p>Ordem de estudo recomendada: <strong>Aula 1</strong> (o que muda de DevOps para AIOps) e <strong>Aula 8</strong> (AIOps na prática: pipeline, casos, métricas e governança) primeiro — são o núcleo da frente 3. Depois <strong>Aula 7</strong> (governança e anti-padrões de pipeline), <strong>Aula 5</strong> (canary, blue-green e shadow), <strong>Aula 3</strong> (padrões de infraestrutura e Terraform), <strong>Aula 4</strong> (gates de qualidade no CI), <strong>Aula 6</strong> (MCP) e <strong>Aula 2</strong> (ciclo de vida de modelos). No fim, o <a href="#kit">Kit ITSM + AIOps</a> traz o desenho pronto para adaptar.</p>
+<p><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-23">OBRIGATÓRIO · REQ-OBR-23</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-24">OBRIGATÓRIO · REQ-OBR-24</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-45">OBRIGATÓRIO · REQ-OBR-45</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-14">OBRIGATÓRIO · REQ-OBR-14</a></p>
+</section>
+
+<section id="obrigatorio-bonus"><h2>Obrigatório × Bônus neste módulo</h2><div class="section-rule"></div>
+<p class="lead">A frente 3 tem só dois 🔴, mas eles dependem de quase tudo: telemetria boa para a IA aprender, alertas para disparar o fluxo, automação para responder e post-mortem para fechar o ciclo.</p>
+<div class="split three">
+<div class="col obr"><h3>🔴 Obrigatório</h3><p>O enunciado cobra; este módulo ensina.</p><ul>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-23">OBRIGATÓRIO · REQ-OBR-23</a> <strong>IA do APM detectando anomalias</strong> <span class="li-note">Não aparece nas listas do vídeo e do relatório: mostre nos dois.</span></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-24">OBRIGATÓRIO · REQ-OBR-24</a> <strong>Ciclo de vida do incidente desenhado</strong></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-45">OBRIGATÓRIO · REQ-OBR-45</a> <strong>Seção ITSM/AIOps: ciclo de incidentes</strong></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-14">OBRIGATÓRIO · REQ-OBR-14</a> <strong>Automação de resposta a incidentes</strong> <span class="li-note">Marcado como [INCERTO].</span></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-18">OBRIGATÓRIO · REQ-OBR-18</a> <strong>Relatório: como o MTTR é reduzido</strong> <span class="li-note">As Aulas 1 e 8 medem MTTD e MTTR.</span></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-36">OBRIGATÓRIO · REQ-OBR-36</a> <strong>Demo: traces no APM e alertas</strong> <span class="li-note">Alertas configurados na demo.</span></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-07">OBRIGATÓRIO · REQ-OBR-07</a> <strong>Terraform provisiona todo o ambiente</strong> <span class="li-note">Aula 3: padrões e Terraform.</span></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-08">OBRIGATÓRIO · REQ-OBR-08</a> <strong>CI/CD automatizado com testes</strong> <span class="li-note">Aulas 4 e 7: gates de qualidade.</span></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-09">OBRIGATÓRIO · REQ-OBR-09</a> <strong>Scans SAST/SCA no pipeline</strong> <span class="li-note">Aula 7: scans como passo obrigatório.</span></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-02">OBRIGATÓRIO · REQ-OBR-02</a> <strong>Zero deploy manual via kubectl</strong> <span class="li-note">Aula 7: produção só por pipeline.</span></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-03">OBRIGATÓRIO · REQ-OBR-03</a> <strong>Zero infraestrutura “clicada” no console</strong> <span class="li-note">Aula 7: contra o “IaC cosmético”.</span></li>
+</ul></div>
+<div class="col bon"><h3>🟢 Bônus / diferencial</h3><p>Vai além do mínimo; sem pontos extras prometidos.</p><ul>
+<li><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-31">BÔNUS · REQ-BON-31</a> <strong>Correlação e deduplicação de alertas</strong></li>
+<li><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-29">BÔNUS · REQ-BON-29</a> <strong>Fluxo ITSM implementado numa ferramenta</strong></li>
+<li><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-30">BÔNUS · REQ-BON-30</a> <strong>Comunicação automatizada aos stakeholders</strong></li>
+<li><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-32">BÔNUS · REQ-BON-32</a> <strong>Detector de anomalia complementar</strong></li>
+<li><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-33">BÔNUS · REQ-BON-33</a> <strong>Copiloto de incidentes com ferramentas MCP</strong></li>
+<li><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-19">BÔNUS · REQ-BON-19</a> <strong>Entrega progressiva com rollback automático</strong></li>
+<li><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-08">BÔNUS · REQ-BON-08</a> <strong>Produção sem atalhos (RBAC + aprovação)</strong></li>
+<li><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-09">BÔNUS · REQ-BON-09</a> <strong>Cadeia de suprimentos: tag imutável, assinatura e SBOM</strong></li>
+<li><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-10">BÔNUS · REQ-BON-10</a> <strong>Métricas DORA do pipeline</strong></li>
+<li><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-16">BÔNUS · REQ-BON-16</a> <strong>Post-mortem blameless de um incidente simulado</strong></li>
+<li><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-15">BÔNUS · REQ-BON-15</a> <strong>Runbooks versionados (Runbook-as-Code)</strong></li>
+<li><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-28">BÔNUS · REQ-BON-28</a> <strong>Policy-as-code para tags e guardrails</strong></li>
+</ul></div>
+<div class="col sug"><h3>🔵 Sugestões</h3><p>Recomendações autorais, não exigências.</p><ul>
+<li><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-12">SUGESTÃO · SUG-12</a> <strong>Ligar a IA do APM cedo</strong></li>
+<li><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-13">SUGESTÃO · SUG-13</a> <strong>Matriz de autonomia da automação</strong></li>
+<li><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-07">SUGESTÃO · SUG-07</a> <strong>Carimbos de tempo de cada incidente</strong></li>
+<li><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-02">SUGESTÃO · SUG-02</a> <strong>Terraform pelo pipeline, não pelo laptop</strong></li>
+<li><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-06">SUGESTÃO · SUG-06</a> <strong>Tráfego sintético contínuo</strong></li>
+</ul></div>
+</div>
+</section>
+
+<section id="mapa"><h2>Mapa de conceitos e vocabulário</h2><div class="section-rule"></div>
+<div class="tablewrap"><table><thead><tr><th scope="col">Conceito</th><th scope="col">Em uma frase</th><th scope="col">Onde cai no Hackathon</th><th scope="col">Fonte</th></tr></thead><tbody>
+<tr><td>AIOps</td><td>ML aplicado a logs, métricas e eventos para detectar, diagnosticar e agir.</td><td>IA do APM detectando anomalias.</td><td><a href="POSTECH%20-%20IT%20Service%20Management%20e%20AIOPs%20-%20Aula%201.pdf#page=6">Aula 1, p. 6</a>; <a href="POSTECH%20-%20IT%20Service%20Management%20e%20AIOPs%20-%20Aula%208.pdf#page=5">Aula 8, p. 5</a></td></tr>
+<tr><td>Alert fatigue</td><td>Alertas demais fazem as pessoas ignorarem os importantes.</td><td>Correlação e prioridade no fluxo de incidentes.</td><td><a href="POSTECH%20-%20IT%20Service%20Management%20e%20AIOPs%20-%20Aula%201.pdf#page=5">Aula 1, p. 5</a>; <a href="POSTECH%20-%20IT%20Service%20Management%20e%20AIOPs%20-%20Aula%208.pdf#page=7">Aula 8, p. 7</a></td></tr>
+<tr><td>Human-in-the-loop</td><td>A IA sugere e age no pequeno; o humano decide o grande.</td><td>Matriz de autonomia da automação.</td><td><a href="POSTECH%20-%20IT%20Service%20Management%20e%20AIOPs%20-%20Aula%201.pdf#page=10">Aula 1, p. 10–12</a>; <a href="POSTECH%20-%20IT%20Service%20Management%20e%20AIOPs%20-%20Aula%208.pdf#page=14">Aula 8, p. 14</a></td></tr>
+<tr><td>Pipeline de AIOps</td><td>Coleta → detecção → orquestração → feedback → automação DevOps.</td><td>Arquitetura da frente 3.</td><td><a href="POSTECH%20-%20IT%20Service%20Management%20e%20AIOPs%20-%20Aula%208.pdf#page=9">Aula 8, p. 9–10</a></td></tr>
+<tr><td>MTTD · MTTR</td><td>Tempo para detectar · tempo para resolver (ver a nota sobre a definição).</td><td>Relatório de MTTR.</td><td><a href="POSTECH%20-%20IT%20Service%20Management%20e%20AIOPs%20-%20Aula%208.pdf#page=14">Aula 8, p. 14</a></td></tr>
+<tr><td>Landing Zone · Hub-and-Spoke</td><td>Base de contas, rede, identidade e tags · topologia com núcleo compartilhado.</td><td>Terraform organizado e tags obrigatórias.</td><td><a href="POSTECH%20-%20IT%20Service%20Management%20e%20AIOPs%20-%20Aula%203.pdf#page=7">Aula 3, p. 7–9</a></td></tr>
+<tr><td>Gates de qualidade</td><td>Testes que barram o artefato ruim no CI.</td><td>Pipelines com testes e scans.</td><td><a href="POSTECH%20-%20IT%20Service%20Management%20e%20AIOPs%20-%20Aula%204.pdf#page=7">Aula 4, p. 7–9</a>; <a href="POSTECH%20-%20IT%20Service%20Management%20e%20AIOPs%20-%20Aula%207.pdf#page=8">Aula 7, p. 8–9</a></td></tr>
+<tr><td>Blue-green · canary · shadow</td><td>Troca atômica · exposição gradual · cópia sem resposta ao usuário.</td><td>Entrega progressiva (bônus).</td><td><a href="POSTECH%20-%20IT%20Service%20Management%20e%20AIOPs%20-%20Aula%205.pdf#page=10">Aula 5, p. 10–12</a></td></tr>
+<tr><td>AgentOps · MCP</td><td>Operar agentes de IA · protocolo aberto para ligá-los a ferramentas.</td><td>Copiloto de incidentes (bônus).</td><td><a href="POSTECH%20-%20IT%20Service%20Management%20e%20AIOPs%20-%20Aula%205.pdf#page=14">Aula 5, p. 14–15</a>; <a href="POSTECH%20-%20IT%20Service%20Management%20e%20AIOPs%20-%20Aula%206.pdf#page=6">Aula 6, p. 6–12</a></td></tr>
+<tr><td>MLOps</td><td>Pipeline de dados, treino, validação, deploy e monitoramento de modelos.</td><td>Entender como a IA do APM aprende.</td><td><a href="POSTECH%20-%20IT%20Service%20Management%20e%20AIOPs%20-%20Aula%202.pdf#page=6">Aula 2, p. 6–11</a></td></tr>
+</tbody></table></div>
+<aside class="note"><strong>Atenção à sigla MTTR</strong>O enunciado (p. 4) e a <a href="../02.SRE%20%28Site%20Reliability%20Engineering%29/GUIA-ESTUDO-SRE-Site-Reliability-Engineering.html">Aula 4 de SRE</a> usam <em>Mean Time To Recovery</em>, da falha à recuperação. A Aula 8 deste módulo define <em>Mean Time to Repair</em> como o tempo entre a detecção e a resolução (p. 14). No relatório, diga qual janela você mediu.</aside>
+<div class="glossary">
+<div class="term"><span class="k">Data drift</span><span class="d">Os dados de entrada mudam e o modelo perde precisão (Aula 2, p. 10).</span></div>
+<div class="term"><span class="k">Model Card</span><span class="d">Documento padrão com propósito, métricas e limites de um modelo (Aula 4, p. 11).</span></div>
+<div class="term"><span class="k">DAG</span><span class="d">Grafo de tarefas e dependências que o orquestrador executa (Aula 5, p. 7).</span></div>
+<div class="term"><span class="k">IaC cosmético</span><span class="d">Terraform no repositório, mas aplicado à mão com ajustes — anti-padrão (Aula 7, p. 14).</span></div>
+<div class="term"><span class="k">Playbook</span><span class="d">Correção predefinida acionada pelo AIOps (Aula 8, p. 9).</span></div>
+<div class="term"><span class="k">3 sigmas</span><span class="d">Regra estatística: valores além de três desvios-padrão são anômalos (Aula 8, p. 4).</span></div>
+<div class="term"><span class="k">Snowflake server</span><span class="d">Servidor único e irreprodutível, montado à mão (Aula 3, p. 6).</span></div>
+<div class="term"><span class="k">JSON-RPC</span><span class="d">Protocolo de chamada usado entre cliente e servidor MCP (Aula 6, p. 8).</span></div>
+</div>
+</section>
+
+<section id="aula-1"><h2>Aula 1 — AIOps vs DevOps: o que muda?</h2><div class="section-rule"></div><article class="lesson"><div class="lesson-head"><span class="num">01</span><div><h3>Do extintor ao alarme de fumaça inteligente</h3><span class="badge ok">Ficha de aula · 18 p.</span></div></div>
+<p><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-23">OBRIGATÓRIO · REQ-OBR-23</a><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-31">BÔNUS · REQ-BON-31</a><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-13">SUGESTÃO · SUG-13</a><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-12">SUGESTÃO · SUG-12</a></p>
+<dl class="facets"><div><dt>Em miúdos</dt><dd>O DevOps acelerou a entrega, mas a operação continuou reativa: o erro acontece, o alerta dispara, alguém corre. O AIOps procura o sinal fraco antes do erro — como trocar o extintor por um alarme de fumaça que aciona o sistema anti-incêndio.</dd></div><div><dt>Tecnicamente</dt><dd>O termo foi formalizado pelo Gartner em 2016: aplicar ML para coletar, agregar, analisar e agir sobre dados operacionais em tempo real. Em vez de “memória acima de 90%”, um modelo aprende que um crescimento gradual de memória seguido de certo log costuma preceder um travamento e avisa antes do limite.</dd></div></dl>
+<p class="source">Fonte: <a href="POSTECH%20-%20IT%20Service%20Management%20e%20AIOPs%20-%20Aula%201.pdf#page=5">Aula 1, p. 5–7</a>.</p>
+<div class="tablewrap"><table><thead><tr><th scope="col">Aspecto</th><th scope="col">DevOps tradicional</th><th scope="col">AIOps</th></tr></thead><tbody>
+<tr><td>Foco</td><td>Agilidade na entrega e colaboração</td><td>Estabilidade e otimização pela inteligência de dados</td></tr>
+<tr><td>Automação</td><td>Scripts e pipelines predefinidos</td><td>Automação adaptativa baseada em ML</td></tr>
+<tr><td>Monitoramento</td><td>Métricas fixas, painéis estáticos, reação após a falha</td><td>Detecção contínua de anomalias, prevenção</td></tr>
+<tr><td>Escala</td><td>Limitada pelas pessoas (e pela fadiga de alertas)</td><td>Algorítmica — desde que os dados sejam bons</td></tr>
+</tbody></table></div>
+<p class="source">Fonte: <a href="POSTECH%20-%20IT%20Service%20Management%20e%20AIOPs%20-%20Aula%201.pdf#page=6">Aula 1, p. 6–7</a>.</p>
+<p>Os desafios de adoção (p. 9–11): <em>garbage in, garbage out</em> — logs sem código de erro enganam o algoritmo, então investir em observabilidade vem antes; resistência das equipes, resolvida com humano no circuito e explicações para cada alerta; sistemas legados sem APIs; custo e ROI, começando por um piloto pequeno e mensurável. A governança define o que a IA pode fazer sozinha: reiniciar um contêiner, talvez; desligar um serviço ou acionar fallback de larga escala, com aprovação humana — e sempre com log das decisões (p. 11). O sucesso se mede em MTTD, MTTR, disponibilidade e incidentes graves por mês (p. 12).</p>
+<p class="source">Fonte: <a href="POSTECH%20-%20IT%20Service%20Management%20e%20AIOPs%20-%20Aula%201.pdf#page=9">Aula 1, p. 9–12</a>.</p>
+<aside class="hk"><strong>🎯 No Hackathon</strong>
+<ul><li><strong>Watchdog e Applied Intelligence são o “plugin de AIOps”</strong> que a aula descreve: a IA que roda sobre a telemetria que vocês já enviam. Sem instrumentação boa nos três serviços, ela não tem o que aprender <a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-04">OBRIGATÓRIO · REQ-OBR-04</a>.</li>
+<li><strong>Ligue cedo:</strong> a detecção precisa de um período de tráfego normal para aprender o padrão <a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-12">SUGESTÃO · SUG-12</a>.</li>
+<li><strong>Piloto no lugar certo:</strong> o <code>donation-service</code> é o serviço crítico ideal para o piloto que a aula recomenda.</li>
+<li><strong>Explicabilidade na demo:</strong> mostre não só que a anomalia foi detectada, mas a explicação que a ferramenta dá para ela.</li></ul></aside>
+<p class="memo"><strong>Para memorizar:</strong> AIOps não substitui DevOps, soma inteligência sobre ele; dados ruins geram alertas ruins; humano no circuito para o que tem grande impacto.</p>
+</article></section>
+
+<section id="aula-2"><h2>Aula 2 — Ciclo de desenvolvimento de IA: do modelo ao agente</h2><div class="section-rule"></div><article class="lesson"><div class="lesson-head"><span class="num">02</span><div><h3>Muito além do <code>model.fit()</code></h3><span class="badge ok">Ficha de aula · 24 p.</span></div></div>
+<p><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-23">OBRIGATÓRIO · REQ-OBR-23</a><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-12">SUGESTÃO · SUG-12</a></p>
+<dl class="facets"><div><dt>Em miúdos</dt><dd>Um modelo de IA não é só código: é código, dados e o modelo treinado, cada um com seu ciclo de vida. Sem um pipeline, ninguém reproduz o que foi feito e o modelo envelhece em silêncio.</dd></div><div><dt>Tecnicamente</dt><dd>Cinco etapas em ciclo — preparação de dados, treinamento, validação, deploy e monitoramento — e boas práticas de MLOps: versionar código, dados e modelos; automatizar o pipeline; CI/CD para ML; DataOps; documentação (Model Cards) e feedback real. A aula introduz agentes de IA, que percebem, decidem e agem com ferramentas, e o desafio de “AgentOps”.</dd></div></dl>
+<p class="source">Fonte: <a href="POSTECH%20-%20IT%20Service%20Management%20e%20AIOPs%20-%20Aula%202.pdf#page=5">Aula 2, p. 5–13</a>.</p>
+<p>Destaques: até 80% do tempo vai para preparar dados (p. 6); modelos degradam por <em>data drift</em> e <em>concept drift</em>, o que exige monitorar métricas de negócio, do modelo, de drift e de saúde do serviço (p. 10–11); a aula lista ferramentas por etapa — de Great Expectations e MLflow a Prometheus, Grafana e Evidently (p. 14–15) — e fecha com um checklist que inclui conformidade com a LGPD (p. 20).</p>
+<aside class="hk"><strong>🎯 No Hackathon</strong>
+<p>A SolidaryTech não treina modelos, então MLOps é contexto, não requisito. O que se aproveita: <strong>a IA do APM é um modelo</strong> que depende de dados consistentes (nomes de serviço padronizados, tags, tráfego representativo) e de um período de aprendizado — por isso o tráfego sintético e a ativação antecipada importam <a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-06">SUGESTÃO · SUG-06</a>.</p></aside>
+<p class="memo"><strong>Para memorizar:</strong> código + dados + modelo; dados de qualidade primeiro; modelo sem monitoramento degrada em silêncio.</p>
+</article></section>
+
+<section id="aula-3"><h2>Aula 3 — Infraestrutura de IA: padrões arquiteturais e Terraform</h2><div class="section-rule"></div><article class="lesson"><div class="lesson-head"><span class="num">03</span><div><h3>Da infraestrutura improvisada à Landing Zone em código</h3><span class="badge ok">Ficha de aula · 23 p.</span></div></div>
+<p><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-07">OBRIGATÓRIO · REQ-OBR-07</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-03">OBRIGATÓRIO · REQ-OBR-03</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-19">OBRIGATÓRIO · REQ-OBR-19</a><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-28">BÔNUS · REQ-BON-28</a><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-42">BÔNUS · REQ-BON-42</a></p>
+<dl class="facets"><div><dt>Em miúdos</dt><dd>Montar ambiente “na mão” cria servidores únicos que ninguém consegue reproduzir. Padrões de arquitetura e Terraform transformam a infraestrutura em receita versionada: igual em todo ambiente, revisada e auditável.</dd></div><div><dt>Tecnicamente</dt><dd>Hub-and-spoke centraliza conectividade e segurança; a Landing Zone prepara contas, rede, identidade, monitoramento e conformidade — inclusive criptografia padrão e <strong>tags obrigatórias</strong>; ambientes Dev, Teste e Prod saem do mesmo código com parâmetros diferentes.</dd></div></dl>
+<p class="source">Fonte: <a href="POSTECH%20-%20IT%20Service%20Management%20e%20AIOPs%20-%20Aula%203.pdf#page=6">Aula 3, p. 6–10</a>.</p>
+<h4>Boas práticas de IaC listadas pela aula</h4>
+<div class="tablewrap"><table><thead><tr><th scope="col">Prática (aula, p. 13–14)</th><th scope="col">Na SolidaryTech</th></tr></thead><tbody>
+<tr><td>Modularizar e reutilizar</td><td>Módulos de rede, cluster, banco, fila e tabela — base da Opção B de DR.</td></tr>
+<tr><td>Separar variáveis sensíveis</td><td>Senha do banco num cofre de segredos, nunca no código <a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-42">BÔNUS · REQ-BON-42</a>.</td></tr>
+<tr><td>Ambientes isolados com estados independentes</td><td>Estado da produção separado do estado do DR.</td></tr>
+<tr><td>Policy as Code</td><td>Bloquear região não autorizada, porta pública, recurso sem tag <a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-28">BÔNUS · REQ-BON-28</a>.</td></tr>
+<tr><td>Padronizar nomes e tags</td><td>As três tags obrigatórias do enunciado <a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-19">OBRIGATÓRIO · REQ-OBR-19</a>.</td></tr>
+<tr><td>Proteger o state</td><td>Backend remoto com trava e backup.</td></tr>
+<tr><td>Testar mudanças arriscadas antes</td><td>Atualização de versão do Kubernetes validada antes da produção.</td></tr>
+</tbody></table></div>
+<p class="source">Fonte: <a href="POSTECH%20-%20IT%20Service%20Management%20e%20AIOPs%20-%20Aula%203.pdf#page=12">Aula 3, p. 12–14</a>.</p>
+<p>A aula também trata de custos — rightsizing, spot para o que é interrompível, desligar o que não é produção à noite, compromissos de 30–50% para cargas previsíveis — e de segurança: redes privadas, endpoints privados, sub-redes por função, IAM por recurso e criptografia em repouso (p. 15–16).</p>
+<aside class="hk"><strong>🎯 No Hackathon</strong>
+<p>É a aula que mais conversa com a Regra de Ouro: “quem clicou isso no portal?” deixa de existir quando cluster, bancos (PostgreSQL e DynamoDB), fila (SQS) e rede estão em módulos Terraform aplicados pelo pipeline <a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-02">SUGESTÃO · SUG-02</a>. A mesma estrutura de módulos que organiza a produção é a que permite subir o ambiente espelho da Opção B.</p></aside>
+<p class="memo"><strong>Para memorizar:</strong> padrão antes de recurso; Landing Zone com tags e criptografia desde o primeiro dia; mesmo código, parâmetros diferentes por ambiente.</p>
+</article></section>
+
+<section id="aula-4"><h2>Aula 4 — Versionamento e validações no GitHub (MLOps)</h2><div class="section-rule"></div><article class="lesson"><div class="lesson-head"><span class="num">04</span><div><h3>Nada chega à produção sem passar pelos gates</h3><span class="badge ok">Ficha de aula · 21 p.</span></div></div>
+<p><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-08">OBRIGATÓRIO · REQ-OBR-08</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-09">OBRIGATÓRIO · REQ-OBR-09</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-31">OBRIGATÓRIO · REQ-OBR-31</a><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-19">BÔNUS · REQ-BON-19</a></p>
+<dl class="facets"><div><dt>Em miúdos</dt><dd>Versionar tudo permite refazer e investigar; validar tudo impede que uma regressão silenciosa chegue ao usuário. O CI vira uma sequência de portões que o artefato precisa atravessar.</dd></div><div><dt>Tecnicamente</dt><dd>Três pilares de versionamento (código no Git, dados com DVC, modelos em registry) e testes em quatro camadas — dados, código e pipeline, modelo e pós-implantação —, inspirados nos 28 itens do “ML Test Score” do Google. Ferramentas como Great Expectations, Evidently e AIF360 entram como gates.</dd></div></dl>
+<p class="source">Fonte: <a href="POSTECH%20-%20IT%20Service%20Management%20e%20AIOPs%20-%20Aula%204.pdf#page=6">Aula 4, p. 6–11</a>.</p>
+<p>Boas práticas que valem para qualquer pipeline (p. 14–15): comparar com uma linha de base, ligar métricas técnicas a KPIs de negócio, restringir quem pode promover para produção com aprovação e log, limpar artefatos antigos e cultivar o “testa tudo” — cada bug que escapou ganha um teste novo. Em produção, alarmes podem disparar rollback automático quando uma métrica cai (p. 11).</p>
+<aside class="hk"><strong>🎯 No Hackathon</strong>
+<ul><li><strong>O repositório-fonte não tem testes</strong>: o pipeline exigido precisa que o grupo os escreva — no mínimo testes unitários dos handlers e um teste de fumaça que sobe o serviço e chama <code>/health</code> e <code>POST</code> <a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-08">OBRIGATÓRIO · REQ-OBR-08</a>. A dúvida sobre o nível esperado está em <a class="rid" href="../../requisitos/REQUISITOS.html#q-20">Q-20</a>.</li>
+<li><strong>Gate de segurança de verdade:</strong> o scan só protege se reprovar o build com vulnerabilidade crítica — a Aula 7 diz isso com todas as letras <a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-09">OBRIGATÓRIO · REQ-OBR-09</a>.</li>
+<li><strong>Do post-mortem ao CI:</strong> cada incidente simulado deve deixar um teste ou alerta novo — é o “testa tudo” fechando o ciclo de incidentes.</li></ul></aside>
+<p class="memo"><strong>Para memorizar:</strong> versionar para reproduzir; testar dados, código, artefato e produção; gate que não reprova não é gate.</p>
+</article></section>
+
+<section id="aula-5"><h2>Aula 5 — Orquestrando modelos e agentes em múltiplos ambientes</h2><div class="section-rule"></div><article class="lesson"><div class="lesson-head"><span class="num">05</span><div><h3>Promover com segurança: blue-green, canary e shadow</h3><span class="badge ok">Ficha de aula · 23 p.</span></div></div>
+<p><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-19">BÔNUS · REQ-BON-19</a><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-09">BÔNUS · REQ-BON-09</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-11">OBRIGATÓRIO · REQ-OBR-11</a></p>
+<dl class="facets"><div><dt>Em miúdos</dt><dd>Scripts soltos e passos manuais quebram quando alguém sai de férias. Orquestrar é descrever as etapas e suas dependências para que rodem sempre na ordem certa — e lançar versões novas expondo o mínimo de usuários ao risco.</dd></div><div><dt>Tecnicamente</dt><dd>DAGs (Airflow, Kubeflow Pipelines, Azure ML Pipelines) definem dependências; ambientes Dev → Teste → Prod rodam o mesmo pipeline com parâmetros diferentes e gates de aprovação; imagens com tags explícitas garantem rastreabilidade.</dd></div></dl>
+<p class="source">Fonte: <a href="POSTECH%20-%20IT%20Service%20Management%20e%20AIOPs%20-%20Aula%205.pdf#page=5">Aula 5, p. 5–10</a>.</p>
+<div class="tablewrap"><table><thead><tr><th scope="col">Estratégia</th><th scope="col">Como funciona</th><th scope="col">Troca</th></tr></thead><tbody>
+<tr><td>Blue-green</td><td>Duas versões completas; o tráfego muda de uma vez.</td><td>Rollback instantâneo × infraestrutura dobrada na transição.</td></tr>
+<tr><td>Canary</td><td>1–10% do tráfego na versão nova, crescendo se as métricas aguentarem; rollback automático se erros 500 ou latência saírem do SLA.</td><td>Risco mínimo × exige roteamento e métricas maduras.</td></tr>
+<tr><td>Shadow</td><td>A versão nova recebe cópia das requisições, mas não responde ao usuário.</td><td>Zero impacto × não valida a experiência real.</td></tr>
+</tbody></table></div>
+<p class="source">Fonte: <a href="POSTECH%20-%20IT%20Service%20Management%20e%20AIOPs%20-%20Aula%205.pdf#page=10">Aula 5, p. 10–12 e 17</a>.</p>
+<p>Para agentes de IA, a aula descreve AgentOps: monitorar a cadeia de decisões, limitar quais APIs podem ser chamadas e exigir aprovação humana acima de certos valores — no exemplo, transações acima de R$ 1.000 (p. 14–15).</p>
+<aside class="hk"><strong>🎯 No Hackathon</strong>
+<p>O <code>donation-service</code> é candidato natural a canary com rollback automático: se a versão nova aumentar 5xx ou latência, ela volta sozinha — menos doadores afetados, MTTR menor e error budget preservado <a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-19">BÔNUS · REQ-BON-19</a>. Mesmo sem canary, use tags de imagem imutáveis no repositório GitOps para saber exatamente o que está no ar <a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-09">BÔNUS · REQ-BON-09</a>.</p></aside>
+<p class="memo"><strong>Para memorizar:</strong> shadow → canary → blue-green, do mais seguro ao mais exposto; dependências explícitas; tag de imagem explícita.</p>
+</article></section>
+
+<section id="aula-6"><h2>Aula 6 — Ferramentas MCP para agentes de IA</h2><div class="section-rule"></div><article class="lesson"><div class="lesson-head"><span class="num">06</span><div><h3>Um “USB” para ligar agentes a ferramentas, com governança</h3><span class="badge ok">Ficha de aula · 19 p.</span></div></div>
+<p><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-33">BÔNUS · REQ-BON-33</a><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-29">BÔNUS · REQ-BON-29</a></p>
+<dl class="facets"><div><dt>Em miúdos</dt><dd>Cada integração feita à mão entre um modelo de IA e uma ferramenta vira código frágil. O Model Context Protocol padroniza essa conexão: a ferramenta se descreve num contrato, e qualquer agente compatível sabe usá-la.</dd></div><div><dt>Tecnicamente</dt><dd>Arquitetura cliente-servidor sobre JSON-RPC 2.0, com três primitivas — recursos (dados), ferramentas (ações) e prompts (modelos) — e ferramentas descritas por JSON Schema. A aula cita como transportes STDIO, SSE e WebSockets; a especificação evolui, então confira a versão vigente.</dd></div></dl>
+<p class="source">Fonte: <a href="POSTECH%20-%20IT%20Service%20Management%20e%20AIOPs%20-%20Aula%206.pdf#page=6">Aula 6, p. 6–10</a>.</p>
+<p>Segurança e governança (p. 10–11): autenticação e permissões no protocolo, exposição controlada de ferramentas, log e auditoria estruturados e controle dos prompts contra injeção. Versionamento semântico dos servidores, testes de contrato no CI e monitoramento de uso das ferramentas completam o AgentOps (p. 11–12). No caso GammaTech, a ferramenta “abrir_ticket” manteve o mesmo contrato quando o backend migrou do Jira para o ServiceNow (p. 13).</p>
+<aside class="hk"><strong>🎯 No Hackathon</strong>
+<p>Nada aqui é exigido. Como diferencial de alto esforço, um copiloto de plantão poderia consultar as métricas do <code>donation-service</code>, abrir o incidente e postar no canal de crise via ferramentas MCP — com permissões mínimas e cada ação auditada <a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-33">BÔNUS · REQ-BON-33</a>. Os princípios da aula (menor privilégio, log de toda ação) valem também para o robô de remediação que vocês já terão.</p></aside>
+<p class="memo"><strong>Para memorizar:</strong> contrato tipado em vez de prompt improvisado; menor privilégio; tudo auditado.</p>
+</article></section>
+
+<section id="aula-7"><h2>Aula 7 — Integrando e gerenciando o ciclo de vida com padrões de infra</h2><div class="section-rule"></div><article class="lesson"><div class="lesson-head"><span class="num">07</span><div><h3>Governança que acelera: sem atalhos para a produção</h3><span class="badge ok">Ficha de aula · 20 p.</span></div></div>
+<p><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-02">OBRIGATÓRIO · REQ-OBR-02</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-03">OBRIGATÓRIO · REQ-OBR-03</a><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-08">BÔNUS · REQ-BON-08</a><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-09">BÔNUS · REQ-BON-09</a><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-10">BÔNUS · REQ-BON-10</a><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-02">SUGESTÃO · SUG-02</a></p>
+<dl class="facets"><div><dt>Em miúdos</dt><dd>Quando cada time configura seu pedaço à mão, ninguém sabe se a falha é do código ou do ambiente. IaC, CI/CD com aprovação e observabilidade unificada acabam com a “culpa cruzada”.</dd></div><div><dt>Tecnicamente</dt><dd>A aula organiza a governança em quatro pilares: versionamento completo, segregação de ambientes com acesso progressivo (em produção, nenhuma mudança sem o pipeline, imposto por IAM ou rede), papéis e aprovações formais e auditoria contínua.</dd></div></dl>
+<p class="source">Fonte: <a href="POSTECH%20-%20IT%20Service%20Management%20e%20AIOPs%20-%20Aula%207.pdf#page=7">Aula 7, p. 7–12</a>.</p>
+<div class="tablewrap"><table><thead><tr><th scope="col">Anti-padrão (p. 14)</th><th scope="col">O que é</th><th scope="col">Antídoto no Hackathon</th></tr></thead><tbody>
+<tr><td>Notebook para produção</td><td>Código de experimento promovido sem testes.</td><td>Testes e gates no pipeline.</td></tr>
+<tr><td>Modelo órfão</td><td>Algo em produção sem monitoramento.</td><td>Nenhum serviço sem telemetria — “sem voo cego”.</td></tr>
+<tr><td>IaC cosmético</td><td>Terraform no repositório, aplicado à mão com ajustes.</td><td>Plan no PR, apply pelo pipeline <a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-02">SUGESTÃO · SUG-02</a>.</td></tr>
+</tbody></table></div>
+<p class="source">Fonte: <a href="POSTECH%20-%20IT%20Service%20Management%20e%20AIOPs%20-%20Aula%207.pdf#page=14">Aula 7, p. 14</a>.</p>
+<p>Segurança da cadeia (p. 15): assinatura de artefatos e scan de dependências (Trivy, Snyk, pip-audit) como passos obrigatórios que <strong>rejeitam</strong> builds vulneráveis. Cultura (p. 15): métricas compartilhadas de ponta a ponta — tempo do commit ao deploy, frequência de deploys bem-sucedidos e MTTR. A aula ainda propõe níveis de maturidade, de “treinado localmente e implantado à mão” até “pipeline que se autoajusta” (p. 13).</p>
+<aside class="hk"><strong>🎯 No Hackathon</strong>
+<ul><li><strong>Prove a Regra de Ouro com controle, não com promessa:</strong> pessoas só com leitura no cluster de produção, mudanças apenas pelo ArgoCD e pelo pipeline, aprovação registrada para promover <a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-08">BÔNUS · REQ-BON-08</a>.</li>
+<li><strong>Scan que bloqueia:</strong> configure o Trivy/Sonar para falhar o build em vulnerabilidade crítica — e mostre um build barrado na demo, se acontecer <a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-09">OBRIGATÓRIO · REQ-OBR-09</a>.</li>
+<li><strong>Métricas DORA</strong> no pitch mostram maturidade de entrega ao lado da confiabilidade <a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-10">BÔNUS · REQ-BON-10</a>.</li></ul></aside>
+<p class="memo"><strong>Para memorizar:</strong> versionar, segregar, aprovar, auditar; IaC aplicado à mão é cosmético; scan que não bloqueia é decoração.</p>
+</article></section>
+
+<section id="aula-8"><h2>Aula 8 — AIOps na prática: projetos e tendências</h2><div class="section-rule"></div><article class="lesson"><div class="lesson-head"><span class="num">08</span><div><h3>Monitorar, detectar, agir e registrar</h3><span class="badge ok">Ficha de aula · 20 p.</span></div></div>
+<p><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-23">OBRIGATÓRIO · REQ-OBR-23</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-24">OBRIGATÓRIO · REQ-OBR-24</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-18">OBRIGATÓRIO · REQ-OBR-18</a><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-31">BÔNUS · REQ-BON-31</a><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-29">BÔNUS · REQ-BON-29</a><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-32">BÔNUS · REQ-BON-32</a></p>
+<dl class="facets"><div><dt>Em miúdos</dt><dd>Na prática, AIOps funciona como um ciclo: coletar sinais, detectar o que foge do normal, acionar a resposta certa e registrar tudo para aprender. Os casos da aula mostram menos alertas falsos, menos tempo parado e equipes que deixam de apagar incêndio.</dd></div><div><dt>Tecnicamente</dt><dd>A aula disseca um pipeline em cinco estágios: coleta (Prometheus, Fluentd, OpenTelemetry), análise e detecção (modelos como Isolation Forest comparando com o histórico), orquestração na plataforma de AIOps (failover, restart, roteamento), feedback e melhoria contínua, e automação integrada ao CI/CD (rollback se a nova versão regredir).</dd></div></dl>
+<p class="source">Fonte: <a href="POSTECH%20-%20IT%20Service%20Management%20e%20AIOPs%20-%20Aula%208.pdf#page=9">Aula 8, p. 9–10</a>.</p>
+<div class="tablewrap"><table><thead><tr><th scope="col">Caso (aula)</th><th scope="col">O que fez</th><th scope="col">Lição para a SolidaryTech</th></tr></thead><tbody>
+<tr><td>Suporte de TI (GammaTech)</td><td>Agente classifica tickets e resolve os simples.</td><td>Automação para o repetitivo, humanos no complexo.</td></tr>
+<tr><td>FinOps com AIOps (SaaS)</td><td>Reduz capacidade à noite, pré-aloca para picos previstos.</td><td>Antecipar a capacidade das campanhas na TV.</td></tr>
+<tr><td>Anomalias e SLA (TelCo)</td><td>Sinais precursores e correlação de causa.</td><td>Detectar o desvio antes de virar violação de SLO.</td></tr>
+<tr><td>Black Friday (e-commerce)</td><td>AIOps integrado ao ITSM: prioriza por impacto, agrupa duplicados, aciona playbooks e escala com diagnóstico.</td><td>É o modelo do ciclo de incidente pedido no enunciado.</td></tr>
+</tbody></table></div>
+<p class="source">Fonte: <a href="POSTECH%20-%20IT%20Service%20Management%20e%20AIOPs%20-%20Aula%208.pdf#page=7">Aula 8, p. 7–9</a>.</p>
+<p>Métricas (p. 14): MTTD, MTTR, taxa de falsos positivos e taxa de correlação de alertas — e a recomendação de <strong>medir a linha de base antes de automatizar</strong>, para provar o ganho. Governança (p. 14): a IA pode reiniciar contêineres, escalar e abrir tickets; desligar sistemas, acionar fallbacks amplos ou mudar segurança exige aprovação humana. O Hands On (p. 4) aplica a regra dos 3 sigmas a latência, CPU e erros e dispara escalonamento automático. Tendências: LLMOps, Data-Centric AI, AutoMLOps e agentes (p. 11–14).</p>
+<aside class="hk"><strong>🎯 No Hackathon</strong>
+<ul><li><strong>O caso Black Friday é o seu desenho:</strong> detecção → priorização por impacto → agrupamento → playbook automático → escalonamento com contexto → análise posterior. O <a href="#kit">Kit</a> adapta isso à SolidaryTech <a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-24">OBRIGATÓRIO · REQ-OBR-24</a>.</li>
+<li><strong>Linha de base primeiro:</strong> meça MTTD e MTTR de um incidente sem automação; depois repita com ela. É a prova de redução ativa que o enunciado pede <a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-18">OBRIGATÓRIO · REQ-OBR-18</a><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-07">SUGESTÃO · SUG-07</a>.</li>
+<li><strong>3 sigmas em casa:</strong> uma regra simples sobre métricas do Prometheus, acionando remediação, complementa a IA do APM <a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-32">BÔNUS · REQ-BON-32</a>.</li></ul></aside>
+<p class="memo"><strong>Para memorizar:</strong> monitorar → detectar → agir → registrar; linha de base antes da automação; autonomia proporcional ao impacto.</p>
+</article></section>
+
+<section id="itil"><h2>📘 Complemento: o básico de ITIL 4 para desenhar o fluxo</h2><div class="section-rule"></div>
+<aside class="complemento"><strong>📘 Complemento — conteúdo autoral, fora das aulas</strong><p>O Welcome da fase promete revisitar ITIL e ISO/IEC 20000, mas as aulas do módulo não os abordam. Este resumo dá vocabulário de mercado para o desenho do ciclo de incidente; ele não é exigência do enunciado e deve ser confirmado com o material oficial, se houver (<a class="rid" href="../../requisitos/REQUISITOS.html#q-12">Q-12</a>).</p></aside>
+<div class="tablewrap"><table><thead><tr><th scope="col">Conceito</th><th scope="col">Em uma frase</th><th scope="col">Na SolidaryTech</th></tr></thead><tbody>
+<tr><td>Incidente</td><td>Interrupção não planejada ou redução de qualidade de um serviço.</td><td>Doações falhando ou lentas.</td></tr>
+<tr><td>Problema</td><td>A causa (ou causa potencial) de um ou mais incidentes.</td><td>Pool de conexões mal dimensionado que derruba o serviço nos picos.</td></tr>
+<tr><td>Mudança</td><td>Adicionar, modificar ou remover algo que afete serviços.</td><td>Um Pull Request no repositório GitOps.</td></tr>
+<tr><td>Evento</td><td>Mudança de estado relevante detectada pelo monitoramento.</td><td>Anomalia apontada pela IA do APM ou alerta de burn rate.</td></tr>
+<tr><td>Prioridade = impacto × urgência</td><td>Quanto afeta o negócio e quão rápido precisa de resposta.</td><td>Matriz P1–P4 do Kit.</td></tr>
+<tr><td>Incidente grave (major)</td><td>Impacto alto que pede coordenação e comunicação especiais.</td><td>Doações paradas durante campanha.</td></tr>
+<tr><td>ISO/IEC 20000-1</td><td>Norma internacional de requisitos para sistemas de gestão de serviços de TI.</td><td>Referência para maturidade, não exigida no Hackathon.</td></tr>
+</tbody></table></div>
+<p>Fluxo clássico de gestão de incidentes: identificar e registrar → categorizar e priorizar → diagnosticar (com escalonamento funcional ou hierárquico) → resolver e recuperar → encerrar. A causa raiz segue para a gestão de problemas, e a correção definitiva entra como mudança — no seu caso, um Pull Request com teste novo.</p>
+</section>
+
+<section id="kit"><h2>Kit ITSM + AIOps da SolidaryTech</h2><div class="section-rule"></div>
+<aside class="complemento"><strong>📘 Complemento — desenho autoral para adaptar</strong><p>O enunciado pede o fluxo “da detecção via AIOps/Alerta até o PostMortem e comunicação aos stakeholders”. O modelo abaixo junta SRE (Aulas 4 e 5), AIOps (Aulas 1 e 8) e o complemento de ITIL 4. Nomes de ferramentas são as escolhas prováveis do grupo; troque pelas suas.</p></aside>
+<h4>1. Ciclo de vida de um incidente</h4>
+<ol class="flow">
+<li><div><strong>Sinais</strong><span>OpenTelemetry nos três serviços → Prometheus, Loki e APM.</span></div></li>
+<li><div><strong>Detecção</strong><span>Anomalia da IA do APM (Watchdog/Applied Intelligence) <em>ou</em> alerta por SLO (burn rate do error budget).</span></div></li>
+<li><div><strong>Triagem automática</strong><span>Correlação e deduplicação; serviço afetado identificado; prioridade pela matriz impacto × urgência.</span></div></li>
+<li><div><strong>Registro e acionamento</strong><span>Incidente aberto automaticamente (ex.: PagerDuty), canal de crise no chat, Incident Commander designado.</span></div></li>
+<li><div><strong>Resposta</strong><span>Runbook do alerta; automação permitida executa (rollback via GitOps, restart, escala); escalonamento se não resolver em X minutos.</span></div></li>
+<li><div><strong>Comunicação</strong><span>Communications Lead avisa diretoria e ONGs com modelo padrão e atualizações periódicas até a resolução.</span></div></li>
+<li><div><strong>Recuperação</strong><span>SLI de volta ao normal e transação de teste com sucesso; incidente encerrado com linha do tempo.</span></div></li>
+<li><div><strong>Post-mortem blameless</strong><span>Até 5 dias úteis: impacto, linha do tempo, causa raiz, ações com dono e prazo; MTTD/MTTA/MTTR calculados.</span></div></li>
+<li><div><strong>Melhoria</strong><span>Causa raiz vira problema; correção vira Pull Request com teste ou alerta novo; runbook atualizado; resumo final aos stakeholders.</span></div></li>
+</ol>
+<p><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-24">OBRIGATÓRIO · REQ-OBR-24</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-45">OBRIGATÓRIO · REQ-OBR-45</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-23">OBRIGATÓRIO · REQ-OBR-23</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-14">OBRIGATÓRIO · REQ-OBR-14</a></p>
+<figure class="example"><figcaption>📘 Exemplo autoral — o mesmo fluxo em Mermaid, para o README e para o relatório</figcaption><pre><code>flowchart LR
+  S[Sinais OTel] --&gt; D{Detecção}
+  D --&gt;|anomalia IA do APM| T[Triagem: correlação + prioridade]
+  D --&gt;|alerta de SLO| T
+  T --&gt; R[Incidente aberto + IC + canal de crise]
+  R --&gt; A[Runbook / automação permitida]
+  R --&gt; C[Comunicação: diretoria e ONGs]
+  A --&gt; V{Recuperou?}
+  V --&gt;|não| E[Escalonar com diagnóstico]
+  E --&gt; A
+  V --&gt;|sim| P[Post-mortem blameless]
+  P --&gt; M[Ações: PR + teste + runbook]
+  P --&gt; C</code></pre></figure>
+<h4>2. Matriz de prioridade (impacto × urgência)</h4>
+<div class="tablewrap"><table><thead><tr><th scope="col">Prioridade</th><th scope="col">Exemplo na SolidaryTech</th><th scope="col">Resposta</th><th scope="col">Comunicação</th></tr></thead><tbody>
+<tr><td><strong>P1</strong></td><td>Doações recusadas; burn rate rápido do SLO de disponibilidade.</td><td>Acionamento imediato 24×7; automação + IC.</td><td>Diretoria e ONGs em até 30 min; atualização a cada 30 min.</td></tr>
+<tr><td><strong>P2</strong></td><td>Latência de doação acima do SLO; <code>volunteer-service</code> fora.</td><td>Acionamento em horário estendido.</td><td>Diretoria em até 2 h.</td></tr>
+<tr><td><strong>P3</strong></td><td><code>ngo-service</code> lento; falha intermitente sem impacto em doações.</td><td>Fila do time no dia útil.</td><td>Registro no relatório semanal.</td></tr>
+<tr><td><strong>P4</strong></td><td>Problema cosmético ou alerta informativo.</td><td>Backlog.</td><td>—</td></tr>
+</tbody></table></div>
+<h4>3. Papéis (da Aula 4 de SRE)</h4>
+<div class="tablewrap"><table><thead><tr><th scope="col">Papel</th><th scope="col">Quem, no grupo</th><th scope="col">Entrega no incidente</th></tr></thead><tbody>
+<tr><td>Incident Commander</td><td>Pessoa de plantão</td><td>Decide, prioriza, declara início e fim.</td></tr>
+<tr><td>Communications Lead</td><td>Responsável pela relação com a ONG</td><td>Mensagens à diretoria e às ONGs.</td></tr>
+<tr><td>Operations/SRE</td><td>Time de plataforma</td><td>Diagnóstico e mitigação com runbooks.</td></tr>
+<tr><td>Postmortem Owner</td><td>Rotativo</td><td>Documento blameless e acompanhamento das ações.</td></tr>
+</tbody></table></div>
+<h4>4. Modelos de comunicação</h4>
+<figure class="example"><figcaption>📘 Exemplo autoral — mensagens curtas para a diretoria e as ONGs</figcaption><pre><code>[INÍCIO · P1] Identificamos às 14:01 falhas no registro de doações.
+Impacto: parte das doações não está sendo concluída. Equipe atuando.
+Próxima atualização: 14:30.
+
+[ATUALIZAÇÃO] Causa provável isolada; correção automática em andamento.
+Doações já voltaram a ser aceitas parcialmente. Próxima atualização: 15:00.
+
+[RESOLVIDO] Serviço normalizado às 14:03. Nenhuma doação concluída foi perdida.
+Relatório pós-incidente em até 5 dias úteis.</code></pre></figure>
+<p><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-30">BÔNUS · REQ-BON-30</a></p>
+<h4>5. Matriz de autonomia da automação</h4>
+<div class="tablewrap"><table><thead><tr><th scope="col">Ação</th><th scope="col">Autonomia</th><th scope="col">Registro</th></tr></thead><tbody>
+<tr><td>Reiniciar um Pod do serviço afetado</td><td>Automática</td><td>Log da execução no pipeline e no incidente.</td></tr>
+<tr><td>Escalar réplicas dentro do limite do HPA</td><td>Automática</td><td>Evento do cluster.</td></tr>
+<tr><td>Rollback para a versão anterior via GitOps</td><td>Automática com notificação</td><td>Commit de revert.</td></tr>
+<tr><td>Failover para a região de DR</td><td>Humana (IC + responsável pela ONG)</td><td>Decisão registrada no incidente.</td></tr>
+<tr><td>Mudar regra de segurança ou IAM</td><td>Humana, via Pull Request</td><td>Revisão e aprovação.</td></tr>
+</tbody></table></div>
+<p><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-13">SUGESTÃO · SUG-13</a> A divisão segue a governança das Aulas 1 (p. 11) e 8 (p. 14).</p>
+<h4>6. AIOps ativado — o que mostrar</h4>
+<ol class="flow">
+<li><div><strong>Ativação</strong><span>Recurso de anomalias ligado para os serviços — de preferência configurado por código, com o provider Terraform do APM.</span></div></li>
+<li><div><strong>Aprendizado</strong><span>Dias de tráfego estável antes da gravação <a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-12">SUGESTÃO · SUG-12</a>.</span></div></li>
+<li><div><strong>Anomalia provocada</strong><span>Latência ou erro injetado no <code>donation-service</code>; a ferramenta aponta o desvio e explica.</span></div></li>
+<li><div><strong>Integração</strong><span>A anomalia entra no mesmo fluxo de incidente (passo 2 do ciclo).</span></div></li>
+<li><div><strong>Evidência</strong><span>Trecho no vídeo e print na seção ITSM/AIOps do relatório — a regra de avaliação exige mostrar <a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-28">OBRIGATÓRIO · REQ-OBR-28</a>.</span></div></li>
+</ol>
+</section>
+
+<section id="aplicacao"><h2>Da aula à entrega: o que verificar</h2><div class="section-rule"></div>
+<ol class="flow">
+<li><div><strong>Telemetria limpa</strong><span>Três serviços com nomes padronizados e tráfego contínuo.</span></div></li>
+<li><div><strong>IA do APM ligada</strong><span>Com antecedência e, se possível, por código.</span></div></li>
+<li><div><strong>Alertas por SLO</strong><span>Ligados à ferramenta de incidentes e ao chat.</span></div></li>
+<li><div><strong>Automação com limites</strong><span>Matriz de autonomia aplicada e registrada.</span></div></li>
+<li><div><strong>Fluxo desenhado</strong><span>Diagrama, matriz de prioridade, papéis e modelos de comunicação.</span></div></li>
+<li><div><strong>Incidente ensaiado</strong><span>Do sinal ao post-mortem, com carimbos de tempo.</span></div></li>
+<li><div><strong>Evidências</strong><span>Anomalia e alertas no vídeo; desenho e post-mortem no relatório.</span></div></li>
+</ol>
+<p><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-17">SUGESTÃO · SUG-17</a></p>
+<div class="tablewrap"><table><thead><tr><th scope="col">Erro comum</th><th scope="col">Como evitar</th><th scope="col">Base</th></tr></thead><tbody>
+<tr><td>Ligar a IA do APM na véspera.</td><td>Dar tempo para aprender o normal.</td><td>Aula 1, p. 9</td></tr>
+<tr><td>Mostrar a anomalia, mas não o fluxo depois dela.</td><td>Integrar ao mesmo ciclo de incidente.</td><td>Enunciado, p. 5; Aula 8, p. 9</td></tr>
+<tr><td>Fluxo que termina no “resolvido”.</td><td>Ir até post-mortem e comunicação.</td><td>Enunciado, p. 5</td></tr>
+<tr><td>Automação sem limites nem log.</td><td>Matriz de autonomia e auditoria.</td><td>Aula 1, p. 11; Aula 8, p. 14</td></tr>
+<tr><td>Cinquenta alertas para uma causa.</td><td>Correlacionar e priorizar por impacto.</td><td>Aula 8, p. 7 e 9</td></tr>
+<tr><td>Terraform aplicado do laptop.</td><td>Plan no PR, apply pelo pipeline.</td><td>Aula 7, p. 14</td></tr>
+<tr><td>Usar MTTR sem dizer a janela.</td><td>Definir como no enunciado (falha → recuperação).</td><td>Aula 8, p. 14; enunciado, p. 4</td></tr>
+</tbody></table></div>
+</section>
+
+<section id="outros-modulos"><h2>Como este módulo se conecta aos outros</h2><div class="section-rule"></div>
+<div class="tablewrap"><table><thead><tr><th scope="col">Guia</th><th scope="col">Conexão</th></tr></thead><tbody>
+<tr><td><a href="../00.Welcome%20to%20Multicloud%2C%20custos%20e%20IA/GUIA-ESTUDO-Welcome-to-Multicloud-custos-e-IA.html">00 — Welcome to Multicloud, custos e IA</a></td><td>Promete ITIL e ISO/IEC 20000 sob a ótica do AIOps — tema que as aulas não detalham.</td></tr>
+<tr><td><a href="../02.SRE%20%28Site%20Reliability%20Engineering%29/GUIA-ESTUDO-SRE-Site-Reliability-Engineering.html">02 — SRE — Site Reliability Engineering</a></td><td>Ciclo de resposta, papéis, runbooks e post-mortem: a metade “processo” do fluxo de incidente.</td></tr>
+<tr><td><a href="../01.Multicloud%20e%20Seguran%C3%A7a/GUIA-ESTUDO-Multicloud-e-Seguranca.html">01 — Multicloud e Segurança</a></td><td>AIOps causal (Aula 7) e o acionamento do DR como incidente grave.</td></tr>
+<tr><td><a href="../03.FinOps/GUIA-ESTUDO-FinOps.html">03 — FinOps</a></td><td>Anomalia de custo é AIOps aplicado à fatura; ITSM aparece entre as equipes aliadas de FinOps.</td></tr>
+</tbody></table></div>
+</section>
+
+<section id="revisao"><h2>Revisão rápida e autoavaliação</h2><div class="section-rule"></div>
+<p>Responda antes de abrir. Perguntas autorais, baseadas nas páginas indicadas.</p>
+<details><summary>1. AIOps substitui o DevOps?</summary><p>Não: acrescenta inteligência sobre a base de automação e cultura do DevOps. Aula 1, p. 7 e 11.</p></details>
+<details><summary>2. Por que dados ruins inutilizam o AIOps?</summary><p>“Garbage in, garbage out”: sem logs e métricas consistentes, o algoritmo tira conclusões erradas. Aula 1, p. 9.</p></details>
+<details><summary>3. Que ações a automação pode tomar sozinha?</summary><p>As de impacto pequeno, como reiniciar contêiner, escalar e abrir ticket; desligar sistemas ou acionar fallback amplo pede aprovação humana. Aula 8, p. 14.</p></details>
+<details><summary>4. Quais são os cinco estágios do pipeline de AIOps da aula?</summary><p>Coleta, análise e detecção, orquestração, feedback e melhoria, automação DevOps integrada. Aula 8, p. 9–10.</p></details>
+<details><summary>5. Por que medir MTTD e MTTR antes de automatizar?</summary><p>Para ter a linha de base que prova o ganho depois. Aula 8, p. 14.</p></details>
+<details><summary>6. Qual a diferença entre canary e shadow?</summary><p>No canary uma fração real dos usuários recebe a versão nova; no shadow ela só recebe cópias das requisições, sem responder. Aula 5, p. 11–12.</p></details>
+<details><summary>7. O que é “IaC cosmético”?</summary><p>Manter Terraform no repositório, mas aplicá-lo à mão com ajustes, perdendo a reprodutibilidade. Aula 7, p. 14.</p></details>
+<details><summary>8. Quais pilares de governança a Aula 7 propõe?</summary><p>Versionamento completo, segregação de ambientes com acesso progressivo, papéis e aprovações formais e auditoria contínua. Aula 7, p. 11–12.</p></details>
+<details><summary>9. O que a Landing Zone deve trazer desde o primeiro dia?</summary><p>Estrutura de contas, rede, identidade, monitoramento e conformidade — com criptografia padrão e tags obrigatórias. Aula 3, p. 8.</p></details>
+<details><summary>10. Até onde vai o fluxo de incidente exigido no Hackathon?</summary><p>Da detecção por AIOps ou alerta até o PostMortem e a comunicação aos stakeholders. Enunciado, p. 5.</p></details>
+</section>
+
+<section id="limites"><h2>Fidelidade, fontes e pontos a confirmar</h2><div class="section-rule"></div>
+<p>Leitura integral do texto dos oito PDFs em 2026-11-11. Links externos das aulas não foram acessados e os vídeos não estão na pasta.</p>
+<div class="tablewrap"><table><thead><tr><th scope="col">ID</th><th scope="col">O que o original apresenta</th><th scope="col">Tratamento adotado</th></tr></thead><tbody>
+<tr><td>ITS-L01 · Limitação</td><td>ITIL e ISO/IEC 20000, anunciados no Welcome (p. 3), não aparecem nas oito aulas.</td><td>Complemento autoral de ITIL 4; dúvida <a class="rid" href="../../requisitos/REQUISITOS.html#q-12">Q-12</a>.</td></tr>
+<tr><td>ITS-L02 · Limitação</td><td>Watchdog e Applied Intelligence, citados no enunciado (p. 5), não aparecem nas aulas.</td><td>Orientação genérica de ativação e evidência; dúvida <a class="rid" href="../../requisitos/REQUISITOS.html#q-11">Q-11</a>.</td></tr>
+<tr><td>ITS-L03 · Limitação</td><td>Percentuais de mercado e de casos (ex.: MTTR −50%, alertas −90%, 13% dos projetos de ML em produção).</td><td>Citados como afirmação da aula, sem verificação externa.</td></tr>
+<tr><td>ITS-Q01 · [INCERTO]</td><td>MTTR como <em>Mean Time to Repair</em> (Aula 8, p. 14) × <em>Mean Time To Recovery</em> (enunciado, p. 4).</td><td>Guia recomenda declarar a janela medida.</td></tr>
+<tr><td>ITS-Q02 · [INCERTO]</td><td>Títulos com caracteres duplicados na extração (todas as aulas) e palavras-chave não preenchidas na Aula 1 (p. 17).</td><td>Títulos lidos pela capa de cada PDF.</td></tr>
+<tr><td>ITS-Q03 · [INCERTO]</td><td>Aula 6, p. 8: transportes do MCP descritos como STDIO, SSE e WebSockets.</td><td>Mantido como na aula, com aviso de que a especificação evolui.</td></tr>
+<tr><td>ITS-Q04 · [INCERTO]</td><td>Aula 8: o sumário não lista a seção de mercado; os casos estão no “Saiba mais”.</td><td>Casos sintetizados normalmente.</td></tr>
+</tbody></table></div>
+</section>
+
+<section id="conexao"><h2>Conexão com o Hackathon Fase 5</h2><div class="section-rule"></div>
+<p>As exigências vêm do enunciado; o vínculo com as aulas é mapeamento didático. Estudar o tema não comprova atendimento. Status da implementação: <strong>Pendente</strong>.</p>
+<div class="tablewrap"><table><thead><tr><th scope="col">ID</th><th scope="col">Selo</th><th scope="col">Como este módulo ajuda a cumprir</th></tr></thead><tbody>
+<tr><td>REQ-OBR-23</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-23">OBRIGATÓRIO · REQ-OBR-23</a></td><td>Aulas 1 e 8: o que é, como aprende e como evidenciar.</td></tr>
+<tr><td>REQ-OBR-24</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-24">OBRIGATÓRIO · REQ-OBR-24</a></td><td>Aula 8 (caso Black Friday) + Kit: fluxo completo até post-mortem e comunicação.</td></tr>
+<tr><td>REQ-OBR-45</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-45">OBRIGATÓRIO · REQ-OBR-45</a></td><td>Kit: diagrama, prioridades, papéis e comunicação para a seção do relatório.</td></tr>
+<tr><td>REQ-OBR-14</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-14">OBRIGATÓRIO · REQ-OBR-14</a></td><td>Aulas 1 e 8: playbooks e governança da automação.</td></tr>
+<tr><td>REQ-OBR-18</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-18">OBRIGATÓRIO · REQ-OBR-18</a></td><td>Aula 8: MTTD/MTTR com linha de base.</td></tr>
+<tr><td>REQ-OBR-36</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-36">OBRIGATÓRIO · REQ-OBR-36</a></td><td>Aula 8: alertas e anomalias integrados ao fluxo.</td></tr>
+<tr><td>REQ-OBR-07</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-07">OBRIGATÓRIO · REQ-OBR-07</a></td><td>Aula 3: módulos, estado e ambientes.</td></tr>
+<tr><td>REQ-OBR-03</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-03">OBRIGATÓRIO · REQ-OBR-03</a></td><td>Aulas 3 e 7: contra snowflake servers e IaC cosmético.</td></tr>
+<tr><td>REQ-OBR-02</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-02">OBRIGATÓRIO · REQ-OBR-02</a></td><td>Aula 7: produção só por pipeline.</td></tr>
+<tr><td>REQ-OBR-08</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-08">OBRIGATÓRIO · REQ-OBR-08</a></td><td>Aulas 4 e 7: gates de qualidade.</td></tr>
+<tr><td>REQ-OBR-09</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-09">OBRIGATÓRIO · REQ-OBR-09</a></td><td>Aula 7: scans que rejeitam builds vulneráveis.</td></tr>
+<tr><td>REQ-OBR-31</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-31">OBRIGATÓRIO · REQ-OBR-31</a></td><td>Aulas 4 e 7: pipeline como código.</td></tr>
+<tr><td>REQ-OBR-11</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-11">OBRIGATÓRIO · REQ-OBR-11</a></td><td>Aula 5: promoção entre ambientes e rastreabilidade.</td></tr>
+<tr><td>REQ-OBR-19</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-19">OBRIGATÓRIO · REQ-OBR-19</a></td><td>Aula 3: tags obrigatórias como pilar da Landing Zone.</td></tr>
+<tr><td>REQ-OBR-04</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-04">OBRIGATÓRIO · REQ-OBR-04</a></td><td>Aula 1: sem observabilidade não há AIOps.</td></tr>
+<tr><td>REQ-OBR-28</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-28">OBRIGATÓRIO · REQ-OBR-28</a></td><td>Kit: o que mostrar da IA do APM.</td></tr>
+<tr><td>REQ-BON-31</td><td><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-31">BÔNUS · REQ-BON-31</a></td><td>Aulas 1 e 8: fadiga de alertas e agrupamento.</td></tr>
+<tr><td>REQ-BON-29</td><td><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-29">BÔNUS · REQ-BON-29</a></td><td>Aula 8: AIOps integrado a ServiceNow/Jira.</td></tr>
+<tr><td>REQ-BON-30</td><td><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-30">BÔNUS · REQ-BON-30</a></td><td>Kit: modelos de comunicação.</td></tr>
+<tr><td>REQ-BON-32</td><td><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-32">BÔNUS · REQ-BON-32</a></td><td>Aula 8: Hands On dos 3 sigmas.</td></tr>
+<tr><td>REQ-BON-33</td><td><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-33">BÔNUS · REQ-BON-33</a></td><td>Aula 6: MCP com governança.</td></tr>
+<tr><td>REQ-BON-19</td><td><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-19">BÔNUS · REQ-BON-19</a></td><td>Aulas 5 e 7: entrega progressiva.</td></tr>
+<tr><td>REQ-BON-08</td><td><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-08">BÔNUS · REQ-BON-08</a></td><td>Aula 7: segregação e aprovação.</td></tr>
+<tr><td>REQ-BON-09</td><td><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-09">BÔNUS · REQ-BON-09</a></td><td>Aulas 5 e 7: tags explícitas e assinatura.</td></tr>
+<tr><td>REQ-BON-10</td><td><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-10">BÔNUS · REQ-BON-10</a></td><td>Aula 7: métricas compartilhadas de entrega.</td></tr>
+<tr><td>REQ-BON-16</td><td><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-16">BÔNUS · REQ-BON-16</a></td><td>Aula 8: registro completo de cada incidente.</td></tr>
+<tr><td>REQ-BON-15</td><td><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-15">BÔNUS · REQ-BON-15</a></td><td>Aula 8: playbooks versionados.</td></tr>
+<tr><td>REQ-BON-28</td><td><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-28">BÔNUS · REQ-BON-28</a></td><td>Aulas 3 e 7: OPA/Gatekeeper.</td></tr>
+<tr><td>REQ-BON-42</td><td><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-42">BÔNUS · REQ-BON-42</a></td><td>Aula 3: variáveis sensíveis fora do código.</td></tr>
+<tr><td>SUG-12</td><td><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-12">SUGESTÃO · SUG-12</a></td><td>Aula 1: qualidade de dados para a IA.</td></tr>
+<tr><td>SUG-13</td><td><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-13">SUGESTÃO · SUG-13</a></td><td>Aulas 1 e 8: humano no circuito.</td></tr>
+<tr><td>SUG-07</td><td><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-07">SUGESTÃO · SUG-07</a></td><td>Aula 8: linha de base de MTTD/MTTR.</td></tr>
+<tr><td>SUG-02</td><td><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-02">SUGESTÃO · SUG-02</a></td><td>Aula 7: anti-padrão IaC cosmético.</td></tr>
+<tr><td>SUG-06</td><td><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-06">SUGESTÃO · SUG-06</a></td><td>Aula 2: dados representativos.</td></tr>
+<tr><td>SUG-17</td><td><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-17">SUGESTÃO · SUG-17</a></td><td>Evidências da frente 3 antes de gravar.</td></tr>
+</tbody></table></div>
+</section>
+
+<footer><a href="#conteudo">Voltar ao início</a><p>Fontes locais lidas em 2026-11-11. Síntese didática com referências por página; exemplos de código e números da SolidaryTech são ilustrativos, autorais e não foram executados. Requisitos: enunciado do Hackathon Fase 5, p. 2–7. Material autocontido, sem dependências externas.</p></footer></main></body></html>

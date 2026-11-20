@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Welcome to Multicloud, custos e IA — Guia de estudo · Hackathon Fase 5</title><style>
+    :root{
+      --bg:#eef2f8; --surface:#ffffff; --surface-2:#e7eef7; --panel:#f5f8fc;
+      --ink:#132339; --ink-soft:#4c5f79; --ink-faint:#7787a0;
+      --line:#d3ddea; --line-soft:#e2e9f2;
+      --accent:#2f6ae0; --accent-ink:#1c4aa8; --accent-wash:#e7eefb;
+      --brass:#b26a10; --brass-wash:#f6ecdd;
+      --ok:#2c8159; --warn:#a9741a; --no:#7a869a;
+      --serif:Georgia,"Iowan Old Style","Palatino Linotype","Times New Roman",serif;
+      --sans:"Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+      --mono:"Cascadia Code",Consolas,"SFMono-Regular",ui-monospace,monospace;
+    }
+    @media (prefers-color-scheme:dark){:root{
+      --bg:#0c1725; --surface:#152539; --surface-2:#101f31; --panel:#132234;
+      --ink:#e6edf6; --ink-soft:#a4b6cc; --ink-faint:#7488a2;
+      --line:#26394f; --line-soft:#1d2d40;
+      --accent:#6c9cf1; --accent-ink:#9cbdf8; --accent-wash:#16273f;
+      --brass:#e0a552; --brass-wash:#241c11; --ok:#59bf8c; --warn:#e0a552; --no:#7f8aa0;
+    }}
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.6;-webkit-font-smoothing:antialiased}
+    .wrap{max-width:900px;margin:0 auto;padding:clamp(20px,4vw,52px) clamp(16px,4vw,32px)}
+    .masthead{border-bottom:2px solid var(--ink);padding-bottom:22px;margin-bottom:34px}
+    .eyebrow{font-family:var(--mono);font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:var(--accent-ink);margin:0 0 12px}
+    .masthead h1{font-family:var(--serif);font-weight:700;font-size:clamp(1.9rem,5.6vw,3rem);line-height:1.05;margin:0;text-wrap:balance}
+    .masthead .sub{font-size:clamp(1rem,2.4vw,1.18rem);color:var(--ink-soft);margin:.5em 0 0;max-width:62ch}
+    .meta{font-family:var(--mono);font-size:.74rem;color:var(--ink-faint);margin-top:16px;display:flex;flex-wrap:wrap;gap:6px 18px}
+    h2{font-family:var(--serif);font-weight:700;font-size:clamp(1.4rem,3.4vw,1.9rem);margin:52px 0 6px;text-wrap:balance}
+    .section-rule{height:3px;width:56px;background:var(--accent);border-radius:2px;margin:14px 0 24px}
+    p{max-width:68ch}
+    .lead{color:var(--ink-soft);margin:0 0 22px;max-width:66ch}
+    strong{color:var(--ink)}
+    a{color:var(--accent-ink);text-underline-offset:3px}
+    .intro{display:grid;gap:16px;grid-template-columns:1fr 1fr}
+    @media(max-width:620px){.intro{grid-template-columns:1fr}}
+    .intro .box{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px 22px}
+    .intro .box h3{margin:0 0 8px;font-size:1.05rem;font-family:var(--sans);font-weight:700}
+    .intro .box p{margin:0;font-size:.96rem;color:var(--ink-soft);max-width:none}
+    .intro .box.hi{border-color:var(--brass);background:var(--brass-wash)}
+    .glossary{background:var(--panel);border:1px solid var(--line-soft);border-radius:14px;padding:clamp(16px,3vw,26px);display:grid;grid-template-columns:1fr 1fr;gap:2px 26px}
+    @media(max-width:640px){.glossary{grid-template-columns:1fr}}
+    .term{padding:11px 0;border-bottom:1px solid var(--line-soft)}
+    .term .k{font-family:var(--mono);font-weight:700;color:var(--accent-ink);font-size:.92rem}
+    .term .full{font-style:italic;color:var(--ink-faint);font-size:.86rem;margin-left:6px}
+    .term .d{display:block;color:var(--ink-soft);font-size:.94rem;margin-top:2px}
+    .lessons{display:flex;flex-direction:column;gap:18px}
+    .lesson{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:clamp(18px,3vw,26px);transition:border-color .18s ease}
+    .lesson:hover{border-color:var(--accent)}
+    .lesson-head{display:flex;gap:16px;align-items:flex-start;margin-bottom:16px}
+    .num{font-family:var(--serif);font-size:2.1rem;font-weight:700;line-height:1;color:var(--accent);min-width:1.6em;font-variant-numeric:tabular-nums}
+    .lesson-head h3{margin:2px 0 8px;font-size:clamp(1.12rem,2.6vw,1.3rem);font-family:var(--sans);font-weight:700;line-height:1.25}
+    .badge{display:inline-block;font-family:var(--mono);font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:20px;border:1px solid currentColor}
+    .badge.ok{color:var(--ok)}
+    .badge.warn{color:var(--warn)}
+    .badge.no{color:var(--no)}
+    .facets{margin:0;display:grid;gap:14px}
+    .facets > div{display:grid;grid-template-columns:150px 1fr;gap:4px 18px;align-items:baseline}
+    @media(max-width:600px){.facets > div{grid-template-columns:1fr}}
+    .facets dt{font-family:var(--mono);font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--accent-ink);margin:0}
+    .facets dd{margin:0;color:var(--ink-soft);font-size:.97rem}
+    .facets dd.proj{color:var(--ink)}
+    .facets .use{color:var(--brass)}
+    code{font-family:var(--mono);font-size:.86em;background:var(--accent-wash);color:var(--accent-ink);padding:1px 6px;border-radius:5px}
+    .flow{margin:0;padding:0;list-style:none;counter-reset:flow;display:grid;gap:12px}
+    .flow li{counter-increment:flow;display:grid;grid-template-columns:38px 1fr;gap:13px;align-items:start;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:15px 17px}
+    .flow li::before{content:counter(flow);display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:var(--accent-wash);color:var(--accent-ink);font-family:var(--mono);font-size:.78rem;font-weight:700}
+    .flow strong{display:block;margin-bottom:2px}
+    .flow span{color:var(--ink-soft);font-size:.95rem}
+    .tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+    table{border-collapse:collapse;width:100%;min-width:680px;font-size:.92rem}
+    th,td{text-align:left;padding:11px 15px;border-bottom:1px solid var(--line-soft)}
+    thead th{background:var(--surface-2);font-family:var(--mono);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft)}
+    tbody tr:last-child td{border-bottom:none}
+    td .s{font-family:var(--mono);font-size:.78rem;font-weight:700}
+    td .s.ok{color:var(--ok)}
+    td .s.warn{color:var(--warn)}
+    td .s.no{color:var(--no)}
+    td .num2{font-family:var(--serif);font-weight:700;color:var(--accent)}
+    .note{margin-top:20px;padding:16px 18px;border-left:4px solid var(--brass);background:var(--brass-wash);color:var(--ink-soft)}
+    .note strong{display:block;margin-bottom:3px}
+    .sources{display:grid;grid-template-columns:1fr 1fr;gap:8px 22px;margin:0;padding:0;list-style:none}
+    .sources li{border-bottom:1px solid var(--line-soft);padding:8px 0;font-size:.92rem}
+    @media(max-width:640px){.sources{grid-template-columns:1fr}}
+    footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--line);color:var(--ink-faint);font-size:.86rem}
+    :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+    @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+  /* Extensões Fase 4 — mesmas em todos os guias */
+.wrap{overflow-wrap:anywhere}.badge{letter-spacing:.03em;margin:2px 3px 2px 0;text-decoration:none;max-width:100%}.badge.obrigatorio{color:#a3323d;background:#fff0f1}.badge.bonus{color:#21613d;background:#edf8ef}.badge.sugestao{color:#1c4aa8;background:#e7eefb}.badge.complemento-badge{color:#725000;background:#fff5dc}.legend,.toc{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px 22px;margin:20px 0}.legend p{font-size:.9rem;color:var(--ink-soft);margin-bottom:0}.toc ol{columns:2;column-gap:32px;padding-left:20px}.toc li{break-inside:avoid;margin-bottom:7px}.complemento{border-left:4px solid var(--accent);background:var(--accent-wash);padding:16px 20px;margin:20px 0}.complemento>strong{display:block}.source,figcaption{font-size:.86rem;color:var(--ink-soft)}pre{white-space:pre;overflow:auto;max-width:100%;padding:18px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);line-height:1.55}pre code{padding:0;background:none;color:var(--ink)}figure{margin:22px 0}.source-list{margin-top:18px}summary{cursor:pointer;color:var(--accent-ink);font-weight:600}details{margin:12px 0;padding:12px 16px;border:1px solid var(--line);border-radius:8px}.skip{position:absolute;top:-100px;left:12px}.skip:focus{top:12px;background:var(--surface);padding:10px;z-index:100}.diagram{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:20px 0}.diagram .node{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;flex:1;min-width:130px}.lesson p:last-child{margin-bottom:0}section{scroll-margin-top:20px}h3{line-height:1.35}.warning{border-left:4px solid var(--brass);padding:14px 18px;background:var(--brass-wash)}@media(max-width:640px){.toc ol{columns:1}.meta{font-size:.7rem}.lesson-head{gap:10px}.sources{grid-template-columns:1fr}}@media(prefers-color-scheme:dark){.badge.obrigatorio{color:#ffb3bc;background:#381f29}.badge.bonus{color:#a7e4bb;background:#173123}.badge.sugestao{color:#b5cdff;background:#16273f}.badge.complemento-badge{color:#f1d592;background:#302817}}@media print{body{background:white;color:black}.wrap{max-width:none;padding:0}.toc,.skip{display:none}.lesson,.complemento{break-inside:avoid}.tablewrap{overflow:visible}table{min-width:0}pre{white-space:pre-wrap}.badge{background:none!important;color:black!important}a{color:black}details>*{display:block}}
+
+/* Extensões Hackathon Fase 5 — mesmas em todos os guias */
+.badge.duvida{color:#5b3fa8;background:#f1ecfd}
+.maplinks{font-size:.93rem;margin:16px 0 0;max-width:none}
+.maplinks a{font-weight:600}
+.guide-nav{display:flex;flex-wrap:wrap;gap:6px;margin-top:16px}
+.guide-nav a{font-family:var(--mono);font-size:.72rem;text-decoration:none;padding:4px 11px;border:1px solid var(--line);border-radius:20px;color:var(--ink-soft);background:var(--surface)}
+.guide-nav a:hover{border-color:var(--accent);color:var(--accent-ink)}
+.guide-nav a[aria-current]{border-color:var(--accent);color:var(--accent-ink);background:var(--accent-wash);font-weight:700}
+.guide-nav a.maplink{border-color:var(--brass);color:var(--brass)}
+a.rid{font-family:var(--mono);font-size:.86em;font-weight:700;text-decoration:none;white-space:nowrap}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0}
+.split.three{grid-template-columns:1fr 1fr 1fr}
+@media(max-width:760px){.split,.split.three{grid-template-columns:1fr}}
+.split .col{background:var(--surface);border:1px solid var(--line);border-top:4px solid var(--line);border-radius:14px;padding:16px 18px}
+.split .col.obr{border-top-color:#c2414f}
+.split .col.bon{border-top-color:#2f8a55}
+.split .col.sug{border-top-color:var(--accent)}
+.split .col h3{margin:0 0 4px;font-size:1.02rem;font-family:var(--sans)}
+.split .col > p{font-size:.88rem;color:var(--ink-faint);margin:0 0 8px}
+.split ul{list-style:none;margin:0;padding:0;max-width:none}
+.split li{padding:9px 0;border-bottom:1px solid var(--line-soft);font-size:.93rem;color:var(--ink-soft);margin:0}
+.split li:last-child{border-bottom:none}
+.split li .badge{display:table;margin:0 0 5px}
+.split li strong{color:var(--ink)}
+.split li .li-note{display:block;color:var(--ink-soft);font-size:.88rem;margin-top:2px}
+.hk{border-left:4px solid var(--brass);background:var(--brass-wash);padding:16px 20px;margin:20px 0;border-radius:0 12px 12px 0}
+.hk > strong:first-child{display:block;margin-bottom:6px;color:var(--brass)}
+.hk p{margin:6px 0}
+.hk ul,.hk ol{margin:6px 0;padding-left:20px}
+.hk p:last-child,.hk ul:last-child{margin-bottom:0}
+figure.example{margin:18px 0}
+figure.example figcaption{font-family:var(--mono);font-size:.74rem;letter-spacing:.03em;margin-bottom:6px;color:var(--brass)}
+figure.example pre{margin:0}
+h4{font-size:1.04rem;margin:26px 0 8px;font-family:var(--sans)}
+.math{font-family:var(--mono);font-size:.9rem;background:var(--panel);border:1px solid var(--line-soft);border-radius:10px;padding:12px 16px;margin:12px 0;overflow-x:auto}
+.memo{margin-top:18px;padding:12px 16px;border:1px dashed var(--line);border-radius:10px;background:var(--panel)}
+.memo strong:first-child{color:var(--accent-ink)}
+.tablewrap + .source{margin-top:8px}
+td code,li code{white-space:nowrap}
+@media(max-width:640px){td code,li code{white-space:normal}}
+@media(prefers-color-scheme:dark){.badge.duvida{color:#cdbdff;background:#272042}.split .col.obr{border-top-color:#e06a78}.split .col.bon{border-top-color:#59bf8c}}
+@media print{.guide-nav,.maplinks{display:none}.hk{break-inside:avoid}}
+</style></head>
+<body><a class="skip" href="#conteudo">Ir ao conteúdo</a><main class="wrap" id="conteudo"><header class="masthead"><p class="eyebrow">FIAP · Hackathon Fase 5 · Guia de estudo 00</p><h1>Welcome to Multicloud, custos e IA</h1><p class="sub">A abertura da fase e o mapa do Hackathon: de “como configurar” para “por que manter e como evoluir”.</p><div class="meta"><span>Gerado em 2026-11-11 · Claude</span><span>1 arquivo(s) · 4 páginas</span><span>Introdutório · visão geral</span><span>Desafio: SolidaryTech</span></div><p class="maplinks"><a href="../../requisitos/REQUISITOS.html">🗺️ Mapa de requisitos — obrigatórios × bônus</a> · <a href="../../requisitos/README.md">versão Markdown</a> · <a href="../POSTECH%20-%20DCLT%20-%20Hackathon%20-%20Fase%205.pdf">enunciado do Hackathon (PDF)</a></p><details class="source-list"><summary>Arquivos-fonte usados integralmente</summary><ul class="sources"><li><a href="POSTECH%20-%20%20DCLT%20-%20Cap.%20de%20Projeto%20-%20Fase%205.pdf">POSTECH -  DCLT - Cap. de Projeto - Fase 5.pdf</a><br><span class="source">4 páginas · leitura integral do texto</span></li></ul></details><nav class="guide-nav" aria-label="Guias da Fase 5"><a href="../00.Welcome%20to%20Multicloud%2C%20custos%20e%20IA/GUIA-ESTUDO-Welcome-to-Multicloud-custos-e-IA.html" aria-current="page">00 · Welcome</a><a href="../01.Multicloud%20e%20Seguran%C3%A7a/GUIA-ESTUDO-Multicloud-e-Seguranca.html">01 · Multicloud e Segurança</a><a href="../02.SRE%20%28Site%20Reliability%20Engineering%29/GUIA-ESTUDO-SRE-Site-Reliability-Engineering.html">02 · SRE</a><a href="../03.FinOps/GUIA-ESTUDO-FinOps.html">03 · FinOps</a><a href="../04.IT%20Service%20Management%20e%20AIOPs/GUIA-ESTUDO-IT-Service-Management-e-AIOps.html">04 · ITSM e AIOps</a><a href="../../requisitos/REQUISITOS.html" class="maplink">🗺️ Mapa de requisitos</a></nav></header>
+<aside class="legend" aria-label="Legenda dos selos"><span class="badge obrigatorio">🔴 Obrigatório</span> <span class="badge bonus">🟢 Bônus / diferencial</span> <span class="badge sugestao">🔵 Sugestão</span> <span class="badge complemento-badge">📘 Complemento</span><p><strong>Obrigatório</strong> é o que o enunciado do Hackathon exige. <strong>Bônus</strong> é diferencial: vai além do mínimo pedido, usa a alternativa não escolhida ou aplica algo do material oficial que o enunciado não exige — <em>o PDF não promete pontos extras</em>. <strong>Sugestão</strong> é recomendação autoral para facilitar a entrega. <strong>Complemento</strong> é explicação ou exemplo autoral, não é texto nem exigência da FIAP. Páginas seguem a contagem física do PDF, a partir de 1.</p></aside>
+<nav class="toc" aria-label="Sumário"><strong>Neste guia</strong><ol><li><a href="#visao">De “como configurar” para “por que manter e como evoluir”</a></li><li><a href="#obrigatorio-bonus">Obrigatório × Bônus da fundação e da entrega</a></li><li><a href="#trilha">A trilha da fase e as cinco frentes</a></li><li><a href="#desafio">O desafio em uma página</a></li><li><a href="#revisao">Revisão rápida</a></li><li><a href="#conexao">Conexão com o Hackathon Fase 5</a></li></ol></nav>
+<section id="visao"><h2>De “como configurar” para “por que manter e como evoluir”</h2><div class="section-rule"></div>
+<div class="intro"><div class="box"><h3>Em linguagem simples</h3><p>A fase final pede pensar como arquiteto: além de funcionar, a solução precisa caber no bolso, sobreviver a falhas graves e ser gerenciável por anos. As quatro disciplinas — SRE, Multicloud e Segurança, FinOps e ITSM/AIOps — são as lentes para isso.</p></div><div class="box hi"><h3>No Hackathon</h3><p>O projeto é novo: o ecossistema da SolidaryTech (<code>ngo-service</code>, <code>donation-service</code> — o Hot Path — e <code>volunteer-service</code>). Antes das frentes novas, a <strong>Regra de Ouro</strong> exige aplicar toda a base das Fases 1–4: sem deploy manual, sem infraestrutura clicada, sem voo cego.</p></div></div>
+<p class="source">Fonte: <a href="POSTECH%20-%20%20DCLT%20-%20Cap.%20de%20Projeto%20-%20Fase%205.pdf#page=2">Capítulo de Projeto, p. 2–3</a>.</p>
+<p><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-01">OBRIGATÓRIO · REQ-OBR-01</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-02">OBRIGATÓRIO · REQ-OBR-02</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-03">OBRIGATÓRIO · REQ-OBR-03</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-04">OBRIGATÓRIO · REQ-OBR-04</a></p>
+</section>
+
+<section id="obrigatorio-bonus"><h2>Obrigatório × Bônus da fundação e da entrega</h2><div class="section-rule"></div>
+<p class="lead">Este guia concentra o que não pertence a uma disciplina só: a frente 0 (Fases 1–4) e os entregáveis. O mapa completo está no <a href="../../requisitos/REQUISITOS.html">mapa de requisitos</a>.</p>
+<div class="split three">
+<div class="col obr"><h3>🔴 Obrigatório</h3><p>Frente 0 e entregáveis.</p><ul>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-05">OBRIGATÓRIO · REQ-OBR-05</a> <strong>Dockerfiles otimizados para os 3 serviços</strong></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-06">OBRIGATÓRIO · REQ-OBR-06</a> <strong>Kubernetes gerenciado (EKS, AKS ou GKE)</strong></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-07">OBRIGATÓRIO · REQ-OBR-07</a> <strong>Terraform provisiona todo o ambiente</strong></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-08">OBRIGATÓRIO · REQ-OBR-08</a> <strong>CI/CD automatizado com testes</strong></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-09">OBRIGATÓRIO · REQ-OBR-09</a> <strong>Scans SAST/SCA no pipeline</strong></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-10">OBRIGATÓRIO · REQ-OBR-10</a> <strong>Build da imagem no pipeline</strong></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-11">OBRIGATÓRIO · REQ-OBR-11</a> <strong>GitOps com ArgoCD ou FluxCD</strong></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-12">OBRIGATÓRIO · REQ-OBR-12</a> <strong>Stack de observabilidade rodando</strong></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-13">OBRIGATÓRIO · REQ-OBR-13</a> <strong>APM com Distributed Tracing</strong></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-29">OBRIGATÓRIO · REQ-OBR-29</a> <strong>Repositório: Terraform com tags FinOps</strong></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-30">OBRIGATÓRIO · REQ-OBR-30</a> <strong>Repositório: YAML com requests/limits</strong></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-31">OBRIGATÓRIO · REQ-OBR-31</a> <strong>Repositório: pipelines com DevSecOps</strong></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-32">OBRIGATÓRIO · REQ-OBR-32</a> <strong>Vídeo de até 20 minutos</strong></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-33">OBRIGATÓRIO · REQ-OBR-33</a> <strong>Pitch executivo para a diretoria</strong></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-34">OBRIGATÓRIO · REQ-OBR-34</a> <strong>Demo: CI/CD rodando + deploy via ArgoCD</strong></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-35">OBRIGATÓRIO · REQ-OBR-35</a> <strong>Demo: Terraform rodando / recursos com tags</strong></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-36">OBRIGATÓRIO · REQ-OBR-36</a> <strong>Demo: traces no APM e alertas</strong></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-37">OBRIGATÓRIO · REQ-OBR-37</a> <strong>Demo: Dashboard SRE com SLOs calculados</strong></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-38">OBRIGATÓRIO · REQ-OBR-38</a> <strong>Demo: Backup/DR em ação</strong></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-39">OBRIGATÓRIO · REQ-OBR-39</a> <strong>Relatório em PDF</strong></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-40">OBRIGATÓRIO · REQ-OBR-40</a> <strong>Relatório: nomes, RMs e usernames</strong></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-41">OBRIGATÓRIO · REQ-OBR-41</a> <strong>Relatório: links do repositório e do vídeo</strong></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-42">OBRIGATÓRIO · REQ-OBR-42</a> <strong>Seção SRE: SLI, SLO e SLA formais</strong></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-43">OBRIGATÓRIO · REQ-OBR-43</a> <strong>Seção FinOps: Forecast + evidência de tags</strong></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-44">OBRIGATÓRIO · REQ-OBR-44</a> <strong>Seção Segurança e DR: PCN + estratégia</strong></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-45">OBRIGATÓRIO · REQ-OBR-45</a> <strong>Seção ITSM/AIOps: ciclo de incidentes</strong></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-28">OBRIGATÓRIO · REQ-OBR-28</a> <strong>Regra de avaliação: mostrar funcionando</strong></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-46">OBRIGATÓRIO · REQ-OBR-46</a> <strong>Desenvolvimento em grupo</strong></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-47">OBRIGATÓRIO · REQ-OBR-47</a> <strong>Entrega dentro do prazo</strong></li>
+</ul></div>
+<div class="col bon"><h3>🟢 Bônus / diferencial</h3><p>Sem pontos extras prometidos.</p><ul>
+<li><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-01">BÔNUS · REQ-BON-01</a> <strong>Health checks nas probes e no pipeline</strong></li>
+<li><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-03">BÔNUS · REQ-BON-03</a> <strong>DynamoDB: Query em GSI no lugar de Scan</strong></li>
+<li><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-04">BÔNUS · REQ-BON-04</a> <strong>ElastiCache — só com uso real</strong></li>
+<li><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-05">BÔNUS · REQ-BON-05</a> <strong>Detecção de drift da infraestrutura</strong></li>
+<li><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-06">BÔNUS · REQ-BON-06</a> <strong>Scan de IaC e misconfiguração no pipeline</strong></li>
+<li><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-08">BÔNUS · REQ-BON-08</a> <strong>Produção sem atalhos (RBAC + aprovação)</strong></li>
+<li><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-09">BÔNUS · REQ-BON-09</a> <strong>Cadeia de suprimentos: tag imutável, assinatura e SBOM</strong></li>
+<li><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-10">BÔNUS · REQ-BON-10</a> <strong>Métricas DORA do pipeline</strong></li>
+<li><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-02">BÔNUS · REQ-BON-02</a> <strong>Autoscaling para picos imprevisíveis</strong></li>
+</ul></div>
+<div class="col sug"><h3>🔵 Sugestões</h3><p>Autorais.</p><ul>
+<li><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-01">SUGESTÃO · SUG-01</a> <strong>Reaproveitar a base da Fase 4</strong></li>
+<li><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-03">SUGESTÃO · SUG-03</a> <strong>Schema do banco sem passo manual</strong></li>
+<li><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-02">SUGESTÃO · SUG-02</a> <strong>Terraform pelo pipeline, não pelo laptop</strong></li>
+<li><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-17">SUGESTÃO · SUG-17</a> <strong>Matriz de evidências e ensaio cronometrado</strong></li>
+<li><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-18">SUGESTÃO · SUG-18</a> <strong>Roteiro de vídeo em blocos por frente</strong></li>
+<li><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-11">SUGESTÃO · SUG-11</a> <strong>Proteger a conta do próprio grupo</strong></li>
+</ul></div>
+</div>
+</section>
+
+<section id="trilha"><h2>A trilha da fase e as cinco frentes</h2><div class="section-rule"></div>
+<div class="tablewrap"><table><thead><tr><th scope="col">Disciplina (ordem do capítulo)</th><th scope="col">O que o capítulo anuncia</th><th scope="col">Frente do Hackathon</th><th scope="col">Guia</th></tr></thead><tbody>
+<tr><td>SRE</td><td>SLA, SLI, SLO, Error Budget, Golden Metrics, runbooks, post-mortem, MTTR, RTO e RPO.</td><td>1 — SRE (e base do PCN)</td><td><a href="../02.SRE%20%28Site%20Reliability%20Engineering%29/GUIA-ESTUDO-SRE-Site-Reliability-Engineering.html">02 — SRE — Site Reliability Engineering</a></td></tr>
+<tr><td>Multicloud e Segurança</td><td>PCN, DR, automação entre nuvens, segurança e privacidade centralizadas.</td><td>4 — Multicloud, Segurança e DR</td><td><a href="../01.Multicloud%20e%20Seguran%C3%A7a/GUIA-ESTUDO-Multicloud-e-Seguranca.html">01 — Multicloud e Segurança</a></td></tr>
+<tr><td>FinOps</td><td>Rightsizing, Spot, Savings Plans, Kubecost, Cost Explorer e tagueamento rigoroso.</td><td>2 — FinOps</td><td><a href="../03.FinOps/GUIA-ESTUDO-FinOps.html">03 — FinOps</a></td></tr>
+<tr><td>ITSM e AIOps</td><td>ITIL e ISO/IEC 20000 sob ótica moderna, com AIOps para gestão preditiva.</td><td>3 — ITSM e AIOps</td><td><a href="../04.IT%20Service%20Management%20e%20AIOPs/GUIA-ESTUDO-IT-Service-Management-e-AIOps.html">04 — IT Service Management e AIOps</a></td></tr>
+</tbody></table></div>
+<p class="source">Fonte: <a href="POSTECH%20-%20%20DCLT%20-%20Cap.%20de%20Projeto%20-%20Fase%205.pdf#page=2">Capítulo de Projeto, p. 2–3</a>.</p>
+<aside class="note"><strong>Anúncio × conteúdo</strong>ITIL e ISO/IEC 20000 aparecem só neste capítulo; as aulas de ITSM e AIOps não os detalham (<a class="rid" href="../../requisitos/REQUISITOS.html#q-12">Q-12</a>). Kubecost e Spot também são citados aqui e viram bônus no mapa.</aside>
+</section>
+
+<section id="desafio"><h2>O desafio em uma página</h2><div class="section-rule"></div>
+<div class="tablewrap"><table><thead><tr><th scope="col">Serviço</th><th scope="col">Stack (repositório-fonte)</th><th scope="col">Atenção</th></tr></thead><tbody>
+<tr><td><code>ngo-service</code></td><td>Python/Flask + PostgreSQL, porta 8081</td><td><code>init.sql</code> manual no README <a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-03">SUGESTÃO · SUG-03</a>.</td></tr>
+<tr><td><code>donation-service</code></td><td>Go + PostgreSQL + SQS, porta 8082 — Hot Path</td><td>Foco de SLI/SLO, RTO/RPO e DR.</td></tr>
+<tr><td><code>volunteer-service</code></td><td>Python/Flask + DynamoDB, porta 8083</td><td><code>Scan</code> sinalizado no código <a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-03">BÔNUS · REQ-BON-03</a>.</td></tr>
+</tbody></table></div>
+<p>Fonte: <a href="https://github.com/dougls/hackathon-DCLT">repositório-fonte oficial</a> (consultado em 2026-11-11) e <a href="../POSTECH%20-%20DCLT%20-%20Hackathon%20-%20Fase%205.pdf#page=2">enunciado, p. 2–3</a>. O repositório não traz Dockerfiles, testes, Terraform nem manifestos: tudo isso é trabalho do grupo.</p>
+<aside class="hk"><strong>🎯 Fundação: o que trazer das Fases 1–4</strong>
+<ul><li>Dockerfiles multi-stage, enxutos e não root para os três serviços <a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-05">OBRIGATÓRIO · REQ-OBR-05</a>.</li>
+<li>Terraform para cluster, PostgreSQL, DynamoDB, SQS e rede, aplicado pelo pipeline <a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-07">OBRIGATÓRIO · REQ-OBR-07</a><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-02">SUGESTÃO · SUG-02</a>.</li>
+<li>CI com testes, SAST/SCA e build da imagem; CD por ArgoCD <a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-08">OBRIGATÓRIO · REQ-OBR-08</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-09">OBRIGATÓRIO · REQ-OBR-09</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-10">OBRIGATÓRIO · REQ-OBR-10</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-11">OBRIGATÓRIO · REQ-OBR-11</a>.</li>
+<li>Stack de observabilidade e APM com tracing nos três serviços <a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-12">OBRIGATÓRIO · REQ-OBR-12</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-13">OBRIGATÓRIO · REQ-OBR-13</a>.</li>
+<li>Reaproveitar a base da Fase 4 encurta o caminho <a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-01">SUGESTÃO · SUG-01</a>.</li></ul></aside>
+</section>
+
+<section id="revisao"><h2>Revisão rápida</h2><div class="section-rule"></div>
+<details><summary>A base das Fases 1–4 é opcional?</summary><p>Não: é a frente 0, obrigatória pela Regra de Ouro. Enunciado, p. 2–3.</p></details>
+<details><summary>Quantos minutos tem o vídeo?</summary><p>Até 20, com pitch executivo e demo; a duração do pitch gera dúvida (<a class="rid" href="../../requisitos/REQUISITOS.html#q-01">Q-01</a>). Enunciado, p. 6.</p></details>
+<details><summary>O que o relatório precisa trazer?</summary><p>Identificação, links e quatro seções: SRE, FinOps, Segurança/DR e ITSM/AIOps. Enunciado, p. 7.</p></details>
+</section>
+
+<section id="conexao"><h2>Conexão com o Hackathon Fase 5</h2><div class="section-rule"></div>
+<p>As exigências vêm do enunciado; o vínculo com o capítulo é mapeamento didático. Status da implementação: <strong>Pendente</strong>.</p>
+<div class="tablewrap"><table><thead><tr><th scope="col">ID</th><th scope="col">Selo</th><th scope="col">Como este conteúdo ajuda</th></tr></thead><tbody>
+<tr><td>REQ-OBR-01</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-01">OBRIGATÓRIO · REQ-OBR-01</a></td><td>Situa a fase como continuação madura das anteriores.</td></tr>
+<tr><td>REQ-OBR-33</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-33">OBRIGATÓRIO · REQ-OBR-33</a></td><td>“Pensar como estrategista”: vender a viabilidade à diretoria.</td></tr>
+<tr><td>REQ-OBR-28</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-28">OBRIGATÓRIO · REQ-OBR-28</a></td><td>Solução que funcione, seja viável, resiliente e gerenciável — e provada.</td></tr>
+<tr><td>REQ-OBR-46</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-46">OBRIGATÓRIO · REQ-OBR-46</a></td><td>Atividade em grupo, por leitura conservadora.</td></tr>
+<tr><td>REQ-OBR-47</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-47">OBRIGATÓRIO · REQ-OBR-47</a></td><td>Hackathon de 2 meses corridos.</td></tr>
+</tbody></table></div>
+</section>
+
+<footer><a href="#conteudo">Voltar ao início</a><p>Fontes locais lidas em 2026-11-11. Síntese didática com referências por página; exemplos de código e números da SolidaryTech são ilustrativos, autorais e não foram executados. Requisitos: enunciado do Hackathon Fase 5, p. 2–7. Material autocontido, sem dependências externas.</p></footer></main></body></html>
