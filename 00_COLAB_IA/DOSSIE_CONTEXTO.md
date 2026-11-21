@@ -29,8 +29,10 @@ Cópia idêntica do repositório oficial `dougls/hackathon-DCLT` (commit `79f5c2
 | `donation-service` | Go 1.21, pgx v4, aws-sdk-go v1 | PostgreSQL `donation_db` (tabela `donations`) + fila SQS Standard | 8082 | `GET /health`, `POST /donations`, `GET /donations` | `PORT`, `DATABASE_URL`, `AWS_REGION`, `AWS_SQS_URL` |
 | `volunteer-service` | Python, Flask 2.2.2, boto3 1.26.50, gunicorn 20.1.0 | DynamoDB `SolidaryTechVolunteers` (PK `volunteer_id`, String) | 8083 | `GET /health`, `POST /volunteers`, `GET /volunteers/<ngo_id>` | `PORT`, `AWS_REGION` (padrão us-east-1), `AWS_DYNAMODB_TABLE` |
 
-Observações sobre o código recebido (não mudam regra de negócio; tratadas na C1 conforme a D-009):
-- Sem Dockerfile, sem testes e sem `go.sum` (o build Go falha sem ele).
+Observações sobre o código recebido (não mudam regra de negócio; tratadas na C1 conforme a D-009 e a D-016):
+- **F-001:** o `go.mod` declara `github.com/jackc/pgx/v4/stdlib v4.18.3` como módulo (é um pacote do `pgx/v4`), e o Go recusa o arquivo inteiro: o donation-service não compila como veio. A Fase 4 teve o mesmo problema.
+- **F-002:** `Flask==2.2.2` sem trava de Werkzeug: o pip instala o Werkzeug 3.1.9 e o Flask não importa (`ImportError: cannot import name 'url_quote'`, reproduzido em 2026-11-20). Os dois serviços Python não sobem como vieram.
+- Sem Dockerfile, sem testes e sem `go.sum`.
 - O donation-service é o hot path: grava a doação com status `APPROVED` (simulação de gateway) e publica um evento na SQS numa goroutine sem contexto; não trata SIGTERM.
 - A SQS só é ativada se `AWS_SQS_URL` e `AWS_REGION` estiverem definidas; ninguém consome a fila.
 - O volunteer-service filtra por `ngo_id` com `Scan` (comentário do coordenador: em produção seria um GSI).

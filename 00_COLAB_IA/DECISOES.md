@@ -1,10 +1,22 @@
 # Decisões
 
-TL;DR: D-001 a D-015 registradas em 2026-11-20, antes de qualquer código de infraestrutura. Escopo só obrigatório, conta e região da Fase 4 com ambiente efêmero, New Relic e Slack reaproveitados, PagerDuty em conta nova, DR pela Opção A (Velero), Budget de US$ 50/mês, README do coordenador em `docs/enunciado/`, fluxo dev → PR → main.
+TL;DR: D-001 a D-015 registradas em 2026-11-20, antes de qualquer código de infraestrutura. Escopo só obrigatório, conta e região da Fase 4 com ambiente efêmero, New Relic e Slack reaproveitados, PagerDuty em conta nova, DR pela Opção A (Velero), Budget de US$ 50/mês, README do coordenador em `docs/enunciado/`, fluxo dev → PR → main. D-016 (C1): versões de linguagem, imagens base e dependências dos serviços.
 
 Última atualização: 2026-11-20, Claude.
 
 Formato: contexto, decisão, alternativas, status. Quem decidiu aparece no título: "usuário" quando a resposta veio dele (citada entre aspas), "agente" quando é escolha técnica reversível, tomada com base no pedido e registrada para veto. Herança: IDs da Fase 4 levam o prefixo F4- (F4-D-018); os da Fase 3, F3-.
+
+## D-016 — Versões dos serviços e das imagens (2026-11-20, agente)
+
+Contexto: o código recebido não compila nem sobe como veio. O `go.mod` declara `github.com/jackc/pgx/v4/stdlib` como módulo e é recusado pelo Go (F-001); o `Flask==2.2.2` não importa com o Werkzeug 3 que o pip instala sem trava, com `ImportError: cannot import name 'url_quote'` (F-002, reproduzido em 2026-11-20). As versões antigas também têm vulnerabilidades conhecidas, e a Fase 4 teve o build barrado pelo Trivy por causa do `golang.org/x/crypto` antigo.
+Decisão (aplicação da D-009; versões conferidas no PyPI, no proxy de módulos Go e no Docker Hub em 2026-11-20):
+- Go: diretiva `go 1.26` (exigida pelas dependências), build com `golang:1.27-alpine` e runtime `alpine:3.24`; `x/crypto` 0.59.0, `x/text` 0.44.0, OpenTelemetry 1.47.0, `otelhttp` 0.72.0; `pgx` v4.18.3 → v5.13.0, porque o `pgproto3/v2` do v4 tem HIGH sem correção nessa linha (Trivy, 2026-11-20) e a troca é só o import do driver; `aws-sdk-go` v1.51.10 mantido.
+- Python: `python:3.13-slim`; Flask 3.1.3, Werkzeug 3.1.9, gunicorn 27.0.1, psycopg2-binary 2.9.13, python-dotenv 1.2.4, boto3 1.44.8; OpenTelemetry 1.45.2 / instrumentações 0.66b2. Testes com pytest 9.2.0 e moto 5.2.5. O `pip` é removido da imagem final: o runtime não o usa, e as cópias que ele embute (msgpack, pkg_resources) eram os únicos HIGH com correção na camada Python.
+- Política de scan: CRITICAL derruba o pipeline (como na Fase 4); HIGH com correção é corrigido; HIGH do sistema operacional sem correção publicada é registrado no LOG e revisto quando a imagem base atualizar.
+- Local: PostgreSQL `postgres:17-alpine` (a mesma versão maior será usada no RDS), Moto 5.2.5 e Collector `otel/opentelemetry-collector-contrib:0.163.2` (o mesmo da Fase 4).
+- Usuário não root com UID/GID 10001 nas três imagens.
+Alternativas: travar as versões antigas (Werkzeug < 3, como na Fase 4), mantendo vulnerabilidades conhecidas; migrar o `aws-sdk-go` para a v2 (mais código mudado sem exigência do scan).
+Status: vigente. O resultado do Trivy nas imagens fica no LOG da C1.
 
 ## D-015 — Nomes e tags (2026-11-20, agente)
 

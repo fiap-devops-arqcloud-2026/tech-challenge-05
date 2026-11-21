@@ -1,0 +1,6 @@
+# Lista de permissão: o contexto de build recebe só o que a imagem usa.
+# .env, testes, caches e db/ ficam de fora (nada de segredo na imagem).
+*
+!requirements.txt
+!app.py
+!telemetry.py

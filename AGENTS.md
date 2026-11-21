@@ -33,4 +33,19 @@ TL;DR: Projeto SolidaryTech (Hackathon Fase 5, POSTECH DevOps e Arquitetura Clou
 bash scripts/security-check.sh
 ```
 
-Os comandos de build, teste e execução local entram aqui à medida que cada camada for concluída.
+```bash
+# Testes do donation-service (Go 1.26+; banco e SQS simulados)
+cd services/donation-service && go vet ./... && go test ./...
+```
+
+```bash
+# Testes de um serviço Python dentro de um contêiner descartável (não instala nada na máquina)
+docker run --rm -v "$PWD/services/ngo-service:/src:ro" -w /tmp python:3.13-slim sh -c "cp -r /src svc && cd svc && pip install -q -r requirements-dev.txt && python -m pytest -q -p no:cacheprovider"
+```
+
+```bash
+# Teste ponta a ponta local (Compose: PostgreSQL, Moto e os três serviços); WITH_OTEL=1 confere também os spans
+bash scripts/test-compose.sh
+```
+
+No Windows (Git Bash), use `MSYS_NO_PATHCONV=1` antes do `docker run` com volume e `PYTHON="py -I"` antes do `test-compose.sh`. Os comandos do Terraform e do GitOps entram aqui nas camadas C2 a C4.

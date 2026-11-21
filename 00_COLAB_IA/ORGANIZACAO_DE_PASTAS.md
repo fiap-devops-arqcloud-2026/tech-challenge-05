@@ -1,6 +1,6 @@
 # Organização de pastas
 
-TL;DR: Monorepo dividido por responsabilidade. Hoje existem `services/`, `docs/`, `scripts/` e `00_COLAB_IA/`; `terraform/`, `.github/workflows/` e `gitops/` nascem nas camadas C2 a C4. Não criar pastas vazias "para depois".
+TL;DR: Monorepo dividido por responsabilidade. Hoje existem `services/`, `compose/`, `docs/`, `scripts/` e `00_COLAB_IA/`; `terraform/`, `.github/workflows/` e `gitops/` nascem nas camadas C2 a C4. Não criar pastas vazias "para depois".
 
 Última atualização: 2026-11-20, Claude.
 
@@ -18,6 +18,10 @@ TL;DR: Monorepo dividido por responsabilidade. Hoje existem `services/`, `docs/`
 | `docs/evidencias/`, `docs/relatorio/`, `docs/gravacao/` | Prints revisados, relatório PDF e roteiro do vídeo | C10 |
 | `services/<svc>/` | Código de cada serviço, Dockerfile, testes e README | C1 |
 | `docker-compose.yaml` | Ambiente local completo (PostgreSQL, Moto, serviços) | C1 |
+| `docker-compose.otel.yaml` | Sobreposição com o OpenTelemetry Collector local (spans no log) | C1 |
+| `compose/` | Apoio do Compose: init do PostgreSQL, criação da fila e da tabela no Moto, config do Collector local | C1 |
+| `.env.example` | Valores locais e fictícios que o `.env` (ignorado) pode sobrescrever | C1 |
+| `scripts/integration/`, `scripts/test-compose.sh` | Teste ponta a ponta do ambiente local (também usado no CI) | C1 |
 | `terraform/` | Raízes `bootstrap/`, base (raiz), `cluster/`, `k8s/` e `modules/` | C2 |
 | `.github/workflows/` | CI/CD DevSecOps, verificações e self-healing | C3, C8 |
 | `gitops/` | Kustomize (`base/`, `overlays/prod/`) e Applications do ArgoCD (app e observabilidade) | C4, C5 |

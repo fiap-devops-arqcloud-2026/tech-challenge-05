@@ -1,6 +1,6 @@
 # Hackathon Fase 5 (SolidaryTech) — contexto para assistentes
 
-TL;DR: C0 concluída em 2026-11-20; próxima camada C1 (serviços e contêineres), local e sem custo. Nenhum recurso AWS da Fase 5 existe; apply e destroy só com autorização específica do usuário.
+TL;DR: C0 (fundação) e C1 (serviços, Dockerfiles, testes, OpenTelemetry e Compose) concluídas em 2026-11-20, com verificação local. Próxima: C2 (Terraform), começando por leituras na conta e código validado offline. Nenhum recurso AWS da Fase 5 existe; apply e destroy só com autorização específica do usuário.
 
 Última atualização: 2026-11-20, Claude.
 

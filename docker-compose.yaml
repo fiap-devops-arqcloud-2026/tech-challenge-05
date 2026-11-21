@@ -1,0 +1,156 @@
+# =================================================================
+# Ambiente local completo da SolidaryTech (sem AWS e sem custo)
+# =================================================================
+# Sobe o PostgreSQL (ngo_db e donation_db, com os schemas do coordenador),
+# um emulador da AWS (Moto) com a fila SQS e a tabela DynamoDB, e os três
+# serviços com healthcheck.
+#
+# Uso (na raiz do repositório):
+#   docker compose up --build --wait ngo-service donation-service volunteer-service
+#   bash scripts/test-compose.sh        # sobe, testa o fluxo e derruba
+#   docker compose down -v              # derruba e apaga os volumes
+#
+# Tracing local (OpenTelemetry Collector imprimindo os spans no log):
+#   docker compose -f docker-compose.yaml -f docker-compose.otel.yaml up --build
+#
+# Todos os valores são locais e fictícios. Para trocar portas ou senha,
+# copie .env.example para .env (o .env é ignorado pelo Git).
+# =================================================================
+
+name: solidarytech
+
+# Variáveis AWS comuns aos serviços e ao script de inicialização.
+x-aws-local: &aws-local
+  AWS_REGION: ${AWS_REGION:-us-east-2}
+  # Credenciais FICTÍCIAS: o Moto aceita qualquer valor. Na AWS, os Pods
+  # recebem credencial temporária por IRSA, sem chave nenhuma.
+  AWS_ACCESS_KEY_ID: local
+  AWS_SECRET_ACCESS_KEY: local
+  # Aponta os SDKs para o emulador. Na AWS esta variável não existe.
+  AWS_ENDPOINT_URL: http://moto:5000
+
+services:
+  # -------------------------------------------------------------
+  # PostgreSQL: um servidor com os dois bancos (como o RDS na AWS)
+  # -------------------------------------------------------------
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-solidary}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-solidary-local}
+      POSTGRES_DB: postgres
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # Roda só na primeira inicialização do volume: cria os bancos e aplica os schemas.
+      - ./compose/postgres/01-criar-bancos.sh:/docker-entrypoint-initdb.d/01-criar-bancos.sh:ro
+      # Schemas montados fora do initdb.d, para o script aplicar cada um no banco certo.
+      - ./services/ngo-service/db/init.sql:/schemas/ngo_db.sql:ro
+      - ./services/donation-service/db/init.sql:/schemas/donation_db.sql:ro
+    healthcheck:
+      # Teste por TCP (-h 127.0.0.1): o servidor temporário da inicialização só
+      # escuta no socket local, então isto só passa com os bancos já criados.
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U $${POSTGRES_USER} -d donation_db"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+
+  # -------------------------------------------------------------
+  # Moto: emulador local de SQS e DynamoDB
+  # -------------------------------------------------------------
+  moto:
+    image: motoserver/moto:5.2.5
+    ports:
+      - "${MOTO_PORT:-5000}:5000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5000/moto-api/', timeout=3)"]
+      interval: 3s
+      timeout: 3s
+      retries: 30
+
+  # Cria a fila e a tabela no Moto e termina (o equivalente local do Terraform).
+  aws-init:
+    image: motoserver/moto:5.2.5
+    entrypoint: ["python", "/compose/aws-init.py"]
+    environment:
+      <<: *aws-local
+      SQS_QUEUE_NAME: solidary-donations
+      DYNAMODB_TABLE: SolidaryTechVolunteers
+    volumes:
+      - ./compose/aws-init.py:/compose/aws-init.py:ro
+    depends_on:
+      moto:
+        condition: service_healthy
+    restart: "no"
+
+  # -------------------------------------------------------------
+  # Serviços
+  # -------------------------------------------------------------
+  ngo-service:
+    build: ./services/ngo-service
+    image: solidarytech/ngo-service:local
+    environment:
+      PORT: "8081"
+      DATABASE_URL: postgresql://${POSTGRES_USER:-solidary}:${POSTGRES_PASSWORD:-solidary-local}@postgres:5432/ngo_db
+    ports:
+      - "${NGO_PORT:-8081}:8081"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      # A imagem slim não tem curl nem wget: o próprio Python faz a chamada.
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8081/health', timeout=3)"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
+    restart: on-failure
+
+  donation-service:
+    build: ./services/donation-service
+    image: solidarytech/donation-service:local
+    environment:
+      <<: *aws-local
+      PORT: "8082"
+      DATABASE_URL: postgres://${POSTGRES_USER:-solidary}:${POSTGRES_PASSWORD:-solidary-local}@postgres:5432/donation_db
+      # URL que o Moto devolve para a fila (conta padrão do emulador: 123456789012).
+      AWS_SQS_URL: http://moto:5000/123456789012/solidary-donations
+    ports:
+      - "${DONATION_PORT:-8082}:8082"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      aws-init:
+        condition: service_completed_successfully
+    healthcheck:
+      # O wget do BusyBox vem na imagem Alpine.
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8082/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
+    restart: on-failure
+
+  volunteer-service:
+    build: ./services/volunteer-service
+    image: solidarytech/volunteer-service:local
+    environment:
+      <<: *aws-local
+      PORT: "8083"
+      AWS_DYNAMODB_TABLE: SolidaryTechVolunteers
+    ports:
+      - "${VOLUNTEER_PORT:-8083}:8083"
+    depends_on:
+      aws-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8083/health', timeout=3)"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
+    restart: on-failure
+
+volumes:
+  pgdata:

@@ -1,10 +1,30 @@
 # Log de trabalho
 
-TL;DR: C0 (fundação e colaboração) concluída em 2026-11-20 21:15. Código do coordenador versionado sem alterações em `80a967f`; estrutura de colaboração, plano por camadas e decisões D-001 a D-015 no commit seguinte. Próximo: C1 (serviços e contêineres).
+TL;DR: C0 e C1 concluídas em 2026-11-20. Os três serviços compilam, têm testes, logs JSON e tracing, e rodam no Docker Compose com PostgreSQL e emulador da AWS; fluxo ponta a ponta e Trivy sem CRITICAL verificados localmente. Próximo: C2 (Terraform), que começa por leituras na conta e pede o perfil da AWS CLI (P-004).
 
 Última atualização: 2026-11-20, Claude.
 
 Formato: entrada nova no topo, sem apagar as anteriores. Cada entrada termina com "Estado p/ próximo agente". Horários em America/Sao_Paulo (UTC-03:00).
+
+## 2026-11-20 21:50 — Claude — C1 concluída: serviços e contêineres
+
+Feito:
+- `donation-service`: `go.mod` corrigido (F-001) e `go.sum` gerado; `pgx` v5.13.0, `x/crypto` 0.59.0, OpenTelemetry 1.47.0 (D-016). `telemetry.go`: logs JSON com `trace_id`, tracing opt-in, desligamento gracioso. `sqs.go`: span PRODUCER com `traceparent` nas MessageAttributes (D-013). `main.go` com mudanças mínimas e `App.routes()`. 14 testes (go-sqlmock e SQS falsa).
+- `ngo-service` e `volunteer-service`: dependências atualizadas (F-002, D-016); `telemetry.py` (logs JSON e spans de Flask, psycopg2 e botocore); `RealDictCursor` no pool. 17 e 8 testes (pool falso e Moto).
+- Dockerfiles multi-stage com UID 10001, `.dockerignore` em lista de permissão, `pip` removido do runtime Python e atualizações de segurança do sistema aplicadas no build.
+- `docker-compose.yaml` (PostgreSQL 17 com os dois bancos e os schemas do coordenador, Moto com fila e tabela, três serviços com healthcheck), `docker-compose.otel.yaml` (Collector local), `compose/`, `.env.example`, `scripts/integration/test_fluxo.py` e `scripts/test-compose.sh`.
+- READMEs dos três serviços; README principal com a execução local; AGENTS.md com os comandos.
+Verificação (local, 2026-11-20):
+- `go vet` e `go test`: 14/14. O `-race` exige cgo e não roda neste Windows; fica para o CI Linux.
+- `pytest` em `python:3.13-slim`: ngo 17/17, volunteer 8/8.
+- `scripts/test-compose.sh`: 13/13 verificações. Com `WITH_OTEL=1`: 14/14 (inclui o `traceparent` na mensagem), spans dos três serviços no Collector e `/health` fora dos traces.
+- Spans vistos no Collector: ngo (SERVER `GET/POST /ngos`, CLIENT `INSERT`/`SELECT`) e donation (SERVER `GET/POST /donations`, CLIENT `INSERT`/`SELECT donations`, PRODUCER `send solidary-donations`). Volunteer confirmado pelo `service.name`; os nomes dos spans dele não entraram na extração porque o lote ainda não tinha sido exportado. Daí a espera com tentativas no script.
+- Trivy 0.76.2 (HIGH e CRITICAL, `ignore-unfixed=false`): **CRITICAL 0 nas três imagens**. Donation: HIGH 0. Ngo e volunteer: HIGH 47 cada, todos de 18 pacotes do Debian 13 sem correção publicada; nenhum HIGH com correção. Antes das correções havia: `pgproto3/v2` (HIGH sem correção no pgx v4), resolvido com o pgx v5; `msgpack` e `pkg_resources` embutidos no pip, resolvidos removendo o pip; e `zlib1g` com correção, resolvido pela atualização do sistema no build.
+- Imagens com usuário 10001:10001; tamanhos 59 MB (donation), 226 MB (ngo) e 264 MB (volunteer).
+- Diff dos serviços revisado contra `80a967f`: mudaram logs, telemetria, `RealDictCursor` no pool, desligamento e driver. SQL, validações, status e payloads ficaram iguais.
+Achados: F-001 (`go.mod` inválido) e F-002 (Flask 2.2.2 incompatível com Werkzeug 3), registrados no DOSSIE.
+Não feito: lint e SAST (gosec, golangci-lint, flake8, pylint, bandit) ficam para a C3; nenhuma operação AWS.
+Estado p/ próximo agente: C2. Começar pelas leituras na conta listadas em PENDENCIAS; elas precisam do perfil da AWS CLI (P-004). Escrever as quatro raízes e validar offline (`fmt`, `validate`, `test`) antes de pedir qualquer apply. O Compose fica como referência dos nomes da fila (`solidary-donations`), da tabela e dos bancos.
 
 ## 2026-11-20 21:15 — Claude — C0 concluída: fundação do repositório e colaboração
 

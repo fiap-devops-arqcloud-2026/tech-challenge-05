@@ -1,6 +1,6 @@
 # Plano de ação — SolidaryTech (Hackathon Fase 5)
 
-TL;DR: Onze camadas, da fundação (C0) aos entregáveis (C10), cobrindo só os 47 obrigatórios do [mapa de requisitos](../docs/requisitos/README.md) (D-001). Cada camada tem objetivo, entregas, critério de pronto e dependências. Primeiro tudo roda e é validado localmente; a AWS só liga em janelas curtas e autorizadas (D-003). Estado: C0 concluída em 2026-11-20; próxima, C1.
+TL;DR: Onze camadas, da fundação (C0) aos entregáveis (C10), cobrindo só os 47 obrigatórios do [mapa de requisitos](../docs/requisitos/README.md) (D-001). Cada camada tem objetivo, entregas, critério de pronto e dependências. Primeiro tudo roda e é validado localmente; a AWS só liga em janelas curtas e autorizadas (D-003). Estado: C0 e C1 concluídas em 2026-11-20; próxima, C2 (Terraform).
 
 Última atualização: 2026-11-20, Claude.
 
@@ -18,8 +18,8 @@ TL;DR: Onze camadas, da fundação (C0) aos entregáveis (C10), cobrindo só os 
 | Camada | Tema | Obrigatórios (REQ-OBR-) | Depende de | Estado |
 |---|---|---|---|---|
 | C0 | Fundação do repositório e colaboração | 01, 28, 46, 47 | — | ✅ concluída (2026-11-20) |
-| C1 | Serviços e contêineres | 04, 05, 08, 13 | C0 | ⏳ próxima |
-| C2 | Infraestrutura como Código (Terraform) | 03, 06, 07, 19, 29 | C0 | pendente |
+| C1 | Serviços e contêineres | 04, 05, 08, 13 | C0 | ✅ concluída (2026-11-20) |
+| C2 | Infraestrutura como Código (Terraform) | 03, 06, 07, 19, 29 | C0 | ⏳ próxima |
 | C3 | CI/CD DevSecOps (GitHub Actions) | 02, 08, 09, 10, 31 | C1, C2 | pendente |
 | C4 | GitOps e deploy (ArgoCD) | 02, 06, 11, 30 | C2, C3 | pendente |
 | C5 | Observabilidade e APM | 04, 12, 13 | C1, C4 | pendente |
@@ -67,6 +67,8 @@ Cada janela começa com autorização específica do usuário (P-004) e termina 
 - `services/<svc>/README.md` com variáveis, portas e como testar.
 
 **Pronto quando:** `go test ./...` e `pytest` verdes; `docker compose up --build --wait` saudável; fluxo ONG → doação (mensagem na fila do Moto) → voluntário passa; `trivy image` sem CRITICAL; `docker inspect` mostra usuário não root; Collector local recebe spans dos três serviços sem `/health`.
+
+**Status (2026-11-20):** ✅ concluída, em verificação local. 14 testes Go, 17 do ngo e 8 do volunteer verdes; fluxo do Compose com 13 verificações (14 com tracing, que confere também o `traceparent` na mensagem SQS) e spans dos três serviços no Collector, sem `/health`; Trivy sem CRITICAL nas três imagens; usuário 10001 nas três. Detalhes e números do scan no LOG. Ainda não passou por CI (C3) nem pela AWS (C2/C4).
 
 **Base na Fase 4:** `services/auth-service/{Dockerfile,telemetry.go}`, `services/flag-service/{Dockerfile,telemetry.py,tests/}`, `services/evaluation-service/sqs.go`, `docker-compose*.yaml`, `scripts/test-compose.sh`.
 
@@ -170,16 +172,16 @@ Evidência esperada segundo o mapa: ● exigido, ◐ parcial ou recomendado. A c
 | [REQ-OBR-01](../docs/requisitos/README.md#req-obr-01) | Regra de Ouro: aplicar as Fases 1–4 | p. 2 | C0, C10 | ● | ● | ● | pendente |
 | [REQ-OBR-02](../docs/requisitos/README.md#req-obr-02) | Zero deploy manual via kubectl | p. 2 | C3, C4 | ● | ● |  | pendente |
 | [REQ-OBR-03](../docs/requisitos/README.md#req-obr-03) | Zero infraestrutura “clicada” no console | p. 2 | C2 | ● | ● |  | pendente |
-| [REQ-OBR-04](../docs/requisitos/README.md#req-obr-04) | Zero “voo cego”: monitoramento profundo | p. 2 | C1, C5 | ● | ● |  | pendente |
-| [REQ-OBR-05](../docs/requisitos/README.md#req-obr-05) | Dockerfiles otimizados para os 3 serviços | p. 3 | C1 | ● | ◐ |  | pendente |
+| [REQ-OBR-04](../docs/requisitos/README.md#req-obr-04) | Zero “voo cego”: monitoramento profundo | p. 2 | C1, C5 | ● | ● |  | parcial: logs JSON e traces locais (C1); stack no cluster na C5 |
+| [REQ-OBR-05](../docs/requisitos/README.md#req-obr-05) | Dockerfiles otimizados para os 3 serviços | p. 3 | C1 | ● | ◐ |  | ✅ código + verificação local (C1): multi-stage, não root, Trivy sem CRITICAL |
 | [REQ-OBR-06](../docs/requisitos/README.md#req-obr-06) | Kubernetes gerenciado (EKS, AKS ou GKE) | p. 3 | C2, C4 | ● | ● |  | pendente |
 | [REQ-OBR-07](../docs/requisitos/README.md#req-obr-07) | Terraform provisiona todo o ambiente | p. 3 | C2 | ● | ● |  | pendente |
-| [REQ-OBR-08](../docs/requisitos/README.md#req-obr-08) | CI/CD automatizado com testes | p. 3 | C1, C3 | ● | ● |  | pendente |
+| [REQ-OBR-08](../docs/requisitos/README.md#req-obr-08) | CI/CD automatizado com testes | p. 3 | C1, C3 | ● | ● |  | parcial: testes prontos (C1); pipeline na C3 |
 | [REQ-OBR-09](../docs/requisitos/README.md#req-obr-09) | Scans SAST/SCA no pipeline | p. 3 | C3 | ● | ● |  | pendente |
 | [REQ-OBR-10](../docs/requisitos/README.md#req-obr-10) | Build da imagem no pipeline | p. 3 | C2, C3 | ● | ● |  | pendente |
 | [REQ-OBR-11](../docs/requisitos/README.md#req-obr-11) | GitOps com ArgoCD ou FluxCD | p. 3 | C4 | ● | ● |  | pendente |
 | [REQ-OBR-12](../docs/requisitos/README.md#req-obr-12) | Stack de observabilidade rodando | p. 4 | C5 | ● | ● |  | pendente |
-| [REQ-OBR-13](../docs/requisitos/README.md#req-obr-13) | APM com Distributed Tracing | p. 4 | C1, C5 | ● | ● |  | pendente |
+| [REQ-OBR-13](../docs/requisitos/README.md#req-obr-13) | APM com Distributed Tracing | p. 4 | C1, C5 | ● | ● |  | parcial: instrumentação e spans locais (C1); envio ao APM na C5 |
 | [REQ-OBR-14](../docs/requisitos/README.md#req-obr-14) | Automação de resposta a incidentes | p. 2, 4, 6 | C8 | ◐ | ● | ● | pendente |
 | [REQ-OBR-15](../docs/requisitos/README.md#req-obr-15) | ≥ 2 SLIs do donation-service | p. 4 | C6 |  | ● | ● | pendente |
 | [REQ-OBR-16](../docs/requisitos/README.md#req-obr-16) | Um SLO para cada SLI | p. 4 | C6 |  | ● | ● | pendente |

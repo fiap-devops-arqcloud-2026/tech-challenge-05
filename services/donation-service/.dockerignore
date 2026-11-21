@@ -1,0 +1,8 @@
+# Lista de permissão: o contexto de build recebe só o que a imagem usa.
+# Tudo o mais (.env, binários locais, testes, README, db/) fica de fora,
+# o que evita vazar segredo para dentro da imagem e acelera o build.
+*
+!go.mod
+!go.sum
+!*.go
+*_test.go

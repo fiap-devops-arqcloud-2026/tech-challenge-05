@@ -5,9 +5,10 @@ SolidaryTech recebeu três microsserviços e precisa operá-los com confiabilida
 (SRE), custo sob controle (FinOps), resposta inteligente a incidentes
 (ITSM e AIOps) e recuperação de desastres, tudo como código.
 
-> **Estado:** em construção, por camadas. A fundação do repositório está
-> pronta; os serviços conteinerizados vêm a seguir. O andamento de cada
-> camada aparece na tabela abaixo.
+> **Estado:** em construção, por camadas. Os três serviços já rodam em
+> contêineres, com testes e instrumentação, num ambiente local completo
+> (Docker Compose). A infraestrutura na AWS vem a seguir. O andamento de
+> cada camada aparece na tabela abaixo.
 
 ## Os três serviços
 
@@ -73,8 +74,8 @@ Principais escolhas:
 | Camada | Tema | Estado |
 |---|---|---|
 | C0 | Fundação do repositório | ✅ pronta |
-| C1 | Serviços e contêineres (Dockerfiles, testes, OpenTelemetry, Compose) | ⏳ próxima |
-| C2 | Infraestrutura como Código (Terraform) | pendente |
+| C1 | Serviços e contêineres (Dockerfiles, testes, OpenTelemetry, Compose) | ✅ pronta |
+| C2 | Infraestrutura como Código (Terraform) | ⏳ próxima |
 | C3 | CI/CD DevSecOps (GitHub Actions) | pendente |
 | C4 | GitOps e deploy (ArgoCD) | pendente |
 | C5 | Observabilidade e APM | pendente |
@@ -84,16 +85,52 @@ Principais escolhas:
 | C9 | Disaster Recovery e PCN | pendente |
 | C10 | Entregáveis: evidências, relatório e vídeo | pendente |
 
+## Executar localmente
+
+Pré-requisito: Docker com Compose. Nada é criado na AWS e nenhuma
+credencial real é usada: um emulador (Moto) faz o papel da SQS e do DynamoDB.
+
+```bash
+# Sobe PostgreSQL, emulador da AWS e os três serviços, e espera o healthcheck
+docker compose up --build --wait ngo-service donation-service volunteer-service
+```
+
+```bash
+# Cadastra uma doação no hot path
+curl -X POST http://localhost:8082/donations -H "Content-Type: application/json" -d '{"ngo_id": 1, "amount": 50.5, "donor_name": "Maria"}'
+```
+
+```bash
+# Derruba tudo e apaga os volumes
+docker compose down -v
+```
+
+```bash
+# Teste ponta a ponta: sobe, percorre o fluxo nos três serviços, confere a fila e derruba
+bash scripts/test-compose.sh
+```
+
+```bash
+# O mesmo, com tracing: um OpenTelemetry Collector local recebe e imprime os spans
+WITH_OTEL=1 bash scripts/test-compose.sh
+```
+
+No Windows (Git Bash), acrescente `PYTHON="py -I"` antes dos dois últimos
+comandos. Os testes de cada serviço estão no README dele, em `services/`.
+
 ## Estrutura do repositório
 
 ```text
 .
-├── services/                 # Os três microsserviços (código, Dockerfile, testes)
+├── services/                 # Os três microsserviços (código, Dockerfile, testes, README)
+├── compose/                  # Arquivos de apoio do ambiente local (init do banco e da AWS emulada)
+├── docker-compose.yaml       # Ambiente local completo
+├── docker-compose.otel.yaml  # Sobreposição com o OpenTelemetry Collector local
 ├── docs/
 │   ├── enunciado/            # README original do Hackathon (cópia sem alterações)
 │   ├── requisitos/           # Mapa de requisitos obrigatórios e bônus
 │   └── aulas-fiap/           # Material das aulas e guias de estudo
-├── scripts/                  # Utilitários (ex.: varredura de segredos)
+├── scripts/                  # Varredura de segredos e testes de integração
 ├── SECURITY.md               # Política de segurança e credenciais
 └── POSTECH - DCLT - Hackathon - Fase 5.pdf   # Enunciado oficial
 ```
