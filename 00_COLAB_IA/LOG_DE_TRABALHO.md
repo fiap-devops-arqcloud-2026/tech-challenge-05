@@ -1,10 +1,34 @@
 # Log de trabalho
 
-TL;DR: C0 e C1 concluídas em 2026-11-20. Os três serviços compilam, têm testes, logs JSON e tracing, e rodam no Docker Compose com PostgreSQL e emulador da AWS; fluxo ponta a ponta e Trivy sem CRITICAL verificados localmente. Próximo: C2 (Terraform), que começa por leituras na conta e pede o perfil da AWS CLI (P-004).
+TL;DR: C0 e C1 concluídas em 2026-11-20. C2 em andamento em 2026-11-21: Terraform das quatro raízes escrito e validado offline, revisão adversarial em curso, nada aplicado na AWS.
 
-Última atualização: 2026-11-20, Claude.
+Última atualização: 2026-11-21, Claude.
 
 Formato: entrada nova no topo, sem apagar as anteriores. Cada entrada termina com "Estado p/ próximo agente". Horários em America/Sao_Paulo (UTC-03:00).
+
+## 2026-11-22 16:40 — Claude — Workflows derrubados por falha de rede; C2 salva em commit
+
+Feito:
+- Os workflows de revisão da C2 e de implementação da C3 terminaram sem resultado: todos os 7 agentes falharam com `API Error: Can't reach the API server (ENOTFOUND)`, uma falha de DNS. Eles já tinham parado às ~07:03 de 2026-11-21 e sido reiniciados às 11:20. A rede foi conferida às 16:30 de 2026-11-22: GitHub, registro do Terraform e PyPI responderam.
+- Nenhum arquivo de `terraform/` mudou depois da validação de 2026-11-21 06:44 (conferido por data de modificação): o verificador da revisão não chegou a corrigir nada.
+- A C3 deixou arquivos parciais: `.github/workflows/terraform-check.yml`, `compose-integration.yml` e `repo-check.yml`, `scripts/github/set-repo-variables.sh` e `services/donation-service/.golangci.yml`. Eles ficaram FORA deste commit, como ponto de partida da nova tentativa; os workflows dos serviços (`_ci-go.yml`, `_ci-python.yml` e os chamadores) não chegaram a ser escritos.
+- Commit local da C2 validada offline (91 arquivos de `terraform/`, docs da C2 e a varredura de segredos ampliada), para que nada se perca se a rede cair de novo e para que as correções da revisão apareçam num diff próprio.
+Estado p/ próximo agente: relançar a revisão da C2 (três frentes e o verificador) e a C3 a partir dos parciais. Os workflows agora gravam o progresso em `scratchpad/revisao-c2/` e `scratchpad/c3/`, fora do repositório; se caírem de novo, esses arquivos guardam os achados já feitos. Depois: rodar de novo a validação offline, commitar as correções e a C3 e pedir ao usuário a autorização do primeiro plano na AWS (P-004).
+
+## 2026-11-21 06:55 — Claude — C2 em andamento: Terraform escrito e validado offline
+
+Pedido: o usuário respondeu "Sim, seguir" à pergunta de seguir para a C2 começando por leituras na conta AWS com o perfil `default`.
+Feito:
+- Leituras somente de leitura na conta (2026-11-20 ~22:10): [LEITURA_AWS_C2](02_TRABALHO/LEITURA_AWS_C2_2026-11-20_v01.md). Conta limpa; provedor OIDC do GitHub existente; EKS 1.37 padrão; cota de 16 vCPU; US$ 126,41 de crédito; PostgreSQL 17.11; tipos elegíveis ao plano FREE. Política `AmazonEC2ContainerRegistryPullOnly` conferida (2026-11-21).
+- Versões atuais conferidas nos registros: aws 6.73.0, kubernetes 3.5.0, helm 3.3.0, random 3.9.1, módulo VPC 6.8.0, charts argo-cd 10.18.2 (v3.6.2) e argocd-apps 2.0.8. Subject OIDC imutável do repositório conferido na API do GitHub.
+- Contrato entre as raízes: [DESENHO_C2_TERRAFORM](02_TRABALHO/DESENHO_C2_TERRAFORM_2026-11-20_v01.md) (D-017).
+- Workflow de implementação (3 agentes em paralelo + 1 de integração, ~8,7 h): `terraform/bootstrap`, `base`, `cluster`, `k8s` e os módulos `ecr`, `messaging`, `iam-ci`, `eks`, `rds` e `irsa`, adaptados da Fase 4, com README por raiz e `terraform/README.md`.
+- `scripts/security-check.sh` passou a varrer também arquivos novos ainda não adicionados (`git grep --untracked`, `ls-files --others --exclude-standard`) e IDs de conta de 12 dígitos (permitidos só 000000000000 e 123456789012, do Moto). Testado com amostras falsas num repositório descartável.
+Verificação (offline, 2026-11-21): `fmt -check` limpo; `init -backend=false` e `validate` verdes nas 10 pastas; `terraform test` com 83 cenários e 0 falhas; nenhuma divergência de nome entre produtores e consumidores de remote state; varredura de segredos limpa nos 91 arquivos novos.
+Decisões do orquestrador sobre o que os agentes deixaram em aberto (D-017): bucket de estado no namespace regional da conta (`-an`) com `prevent_destroy`; nós com `PullOnly`; DynamoDB mantém a chave gerenciada; retenção de backup do RDS de 7 dias a confirmar na documentação (a Fase 4 usou 1 dia nesta conta FREE).
+Em andamento: workflow de revisão adversarial (segurança e IAM; correção na AWS; FinOps, requisitos e docs) e um verificador que refuta ou confirma cada achado, aplica as decisões acima e as correções confirmadas e reroda os testes. Ele só altera `terraform/`.
+Não feito: nenhum `plan` ou `apply` com backend; nada adicionado ao Git nesta camada.
+Estado p/ próximo agente: se a revisão já terminou, conferir o resultado dela (relatório do verificador) e rodar de novo `fmt -check`, `validate` e `test` nas 10 pastas antes do commit. Depois, commit curado da C2 (arquivo por arquivo, incluindo os 10 `.terraform.lock.hcl`, sem as pastas `.terraform/`) e push na `dev`. O primeiro `plan` real só com autorização do usuário (P-004), começando pelo bootstrap com o `backend_override.tf` local descrito em `terraform/bootstrap/README.md`.
 
 ## 2026-11-20 21:50 — Claude — C1 concluída: serviços e contêineres
 

@@ -1,0 +1,48 @@
+# =================================================================
+# RAIZ BASE — exemplo de terraform.tfvars
+# =================================================================
+# Copie para terraform.tfvars, que o Git ignora, e preencha:
+#   cp terraform.tfvars.example terraform.tfvars
+#
+# Valores fictícios: este arquivo é público. Só expected_aws_account_id é
+# obrigatória; as linhas comentadas mostram o padrão de cada variável.
+# Descomente apenas o que quiser mudar, para que uma mudança de padrão em
+# variables.tf não seja escondida por uma cópia antiga deste arquivo.
+# =================================================================
+
+# Conta em que esta raiz pode operar. Trocar pelo ID real (12 dígitos).
+# Esquecida com zeros, o provider recusa as credenciais reais: falha
+# segura. Alternativa: export TF_VAR_expected_aws_account_id=<id>.
+expected_aws_account_id = "000000000000"
+
+# -----------------------------------------------------------------
+# Custo: NAT Gateway
+# -----------------------------------------------------------------
+# O NAT é o maior custo fixo da base (cobrado por hora e por GB, mesmo
+# ocioso). Com o cluster no ar ele é obrigatório: sem NAT, os nós não
+# baixam imagens e os Pods ficam em ImagePullBackOff. Se a base ficar de
+# pé sem cluster, false corta esse custo; volte para true antes de subir
+# o cluster.
+# enable_nat_gateway = true
+
+# -----------------------------------------------------------------
+# Padrões do projeto (mudar só com motivo)
+# -----------------------------------------------------------------
+# aws_region   = "us-east-2"
+# project_name = "solidarytech"
+# vpc_cidr     = "10.0.0.0/16"
+# azs          = ["us-east-2a", "us-east-2b"]
+
+# services            = ["ngo-service", "donation-service", "volunteer-service"]
+# sqs_queue_name      = "solidary-donations"
+# dynamodb_table_name = "SolidaryTechVolunteers"
+
+# Precisa ser o nome exato do cluster criado pela raiz cluster.
+# eks_cluster_name = "solidarytech-eks"
+
+# Identidade OIDC do repositório (IDs públicos da API do GitHub). Só os
+# workflows da branch abaixo assumem as roles do CI e do self-healing.
+# github_repository          = "fiap-devops-arqcloud-2026/tech-challenge-05"
+# github_repository_owner_id = "287716251"
+# github_repository_id       = "1454212968"
+# github_deploy_branch       = "main"

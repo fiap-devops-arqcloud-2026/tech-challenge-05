@@ -1,0 +1,31 @@
+# =================================================================
+# EXEMPLO de terraform.tfvars — raiz k8s
+# =================================================================
+# Copie para terraform.tfvars (ignorado pelo Git) e troque os valores
+# FICTÍCIOS abaixo pelos reais. O arquivo real nunca vai para o Git: o
+# nome do bucket contém o ID da conta.
+# =================================================================
+
+# Conta AWS do projeto (12 dígitos). Com o valor fictício, o provider
+# recusa qualquer credencial real; troque antes do plan.
+expected_aws_account_id = "000000000000"
+
+# Bucket e região dos estados: outputs state_bucket_name e
+# state_bucket_region da raiz bootstrap (os mesmos do backend.hcl).
+state_bucket = "solidarytech-tfstate-000000000000-us-east-2"
+state_region = "us-east-2"
+
+# false até a pasta do overlay existir na branch observada e as imagens
+# estarem publicadas no ECR; depois, true cria a Application no ArgoCD.
+enable_applications = false
+
+# -----------------------------------------------------------------
+# Opcionais: os valores comentados abaixo são os padrões.
+# -----------------------------------------------------------------
+# aws_region                = "us-east-2"
+# project_name              = "solidarytech"
+# argocd_chart_version      = "10.18.2"
+# argocd_apps_chart_version = "2.0.8"
+# gitops_repo_url           = "https://github.com/fiap-devops-arqcloud-2026/tech-challenge-05.git"
+# gitops_revision           = "main"
+# gitops_app_path           = "gitops/overlays/prod"

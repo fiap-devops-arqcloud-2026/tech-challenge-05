@@ -1,0 +1,29 @@
+# =================================================================
+# EXEMPLO de terraform.tfvars — raiz bootstrap
+# =================================================================
+# Copie para terraform.tfvars (ignorado pelo Git) e troque os valores
+# FICTÍCIOS abaixo pelos reais. O arquivo real nunca vai para o Git:
+# ele guarda o ID da conta e o e-mail de quem recebe os alertas.
+# =================================================================
+
+# Conta AWS do projeto (12 dígitos). Com o valor fictício, o provider
+# recusa qualquer credencial real; troque antes do plan.
+expected_aws_account_id = "000000000000"
+
+# Quem recebe os alertas do Budget (até 10 endereços).
+budget_alert_emails = ["alertas@example.org"]
+
+# -----------------------------------------------------------------
+# Opcionais: os valores comentados abaixo são os padrões.
+# -----------------------------------------------------------------
+# aws_region         = "us-east-2"
+# project_name       = "solidarytech"
+# monthly_budget_usd = "50"
+
+# true na conta do projeto, que já tem o provedor OIDC do GitHub (adota
+# sem recriar); false numa conta nova ou depois de um destroy do bootstrap.
+# import_existing_github_oidc_provider = true
+
+# true só depois que as tags aparecerem no faturamento (até 24 h depois do
+# primeiro recurso tagueado); antes disso a AWS recusa a ativação.
+# activate_cost_allocation_tags = false

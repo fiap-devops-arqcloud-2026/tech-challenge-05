@@ -1,10 +1,27 @@
 # Decisões
 
-TL;DR: D-001 a D-015 registradas em 2026-11-20, antes de qualquer código de infraestrutura. Escopo só obrigatório, conta e região da Fase 4 com ambiente efêmero, New Relic e Slack reaproveitados, PagerDuty em conta nova, DR pela Opção A (Velero), Budget de US$ 50/mês, README do coordenador em `docs/enunciado/`, fluxo dev → PR → main. D-016 (C1): versões de linguagem, imagens base e dependências dos serviços.
+TL;DR: D-001 a D-015 registradas em 2026-11-20, antes de qualquer código de infraestrutura. Escopo só obrigatório, conta e região da Fase 4 com ambiente efêmero, New Relic e Slack reaproveitados, PagerDuty em conta nova, DR pela Opção A (Velero), Budget de US$ 50/mês, README do coordenador em `docs/enunciado/`, fluxo dev → PR → main. D-016 (C1): versões de linguagem, imagens base e dependências dos serviços. D-017 (C2): desenho do Terraform e ajustes depois da implementação.
 
 Última atualização: 2026-11-20, Claude.
 
 Formato: contexto, decisão, alternativas, status. Quem decidiu aparece no título: "usuário" quando a resposta veio dele (citada entre aspas), "agente" quando é escolha técnica reversível, tomada com base no pedido e registrada para veto. Herança: IDs da Fase 4 levam o prefixo F4- (F4-D-018); os da Fase 3, F3-.
+
+## D-017 — Desenho do Terraform da C2 (2026-11-21, agente)
+
+Contexto: o usuário autorizou seguir para a C2 ("Sim, seguir"), começando por leituras na conta com o perfil `default`. A leitura de 2026-11-20 ([LEITURA_AWS_C2](02_TRABALHO/LEITURA_AWS_C2_2026-11-20_v01.md)) achou a conta limpa, o provedor OIDC do GitHub existente, EKS 1.37 como versão padrão, cota de 16 vCPU e PostgreSQL 17.11 disponível.
+Decisão: o contrato completo está em [DESENHO_C2_TERRAFORM](02_TRABALHO/DESENHO_C2_TERRAFORM_2026-11-20_v01.md). Resumo:
+- Quatro raízes com estado próprio (`bootstrap`, `base`, `cluster`, `k8s`) ligadas por `terraform_remote_state`; o bootstrap começa com estado local e migra para o próprio bucket.
+- EKS 1.37 com `upgrade_policy` STANDARD (sem a cobrança do suporte estendido), 2 nós `m7i-flex.large` com launch template próprio (tags propagadas às instâncias e volumes, IMDSv2, hop limit 2 como o padrão do EKS, sem security group próprio para o RDS continuar alcançável).
+- Uma instância RDS PostgreSQL 17 `db.t4g.micro` para `ngo_db` e `donation_db`, usuários por serviço criados pelo Job de schema da C4, sem Secrets Manager (custo); a senha fica no estado cifrado.
+- ArgoCD 3.6 (chart 10.18.2) e Applications pelo chart `argocd-apps`, num único apply (a Fase 4 precisava de dois); Application com finalizer, para o destroy limpar os volumes.
+- Endpoints de gateway gratuitos para S3 e DynamoDB (menos tráfego no NAT).
+Ajustes do orquestrador depois da implementação (2026-11-21):
+- Bucket de estado no namespace regional da conta (`bucket_namespace = "account-regional"`, sufixo `-an`, o mesmo tipo usado na Fase 4), que impede outra conta de tomar o nome, mais `prevent_destroy`.
+- Role dos nós com `AmazonEC2ContainerRegistryPullOnly` (existe na conta, v2; só permite baixar imagens) no lugar de `ReadOnly`.
+- DynamoDB mantém a chave gerenciada `aws/dynamodb` (trilha de auditoria; custo de KMS desprezível no volume do projeto).
+- Retenção de backup do RDS: 7 dias pedem confirmação, porque a Fase 4 usou 1 dia nesta conta FREE; a revisão confere na documentação oficial.
+Alternativas: módulo EKS da comunidade (mais pesado de entender e revisar); duas instâncias RDS como na Fase 4 (dobra o custo); Secrets Manager (cerca de US$ 0,40 por segredo/mês).
+Status: código escrito e validado offline (10 pastas, 83 cenários de teste); revisão adversarial em andamento. Nenhum apply.
 
 ## D-016 — Versões dos serviços e das imagens (2026-11-20, agente)
 

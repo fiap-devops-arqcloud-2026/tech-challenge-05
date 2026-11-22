@@ -1,0 +1,20 @@
+# =================================================================
+# EXEMPLO DO BACKEND — raiz cluster
+# =================================================================
+# Copie para backend.hcl (ignorado pelo Git), troque os SENTINELAS pelos
+# valores reais e inicialize:
+#   cp backend.hcl.example backend.hcl
+#   terraform init -backend-config=backend.hcl
+#
+# Os valores reais são as saídas state_bucket_name e state_bucket_region
+# da raiz bootstrap. O bucket segue o padrão
+# <projeto>-tfstate-<conta>-<região>.
+#
+# Os sentinelas são nomes inválidos de propósito: se o arquivo for usado
+# sem edição, o init falha na hora, em vez de procurar (ou gravar) o
+# estado num bucket que não é do projeto. A chave (key) não entra aqui:
+# ela fica fixa em versions.tf (phase5/prod/cluster.tfstate).
+# =================================================================
+
+bucket = "SUBSTITUA_PELO_BUCKET_DE_ESTADO"
+region = "SUBSTITUA_PELA_REGIAO_DO_BUCKET"

@@ -48,4 +48,9 @@ docker run --rm -v "$PWD/services/ngo-service:/src:ro" -w /tmp python:3.13-slim 
 bash scripts/test-compose.sh
 ```
 
-No Windows (Git Bash), use `MSYS_NO_PATHCONV=1` antes do `docker run` com volume e `PYTHON="py -I"` antes do `test-compose.sh`. Os comandos do Terraform e do GitOps entram aqui nas camadas C2 a C4.
+```bash
+# Validação offline do Terraform (sem credencial AWS e sem backend): formatação, sintaxe e testes nas 10 pastas
+terraform fmt -check -recursive terraform && for d in terraform/bootstrap terraform/base terraform/cluster terraform/k8s terraform/modules/*/; do terraform -chdir="$d" init -backend=false -input=false >/dev/null && terraform -chdir="$d" validate && terraform -chdir="$d" test || break; done
+```
+
+No Windows (Git Bash), use `MSYS_NO_PATHCONV=1` antes do `docker run` com volume e `PYTHON="py -I"` antes do `test-compose.sh`. A ordem de aplicação na AWS (só com autorização do usuário e plano salvo) está em `terraform/README.md`. Os comandos do GitOps entram aqui na C4.

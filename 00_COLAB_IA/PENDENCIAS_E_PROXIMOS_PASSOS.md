@@ -1,8 +1,8 @@
 # Pendências e próximos passos
 
-TL;DR: C0 e C1 concluídas em 2026-11-20 (serviços conteinerizados, testados e instrumentados, verificados localmente). Próximo passo: C2 — Terraform, a começar pelas leituras na conta, que pedem o perfil da AWS CLI (P-004). Nenhum recurso AWS existe nem foi criado na Fase 5.
+TL;DR: C0 e C1 concluídas. C2 em andamento: leituras na conta feitas, as quatro raízes Terraform escritas e validadas offline (10 pastas, 83 cenários de teste), revisão adversarial em curso. Depois dela: commit e os planos salvos para o usuário autorizar. Nenhum recurso AWS existe nem foi criado na Fase 5.
 
-Última atualização: 2026-11-20, Claude.
+Última atualização: 2026-11-21, Claude.
 
 ## Como usar
 
@@ -13,13 +13,22 @@ Retomar pela primeira caixa vazia da camada em andamento. Cada camada tem entreg
 Ferramentas: Terraform 1.16.0 e AWS CLI 2.35.11 instalados; Helm e Kustomize standalone não (usar `kubectl kustomize` e o provider Helm do Terraform). Docker Desktop iniciado em 2026-11-20 (P-001 resolvida).
 
 - [ ] C2 — Terraform (bootstrap, base, cluster, k8s), validado offline antes de qualquer apply:
-  - [ ] Leituras na conta (sem criar nada): identidade, provedor OIDC do GitHub existente, versões do EKS em suporte padrão, cota de vCPU em us-east-2 e us-east-1. Pede o perfil da AWS CLI (P-004).
-  - [ ] `terraform/bootstrap/`: bucket de estado, import do provedor OIDC e Budget de US$ 50/mês (D-008, D-012).
-  - [ ] `terraform/` (base): VPC, 3 ECR, SQS com DLQ, DynamoDB com PITR, roles OIDC do CI e do self-healing.
-  - [ ] `terraform/cluster/`: EKS, node group, addons, RDS PostgreSQL 17 com `ngo_db` e `donation_db` (backup e PITR), IRSA do donation e do volunteer, access entry do self-healing.
-  - [ ] `terraform/k8s/`: namespaces, Secrets, StorageClass gp3, ArgoCD e Applications.
-  - [ ] `default_tags` com as três tags obrigatórias; `terraform test` da trust OIDC; `fmt` e `validate` offline.
-  - [ ] Plano salvo de cada raiz apresentado ao usuário antes de qualquer apply (P-004).
+  - [x] Leituras na conta, sem criar nada (2026-11-20, perfil `default`): [LEITURA_AWS_C2](02_TRABALHO/LEITURA_AWS_C2_2026-11-20_v01.md).
+  - [x] Contrato entre as raízes: [DESENHO_C2_TERRAFORM](02_TRABALHO/DESENHO_C2_TERRAFORM_2026-11-20_v01.md) (D-017).
+  - [x] `terraform/bootstrap/`: bucket de estado, import do provedor OIDC, Budget de US$ 50/mês e tags de alocação de custo (desligadas até a C7).
+  - [x] `terraform/base/`: VPC, endpoints de gateway, 3 ECR, SQS com DLQ, DynamoDB com PITR, roles OIDC do CI e do self-healing.
+  - [x] `terraform/cluster/`: EKS 1.37, node group com launch template, addons, RDS PostgreSQL 17, IRSA do donation e do volunteer, access entry do self-healing.
+  - [x] `terraform/k8s/`: namespace, Secrets, ConfigMap, ServiceAccounts, StorageClass gp3, ArgoCD e Application (desligada até a C4).
+  - [x] `default_tags` com as tags obrigatórias; `fmt`, `validate` e `terraform test` offline nas 10 pastas (83 cenários, 2026-11-21).
+  - [ ] Revisão adversarial (segurança, correção na AWS, FinOps e docs) com as correções confirmadas aplicadas — em andamento.
+  - [ ] Commit curado da C2 e push na `dev`.
+  - [ ] Plano salvo de cada raiz apresentado ao usuário antes de qualquer apply (P-004). Esperado no bootstrap: 1 import, recursos novos e a troca de tags do provedor OIDC; conferir também se o plano FREE aceita a retenção de backup do RDS.
+
+Herdado da implementação para as próximas camadas:
+- C3: o workflow de verificação do Terraform roda `init -backend=false`, `validate` e `test` nas 10 pastas (4 raízes e 6 módulos), sem credencial AWS; o push da imagem pula quando a tag imutável já existe no ECR (a role do CI tem `ecr:DescribeImages` para isso); as Variables do repositório saem dos outputs da base (`aws_region`, `ecr_registry`, `ci_role_arn`, `self_healing_role_arn`, `eks_cluster_name`).
+- C4: os manifestos não declaram o namespace, os Secrets, o ConfigMap, as ServiceAccounts nem a StorageClass, que a raiz `k8s` cria; o Job de schema cria `ngo_db`, `donation_db` e os usuários `ngo_app` e `donation_app` e roda `ALTER ROLE ... PASSWORD` a cada execução (as senhas vêm do Secret `db-schema`); `enable_applications = true` só depois de as imagens existirem no ECR.
+- C8: o RBAC do self-healing usa exatamente o grupo `solidarytech-self-healing`, no namespace `solidarytech`, só para reiniciar os Deployments.
+- C7: ativar as tags de alocação de custo (`activate_cost_allocation_tags = true`) cerca de 24 h depois dos primeiros recursos tagueados.
 
 ## Camadas seguintes
 

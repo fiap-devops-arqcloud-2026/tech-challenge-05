@@ -78,8 +78,10 @@ Cada janela começa com autorização específica do usuário (P-004) e termina 
 
 **Entregas:**
 - `terraform/bootstrap/`: bucket de estado (versionado, SSE, bloqueio público, só TLS), import do provedor OIDC do GitHub existente (D-012) e o AWS Budget de US$ 50/mês filtrado pela tag `Project` (D-008).
-- `terraform/` (base): VPC (módulo da comunidade, 2 AZs, 1 NAT), 3 ECR, fila SQS Standard das doações com DLQ, tabela DynamoDB `SolidaryTechVolunteers` (PK `volunteer_id`, String) com PITR, roles OIDC do CI e do self-healing.
-- `terraform/cluster/`: EKS em versão de suporte padrão na data do apply; node group dentro da cota de 5 vCPU; addons (vpc-cni, coredns, kube-proxy, EBS CSI com IRSA, metrics-server); RDS PostgreSQL com `ngo_db` e `donation_db`, backup automático e PITR; IRSA do donation (SQS) e do volunteer (DynamoDB); access entry do self-healing.
+- `terraform/base/`: VPC (módulo da comunidade, 2 AZs, 1 NAT, endpoints de gateway S3 e DynamoDB), 3 ECR, fila SQS Standard das doações com DLQ, tabela DynamoDB `SolidaryTechVolunteers` (PK `volunteer_id`, String) com PITR, roles OIDC do CI e do self-healing.
+- `terraform/cluster/`: EKS 1.37 (versão padrão, suporte padrão até 2027-11-30); 2 nós `m7i-flex.large` (cota de 16 vCPU em 2026-11-20); addons (vpc-cni, coredns, kube-proxy, EBS CSI com IRSA, metrics-server); uma instância RDS PostgreSQL 17 para `ngo_db` e `donation_db`, com backup automático e PITR; IRSA do donation (SQS) e do volunteer (DynamoDB); access entry do self-healing.
+
+Contrato detalhado entre as raízes: [DESENHO_C2_TERRAFORM](02_TRABALHO/DESENHO_C2_TERRAFORM_2026-11-20_v01.md). Decisão: D-017.
 - `terraform/k8s/`: namespaces, Secrets, StorageClass gp3 padrão com tags, ArgoCD por Helm e Applications.
 - `default_tags` `Project=SolidaryTech`, `Environment=Production`, `CostCenter=NGO-Core` (+ `ManagedBy=Terraform`) em todos os providers, inclusive o da região secundária (D-015); propagação para nós e volumes.
 - `terraform test` da trust OIDC, `fmt` e `validate` em todas as raízes.
