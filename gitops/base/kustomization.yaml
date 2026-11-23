@@ -1,0 +1,25 @@
+# =================================================================
+# Base da aplicação SolidaryTech (Kustomize)
+# =================================================================
+# Tudo o que o ArgoCD aplica no namespace "solidarytech". O que depende de
+# valores da AWS (namespace, Secrets, ConfigMap aws-endpoints,
+# ServiceAccounts com IRSA e a StorageClass) é criado pela raiz
+# terraform/k8s e NÃO é declarado aqui: dois donos para o mesmo objeto
+# fariam o ArgoCD e o Terraform brigarem.
+# =================================================================
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ngo-service
+  - donation-service
+  - volunteer-service
+  - db-schema
+  - traffic-generator
+labels:
+  # Rótulo comum para filtrar a plataforma inteira (kubectl, Grafana, Loki).
+  # includeSelectors: false — seletores de Deployment são imutáveis e não
+  # devem mudar por causa de um rótulo de agrupamento.
+  - pairs:
+      app.kubernetes.io/part-of: solidarytech
+    includeSelectors: false
+    includeTemplates: true

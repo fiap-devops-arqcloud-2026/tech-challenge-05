@@ -1,0 +1,28 @@
+# =================================================================
+# Overlay de produção — o que a Application "solidarytech" do ArgoCD aplica
+# =================================================================
+# O bloco "images" é reescrito pelo CI a cada imagem publicada na main
+# (kustomize edit set image <nome>=<registro ECR>/<repositório>:<SHA do
+# commit>, seguido de um commit do robô). Ninguém edita essas linhas à mão.
+#
+# Antes da primeira publicação, a tag abaixo é um marcador: a Application
+# só é ligada (enable_applications = true na raiz terraform/k8s) depois que
+# as três imagens existem no ECR.
+#
+# O endereço do registro inclui o ID da conta AWS. A AWS não trata o ID de
+# conta como segredo, e o acesso continua protegido por IAM e OIDC; por isso
+# ele pode ficar neste arquivo, e só aqui (a varredura de segredos aceita o
+# formato <conta>.dkr.ecr. apenas em gitops/).
+# =================================================================
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: solidarytech
+resources:
+  - ../../base
+images:
+  - name: solidarytech/ngo-service
+    newTag: aguardando-primeira-publicacao
+  - name: solidarytech/donation-service
+    newTag: aguardando-primeira-publicacao
+  - name: solidarytech/volunteer-service
+    newTag: aguardando-primeira-publicacao

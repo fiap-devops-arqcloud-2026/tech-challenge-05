@@ -1,0 +1,112 @@
+# =================================================================
+# ngo-service — cadastro das ONGs (Python/Flask, PostgreSQL ngo_db)
+# =================================================================
+# Aplicado só pelo ArgoCD (nada de kubectl apply manual). O namespace, o
+# Secret "ngo-service-db" e a ServiceAccount "ngo-service" são criados pela
+# raiz terraform/k8s, porque dependem de valores da AWS; por isso não
+# aparecem aqui.
+#
+# Requests e limits são o ponto de partida; o ajuste fino (rightsizing) é
+# feito com métricas reais na camada de FinOps, sempre por commit no Git.
+# =================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ngo-service
+  labels:
+    app.kubernetes.io/name: ngo-service
+    app.kubernetes.io/component: api
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ngo-service
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      # Sobe o Pod novo antes de derrubar o antigo: atualização sem queda.
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: ngo-service
+        app.kubernetes.io/component: api
+    spec:
+      serviceAccountName: ngo-service
+      # O serviço não fala com a API do Kubernetes: sem token montado.
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001 # o mesmo UID fixo do Dockerfile
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: ngo-service
+          # Nome lógico; o overlay troca pelo endereço do ECR e pela tag do commit.
+          image: solidarytech/ngo-service
+          ports:
+            - name: http
+              containerPort: 8081
+          env:
+            - name: PORT
+              value: "8081"
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: ngo-service-db
+                  key: DATABASE_URL
+          resources:
+            requests:
+              cpu: 50m
+              memory: 160Mi
+            limits:
+              cpu: 500m
+              memory: 320Mi
+          # startupProbe dá tempo ao Gunicorn de subir os workers antes de a
+          # liveness começar a contar; as três usam o /health do próprio código.
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 2
+            failureThreshold: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+          lifecycle:
+            preStop:
+              # Espera o Service tirar o Pod do balanceamento antes do SIGTERM,
+              # para nenhuma requisição chegar a um processo encerrando.
+              exec:
+                command: ["sleep", "5"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            # O Gunicorn usa um diretório temporário para o sinal de vida dos
+            # workers; com o disco somente leitura, ele precisa deste volume.
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 16Mi

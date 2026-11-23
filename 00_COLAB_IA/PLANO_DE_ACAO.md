@@ -21,7 +21,7 @@ TL;DR: Onze camadas, da fundação (C0) aos entregáveis (C10), cobrindo só os 
 | C1 | Serviços e contêineres | 04, 05, 08, 13 | C0 | ✅ concluída (2026-11-20) |
 | C2 | Infraestrutura como Código (Terraform) | 03, 06, 07, 19, 29 | C0 | ⏳ próxima |
 | C3 | CI/CD DevSecOps (GitHub Actions) | 02, 08, 09, 10, 31 | C1, C2 | pendente |
-| C4 | GitOps e deploy (ArgoCD) | 02, 06, 11, 30 | C2, C3 | pendente |
+| C4 | GitOps e deploy (ArgoCD) | 02, 06, 11, 30 | C2, C3 | ⏳ manifestos validados localmente (2026-11-22); falta o CI e a AWS |
 | C5 | Observabilidade e APM | 04, 12, 13 | C1, C4 | pendente |
 | C6 | SRE: SLIs, SLOs, Error Budget e MTTR | 15, 16, 17, 18 | C4, C5 | pendente |
 | C7 | FinOps | 19, 20, 21, 22 | C2, C4, C5 | pendente |
@@ -172,7 +172,7 @@ Evidência esperada segundo o mapa: ● exigido, ◐ parcial ou recomendado. A c
 | REQ | Requisito | Página | Camada | 📁 Repo | 🎬 Vídeo | 📄 Relatório | Status |
 |---|---|---|---|:-:|:-:|:-:|---|
 | [REQ-OBR-01](../docs/requisitos/README.md#req-obr-01) | Regra de Ouro: aplicar as Fases 1–4 | p. 2 | C0, C10 | ● | ● | ● | pendente |
-| [REQ-OBR-02](../docs/requisitos/README.md#req-obr-02) | Zero deploy manual via kubectl | p. 2 | C3, C4 | ● | ● |  | pendente |
+| [REQ-OBR-02](../docs/requisitos/README.md#req-obr-02) | Zero deploy manual via kubectl | p. 2 | C3, C4 | ● | ● |  | parcial: Job de schema no lugar do psql manual e deploy só pelo ArgoCD (C4); tag gravada pelo CI na C3 |
 | [REQ-OBR-03](../docs/requisitos/README.md#req-obr-03) | Zero infraestrutura “clicada” no console | p. 2 | C2 | ● | ● |  | pendente |
 | [REQ-OBR-04](../docs/requisitos/README.md#req-obr-04) | Zero “voo cego”: monitoramento profundo | p. 2 | C1, C5 | ● | ● |  | parcial: logs JSON e traces locais (C1); stack no cluster na C5 |
 | [REQ-OBR-05](../docs/requisitos/README.md#req-obr-05) | Dockerfiles otimizados para os 3 serviços | p. 3 | C1 | ● | ◐ |  | ✅ código + verificação local (C1): multi-stage, não root, Trivy sem CRITICAL |
@@ -181,7 +181,7 @@ Evidência esperada segundo o mapa: ● exigido, ◐ parcial ou recomendado. A c
 | [REQ-OBR-08](../docs/requisitos/README.md#req-obr-08) | CI/CD automatizado com testes | p. 3 | C1, C3 | ● | ● |  | parcial: testes prontos (C1); pipeline na C3 |
 | [REQ-OBR-09](../docs/requisitos/README.md#req-obr-09) | Scans SAST/SCA no pipeline | p. 3 | C3 | ● | ● |  | pendente |
 | [REQ-OBR-10](../docs/requisitos/README.md#req-obr-10) | Build da imagem no pipeline | p. 3 | C2, C3 | ● | ● |  | pendente |
-| [REQ-OBR-11](../docs/requisitos/README.md#req-obr-11) | GitOps com ArgoCD ou FluxCD | p. 3 | C4 | ● | ● |  | pendente |
+| [REQ-OBR-11](../docs/requisitos/README.md#req-obr-11) | GitOps com ArgoCD ou FluxCD | p. 3 | C4 | ● | ● |  | parcial: ArgoCD e Application no Terraform (C2), manifestos (C4); falta rodar na AWS |
 | [REQ-OBR-12](../docs/requisitos/README.md#req-obr-12) | Stack de observabilidade rodando | p. 4 | C5 | ● | ● |  | pendente |
 | [REQ-OBR-13](../docs/requisitos/README.md#req-obr-13) | APM com Distributed Tracing | p. 4 | C1, C5 | ● | ● |  | parcial: instrumentação e spans locais (C1); envio ao APM na C5 |
 | [REQ-OBR-14](../docs/requisitos/README.md#req-obr-14) | Automação de resposta a incidentes | p. 2, 4, 6 | C8 | ◐ | ● | ● | pendente |
@@ -200,7 +200,7 @@ Evidência esperada segundo o mapa: ● exigido, ◐ parcial ou recomendado. A c
 | [REQ-OBR-27](../docs/requisitos/README.md#req-obr-27) | Estratégia de DR implementada | p. 5 | C9 | ◐ | ● | ● | pendente |
 | [REQ-OBR-28](../docs/requisitos/README.md#req-obr-28) | Regra de avaliação: mostrar funcionando | p. 6 | C0, C10 |  | ● | ● | pendente |
 | [REQ-OBR-29](../docs/requisitos/README.md#req-obr-29) | Repositório: Terraform com tags FinOps | p. 6 | C2 | ● |  |  | pendente |
-| [REQ-OBR-30](../docs/requisitos/README.md#req-obr-30) | Repositório: YAML com requests/limits | p. 6 | C4, C7 | ● |  |  | pendente |
+| [REQ-OBR-30](../docs/requisitos/README.md#req-obr-30) | Repositório: YAML com requests/limits | p. 6 | C4, C7 | ● |  |  | ✅ código + verificação local (C4): requests e limits nos 5 workloads; rightsizing na C7 |
 | [REQ-OBR-31](../docs/requisitos/README.md#req-obr-31) | Repositório: pipelines com DevSecOps | p. 6 | C3 | ● |  |  | pendente |
 | [REQ-OBR-32](../docs/requisitos/README.md#req-obr-32) | Vídeo de até 20 minutos | p. 6 | C10 |  | ● |  | pendente |
 | [REQ-OBR-33](../docs/requisitos/README.md#req-obr-33) | Pitch executivo para a diretoria | p. 6 | C10 |  | ● |  | pendente |

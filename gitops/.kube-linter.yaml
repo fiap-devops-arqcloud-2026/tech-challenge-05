@@ -1,0 +1,13 @@
+# Configuração do kube-linter (scripts/gitops/validate.sh e CI).
+# Todas as verificações padrão ficam ligadas; cada exceção abaixo tem motivo.
+checks:
+  addAllBuiltIn: false
+  exclude:
+    # As ServiceAccounts (com as anotações de IRSA) são criadas pela raiz
+    # terraform/k8s, porque dependem de ARNs da conta; elas não estão nos
+    # manifestos de propósito, então o linter não as encontra.
+    - non-existent-service-account
+    # O donation-service espalha as réplicas com topologySpreadConstraints
+    # (uma por nó), que cumpre o mesmo papel da anti-afinidade sem impedir o
+    # agendamento quando só houver um nó.
+    - no-anti-affinity

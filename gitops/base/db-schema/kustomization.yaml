@@ -1,0 +1,25 @@
+# Job de schema e o ConfigMap com o script e os SQL que ele aplica.
+#
+# Os arquivos em sql/ são CÓPIAS exatas de services/*/db/init.sql: o
+# Kustomize (e o ArgoCD) só leem arquivos dentro da pasta da kustomization,
+# e relaxar essa restrição no ArgoCD inteiro seria pior do que manter uma
+# cópia conferida. scripts/gitops/validate.sh (rodado no CI) falha se a
+# cópia divergir do original.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - job.yaml
+configMapGenerator:
+  - name: db-schema-sql
+    files:
+      - apply.sh
+      - sql/ngo_db.sql
+      - sql/donation_db.sql
+    options:
+      annotations:
+        # O ConfigMap também é hook PreSync, numa onda anterior (-1): ele
+        # precisa existir ANTES do Job, e recursos comuns só seriam aplicados
+        # depois dos hooks PreSync.
+        argocd.argoproj.io/hook: PreSync
+        argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
+        argocd.argoproj.io/sync-wave: "-1"

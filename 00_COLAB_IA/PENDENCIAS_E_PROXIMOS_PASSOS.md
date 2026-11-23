@@ -33,7 +33,15 @@ Herdado da implementação para as próximas camadas:
 ## Camadas seguintes
 
 - [ ] C3 — CI/CD DevSecOps (inclui lint e SAST dos três serviços e `go test -race` no Linux).
-- [ ] C4 — GitOps (ArgoCD), com Job de schema e gerador de tráfego.
+- [ ] C4 — GitOps (ArgoCD), adiantada em 2026-11-22 enquanto a C2 é revisada e a C3 escrita:
+  - [x] `gitops/base/`: Deployments, Services e PDB dos 3 serviços (requests/limits, probes, não root, disco somente leitura), Job `db-schema` PreSync idempotente e gerador de tráfego; `gitops/overlays/prod/` com tags marcadoras.
+  - [x] `scripts/gitops/validate.sh` verde: cópias de SQL, render com o Kustomize 5.8.3, dono único (nada do Terraform no GitOps), kubeconform estrito, kube-linter e shellcheck.
+  - [x] `apply.sh` do Job testado contra PostgreSQL 17 real, duas vezes (idempotente, troca de senha, menor privilégio).
+  - [x] Varredura de segredos aceita o ID da conta só no formato `<conta>.dkr.ecr.` em `gitops/` (o robô do CI grava o registro no overlay).
+  - [ ] Workflow `gitops-check.yml` rodando `scripts/gitops/validate.sh` (depois da C3, para não disputar `.github/workflows/`).
+  - [ ] Job do CI que grava `<registro>/solidarytech/<svc>:<sha>` no overlay com commit do robô na `main` (`kustomize edit set image`, tentativas com rebase).
+  - [ ] Teste do gerador de tráfego no Compose (depois da C3, que também usa o Compose e as mesmas portas).
+  - [ ] Na AWS (depois do apply autorizado da C2 e das imagens no ECR): `enable_applications = true`, Application Synced/Healthy, Job de schema concluído, fluxo pela rede do cluster.
 - [ ] C5 — Observabilidade e APM.
 - [ ] C6 — SRE.
 - [ ] C7 — FinOps.

@@ -106,6 +106,11 @@ check "Atribuição suspeita de segredo" \
 # Permitidos, por serem fictícios e públicos: 000000000000 (exemplos e
 # testes) e 123456789012 (conta padrão do emulador Moto). Lockfiles e go.sum
 # ficam de fora porque seus hashes podem conter sequências de dígitos.
+# Exceção única para o ID real: o endereço do ECR (<conta>.dkr.ecr.<região>)
+# dentro de gitops/, que o robô do CI grava no overlay a cada imagem
+# publicada. A AWS não trata o ID de conta como segredo, o acesso continua
+# protegido por IAM e OIDC, e o Kustomize não permite separar o registro da
+# tag (um override só de nome apaga a tag). Em qualquer outro lugar, reprova.
 check_account_ids() {
   local status=0 matches offending
   matches="$(git grep --untracked -InE '(^|[^0-9A-Za-z])[0-9]{12}([^0-9A-Za-z]|$)' -- \
@@ -117,13 +122,17 @@ check_account_ids() {
     failed=1
     return
   fi
-  # Mantém só as linhas com algum número de 12 dígitos fora da lista permitida.
+  # Mantém só as linhas com algum número de 12 dígitos fora da lista
+  # permitida. Cada linha do git grep começa com "caminho:linha:", o que
+  # permite restringir a exceção do ECR à pasta gitops/.
   offending="$(awk '{
       line = $0
       while (match(line, /(^|[^0-9A-Za-z])[0-9]{12}([^0-9A-Za-z]|$)/)) {
         token = substr(line, RSTART, RLENGTH)
+        rest = substr(line, RSTART)
         gsub(/[^0-9]/, "", token)
-        if (token != "000000000000" && token != "123456789012") { print $0; break }
+        ecr_no_gitops = ($0 ~ /^gitops\//) && (rest ~ /^[^0-9A-Za-z]?[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]\.dkr\.ecr\./)
+        if (token != "000000000000" && token != "123456789012" && !ecr_no_gitops) { print $0; break }
         line = substr(line, RSTART + RLENGTH - 1)
       }
     }' <<< "$matches")"

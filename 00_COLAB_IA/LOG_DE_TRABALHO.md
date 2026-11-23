@@ -6,6 +6,33 @@ TL;DR: C0 e C1 concluídas em 2026-11-20. C2 em andamento em 2026-11-21: Terrafo
 
 Formato: entrada nova no topo, sem apagar as anteriores. Cada entrada termina com "Estado p/ próximo agente". Horários em America/Sao_Paulo (UTC-03:00).
 
+## 2026-11-22 22:00 — Claude — Retomada: C2 revisão e C3 relançadas; C4 validada
+
+Pedido: o usuário pediu para retomar o trabalho.
+Feito:
+- Revisão da C2 (`wf_c7818595-765`) e C3 (`wf_476ffd4c-f67`) relançadas às 21:54. Os agentes leem o progresso salvo em `scratchpad/revisao-c2/` e `scratchpad/c3/`, que sobreviveu à parada.
+- C4: `scripts/gitops/validate.sh` e `gitops/.kube-linter.yaml` escritos. Duas correções vieram do kube-linter: `unhealthyPodEvictionPolicy: AlwaysAllow` no PDB e `ttlSecondsAfterFinished` no Job. Também o `gitops/README.md`, com a divisão de donos entre GitOps e Terraform.
+- Varredura de segredos: o ID da conta só é aceito no formato `<conta>.dkr.ecr.` dentro de `gitops/`. Testado com amostras falsas: o overlay passa; o mesmo endereço fora de `gitops/` e um ID solto dentro dele reprovam.
+Verificação (local, 2026-11-22):
+- `bash scripts/gitops/validate.sh`: cópias de SQL idênticas; 11 objetos renderizados pelo Kustomize 5.8.3; nenhum objeto do Terraform no GitOps; kubeconform estrito 11/11 válidos (schemas 1.34.12); kube-linter sem achados; shellcheck sem achados.
+- `apply.sh` contra `postgres:17.12-alpine3.24`, com mestre não superusuário (`CREATEROLE CREATEDB`, como no RDS). 1ª execução: usuários, bancos, tabelas e seed (2 ONGs). 2ª execução: idempotente e com a senha do `ngo_app` trocada; a conexão pela rede já usou a senha nova. `ngo_app` recusado no `donation_db` ("does not have CONNECT privilege"); tabelas com dono `ngo_app`. A conferência da senha antiga por `127.0.0.1` não vale, porque a imagem oficial dá trust para conexões locais.
+Não feito: workflow `gitops-check` e o job do CI que grava a tag no overlay (esperam a C3, para não disputar `.github/workflows/`); teste do gerador de tráfego no Compose (a C3 usa o Compose e as mesmas portas agora).
+Estado p/ próximo agente: aguardar os dois workflows. Depois, integrar os resultados: correções da revisão da C2, a C3, o `gitops-check` e o job de tag; rodar de novo as validações (Terraform offline, `validate.sh`, `test-compose.sh` e os gates da C3); commitar e pedir ao usuário a autorização do primeiro plano na AWS (P-004).
+
+## 2026-11-22 17:00 — Claude — Parada por limite de uso: C2 no GitHub, C3 e C4 em andamento
+
+Feito:
+- Commit `5c9d9c0` (C2 validada offline) enviado: `origin/dev = 5c9d9c0`.
+- Revisão da C2 e C3 relançadas às 16:32 e PARADAS às ~17:00 pelo orquestrador (limite de uso da conta). O progresso dos revisores e dos agentes da C3 ficou em `scratchpad/revisao-c2/*.md` e `scratchpad/c3/*.md`, fora do repositório, e pode ter sido apagado se o scratchpad for limpo. O verificador da C2 não chegou a rodar: `terraform/` continua igual ao commit `5c9d9c0`.
+- C4 iniciada à mão, NÃO commitada e AINDA NÃO validada: `gitops/base/` (Deployments, Services e PDB dos 3 serviços, Job `db-schema` como hook PreSync com `apply.sh` e cópias de `services/*/db/init.sql` em `sql/`, gerador de tráfego com `curlimages/curl:8.23.0`) e `gitops/overlays/prod/` (tags marcadoras até a primeira publicação).
+- Decisão da C4, testada: o ID da conta fica no overlay (registro do ECR), gravado só pelo robô do CI. Um override só de nome no `kustomize edit set image` APAGA a tag (testado com o kustomize 5.8.3, o mesmo do ArgoCD 3.6.2), então não dá para tirar o registro do Git.
+- Conferidos: UID/GID 100/101 do curl e 70/70 do postgres; imagens `ghcr.io/yannh/kubeconform:v0.8.0`, `stackrox/kube-linter:v0.8.3` e `koalaman/shellcheck:v0.11.0` existem; os schemas do kubeconform só vão até o Kubernetes 1.34.12.
+Arquivos fora do Git: parciais da C3 (`.github/workflows/terraform-check.yml`, `compose-integration.yml` e `repo-check.yml`, `scripts/github/set-repo-variables.sh`, `services/donation-service/.golangci.yml`) e toda a pasta `gitops/`.
+Estado p/ próximo agente:
+1. Relançar a revisão da C2 (script `revisar-c2-terraform`) e a C3 (script `implementar-c3-cicd`). Os dois leem os arquivos de progresso, se existirem.
+2. C4: escrever `scripts/gitops/validate.sh` (cópias de SQL idênticas; nenhum Namespace, Secret, ServiceAccount, StorageClass nem ConfigMap `aws-endpoints` em `gitops/`; build com o kustomize 5.8.3; kubeconform `-strict` com schemas 1.34.12; kube-linter com exceção justificada para `non-existent-service-account`, porque as ServiceAccounts vêm do Terraform; shellcheck nos dois scripts). Acrescentar à varredura de segredos a exceção `<12 dígitos>.dkr.ecr.` só em `gitops/`. Depois disso, o workflow `gitops-check` e o job do CI que grava a tag no overlay.
+3. Só então commitar a C3 e a C4 e pedir ao usuário a autorização do primeiro plano na AWS (P-004).
+
 ## 2026-11-22 16:40 — Claude — Workflows derrubados por falha de rede; C2 salva em commit
 
 Feito:

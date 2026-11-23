@@ -1,0 +1,15 @@
+# Endereço interno estável do donation-service (donation-service.solidarytech.svc).
+apiVersion: v1
+kind: Service
+metadata:
+  name: donation-service
+  labels:
+    app.kubernetes.io/name: donation-service
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: donation-service
+  ports:
+    - name: http
+      port: 8082
+      targetPort: http

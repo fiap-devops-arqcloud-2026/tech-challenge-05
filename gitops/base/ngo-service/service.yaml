@@ -1,0 +1,17 @@
+# Endereço interno estável do ngo-service (ngo-service.solidarytech.svc).
+# ClusterIP: sem balanceador público (custo e superfície de ataque); o acesso
+# de fora do cluster é por port-forward nas demonstrações.
+apiVersion: v1
+kind: Service
+metadata:
+  name: ngo-service
+  labels:
+    app.kubernetes.io/name: ngo-service
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: ngo-service
+  ports:
+    - name: http
+      port: 8081
+      targetPort: http
