@@ -21,7 +21,7 @@ Ajustes do orquestrador depois da implementação (2026-11-21):
 - DynamoDB mantém a chave gerenciada `aws/dynamodb` (trilha de auditoria; custo de KMS desprezível no volume do projeto).
 - Retenção de backup do RDS: 7 dias pedem confirmação, porque a Fase 4 usou 1 dia nesta conta FREE; a revisão confere na documentação oficial.
 Alternativas: módulo EKS da comunidade (mais pesado de entender e revisar); duas instâncias RDS como na Fase 4 (dobra o custo); Secrets Manager (cerca de US$ 0,40 por segredo/mês).
-Status: código escrito e validado offline (10 pastas, 83 cenários de teste); revisão adversarial em andamento. Nenhum apply.
+Status: código escrito e validado offline. A revisão adversarial terminou em 2026-11-23: 18 achados, 15 confirmados e corrigidos (quase todos de documentação e testes), 1 incerto (retenção do RDS no plano FREE, mantida em 7 dias com a troca para 1 documentada); 88 cenários de teste. Nenhum apply.
 
 ## D-016 — Versões dos serviços e das imagens (2026-11-20, agente)
 

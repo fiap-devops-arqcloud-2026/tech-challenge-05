@@ -7,8 +7,9 @@
 #   1. as sub-redes /24 saem do /16 da VPC como documentado;
 #   2. o ARN do cluster na policy do self-healing usa a conta das
 #      credenciais e o nome exato do cluster;
-#   3. os endpoints de gateway de S3 e DynamoDB ficam nas route tables
-#      privadas;
+#   3. os endpoints de gateway de S3 e DynamoDB ficam na route table
+#      privada, o NAT nasce ligado por padrão e, desligado, sai sem levar
+#      os endpoints;
 #   4. zonas de outra região e VPC que não seja /16 são recusadas;
 #   5. as saídas que as raízes cluster e k8s leem existem com os nomes do
 #      contrato.
@@ -168,6 +169,60 @@ run "reject_invalid_account_id" {
   }
 
   expect_failures = [var.expected_aws_account_id]
+}
+
+# -----------------------------------------------------------------
+# 3. Endpoints de gateway e NAT
+# -----------------------------------------------------------------
+# command = apply só simula a criação, para que os IDs das route tables
+# existam e possam ser comparados. A URL dos repositórios recebe um valor
+# fixo no formato real, porque a saída ecr_registry exige um único host.
+run "endpoints_nas_route_tables_privadas_e_nat_ligado" {
+  command = apply
+
+  override_resource {
+    target = module.ecr.aws_ecr_repository.this
+    values = {
+      arn            = "arn:aws:ecr:us-east-2:000000000000:repository/solidarytech/servico"
+      repository_url = "000000000000.dkr.ecr.us-east-2.amazonaws.com/solidarytech/servico"
+    }
+  }
+
+  assert {
+    condition = (
+      aws_vpc_endpoint.gateway["s3"].route_table_ids == toset(module.vpc.private_route_table_ids) &&
+      aws_vpc_endpoint.gateway["dynamodb"].route_table_ids == toset(module.vpc.private_route_table_ids) &&
+      length(module.vpc.private_route_table_ids) == 1
+    )
+    error_message = "Os endpoints de gateway de S3 e DynamoDB devem ficar na route table privada (uma só, com single_nat_gateway), a mesma das sub-redes dos nós e do banco."
+  }
+
+  # Pegadinha da Fase 4: o exemplo da base vinha com o NAT desligado, e
+  # os nós não baixavam imagens. O padrão daqui precisa ligá-lo.
+  assert {
+    condition     = length(module.vpc.natgw_ids) == 1
+    error_message = "Com os padrões, a base deve criar exatamente um NAT Gateway."
+  }
+}
+
+# Base de pé entre janelas, sem cluster: o NAT sai, e os endpoints de
+# gateway (gratuitos) e a route table privada continuam.
+run "nat_desligado_mantem_os_endpoints" {
+  command = plan
+
+  variables {
+    enable_nat_gateway = false
+  }
+
+  assert {
+    condition     = length(module.vpc.natgw_ids) == 0
+    error_message = "Com enable_nat_gateway = false, nenhum NAT Gateway deve ser criado."
+  }
+
+  assert {
+    condition     = length(aws_vpc_endpoint.gateway) == 2 && length(module.vpc.private_route_table_ids) == 1
+    error_message = "Sem NAT, os dois endpoints de gateway e a route table privada devem continuar existindo."
+  }
 }
 
 # -----------------------------------------------------------------

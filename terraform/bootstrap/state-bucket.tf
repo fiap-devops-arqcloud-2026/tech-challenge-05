@@ -16,9 +16,12 @@
 # =================================================================
 
 locals {
-  # Conta e região no nome tornam o nome único no mundo (o namespace de
-  # buckets do S3 é global) e deixam claro de onde ele é.
-  state_bucket_name = "${var.project_name}-tfstate-${data.aws_caller_identity.current.account_id}-${var.aws_region}"
+  # Nome no NAMESPACE REGIONAL DA CONTA (mesmo tipo de bucket da Fase 4):
+  # o S3 exige o sufixo -<conta>-<região>-an, e só esta conta consegue
+  # criar um bucket com ele. Nenhuma outra conta pode ocupar o nome antes
+  # (ou depois de um encerramento) e receber os estados por engano, o que
+  # pode acontecer no namespace global, compartilhado por todas as contas.
+  state_bucket_name = "${var.project_name}-tfstate-${data.aws_caller_identity.current.account_id}-${var.aws_region}-an"
 
   # ARN montado a partir do nome, e não lido do recurso: assim a policy
   # já é conhecida no plan e pode ser revisada (e testada) antes do apply.
@@ -28,11 +31,24 @@ locals {
 resource "aws_s3_bucket" "state" {
   bucket = local.state_bucket_name
 
-  # Proteção do único recurso que não é efêmero no projeto: com false, o
-  # destroy FALHA enquanto houver qualquer objeto ou versão no bucket, em
+  # O nome acima só é aceito com este namespace (o provider confere o
+  # formato antes de chamar a AWS).
+  bucket_namespace = "account-regional"
+
+  # Proteção do único recurso que não é efêmero no projeto: com false, a
+  # exclusão FALHA enquanto houver qualquer objeto ou versão no bucket, em
   # vez de apagar os estados junto. Para encerrar o projeto, o bucket é
   # esvaziado de propósito antes (ver README.md).
   force_destroy = false
+
+  lifecycle {
+    # Segunda trava, que age ainda no PLANO: um destroy do bootstrap, ou
+    # uma mudança que obrigue a recriar o bucket (outro nome ou região),
+    # para com "Instance cannot be destroyed" antes de apagar qualquer
+    # coisa. No encerramento do projeto, a trava é desligada de propósito
+    # por um arquivo de override local (ver README.md).
+    prevent_destroy = true
+  }
 }
 
 # Desliga as ACLs: o dono do bucket é dono de todo objeto e o acesso passa

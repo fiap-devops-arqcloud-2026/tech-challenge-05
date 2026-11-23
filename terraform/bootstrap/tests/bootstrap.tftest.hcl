@@ -2,8 +2,10 @@
 # TESTES DA RAIZ BOOTSTRAP — sem AWS, sem custo
 # =================================================================
 # Provam, a cada alteração, as propriedades que não podem regredir:
-#   1. bucket de estado com o nome do contrato, protegido contra destroy
-#      acidental, versionado, cifrado, sem acesso público e só com TLS;
+#   1. bucket de estado com o nome do contrato, no namespace regional da
+#      conta, protegido contra exclusão com objetos dentro, versionado,
+#      cifrado, sem acesso público e só com TLS (o prevent_destroy não é
+#      atributo do recurso e não aparece no plano de teste);
 #   2. Budget filtrado pela tag Project, medindo o custo BRUTO (sem
 #      créditos nem reembolsos) e com os quatro alertas;
 #   3. tags de alocação de custo desligadas por padrão;
@@ -72,8 +74,13 @@ run "bucket_de_estado_protegido" {
   command = plan
 
   assert {
-    condition     = aws_s3_bucket.state.bucket == "solidarytech-tfstate-000000000000-us-east-2"
-    error_message = "O nome do bucket deve seguir <projeto>-tfstate-<conta>-<região>."
+    condition     = aws_s3_bucket.state.bucket == "solidarytech-tfstate-000000000000-us-east-2-an"
+    error_message = "O nome do bucket deve seguir <projeto>-tfstate-<conta>-<região>-an (namespace regional da conta)."
+  }
+
+  assert {
+    condition     = aws_s3_bucket.state.bucket_namespace == "account-regional"
+    error_message = "O bucket de estado deve nascer no namespace regional da conta (bucket_namespace = account-regional), onde nenhuma outra conta consegue criar o mesmo nome."
   }
 
   assert {
@@ -107,7 +114,7 @@ run "bucket_de_estado_protegido" {
   }
 
   assert {
-    condition     = output.state_bucket_name == "solidarytech-tfstate-000000000000-us-east-2"
+    condition     = output.state_bucket_name == "solidarytech-tfstate-000000000000-us-east-2-an"
     error_message = "O output state_bucket_name deve devolver o nome do bucket."
   }
 }
@@ -134,8 +141,8 @@ run "policy_nega_acesso_sem_tls" {
 
   assert {
     condition = try(toset(jsondecode(aws_s3_bucket_policy.state.policy).Statement[0].Resource), null) == toset([
-      "arn:aws:s3:::solidarytech-tfstate-000000000000-us-east-2",
-      "arn:aws:s3:::solidarytech-tfstate-000000000000-us-east-2/*",
+      "arn:aws:s3:::solidarytech-tfstate-000000000000-us-east-2-an",
+      "arn:aws:s3:::solidarytech-tfstate-000000000000-us-east-2-an/*",
     ])
     error_message = "A negação deve cobrir o bucket e todos os objetos dele."
   }

@@ -3,7 +3,7 @@
 # =================================================================
 # Copie para backend.hcl, que o Git ignora, e troque o sentinela pelo
 # nome real do bucket de estado (output state_bucket_name da raiz
-# bootstrap, no formato <projeto>-tfstate-<conta>-<região>):
+# bootstrap, no formato <projeto>-tfstate-<conta>-<região>-an):
 #   cp backend.hcl.example backend.hcl
 #
 # A chave (phase5/prod/base.tfstate), a criptografia e o lock ficam fixos

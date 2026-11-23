@@ -179,10 +179,16 @@ resource "helm_release" "argocd_apps" {
         namespace = helm_release.argocd.namespace
 
         # PEGADINHA DA FASE 4 (discos órfãos): sem este finalizer, apagar
-        # a Application deixa no cluster tudo o que ela criou, inclusive
-        # PVCs; o cluster é destruído depois e os volumes EBS sobram,
-        # cobrando. Com ele, o ArgoCD apaga primeiro os recursos da
-        # Application (e os PVCs liberam os discos) e só então a remove.
+        # a Application deixa no cluster tudo o que ela criou; o cluster é
+        # destruído depois e os volumes EBS sobram, cobrando. Com ele, o
+        # ArgoCD apaga primeiro os recursos que a Application gerencia (os
+        # declarados no Git, inclusive PVCs declarados lá) e só então a
+        # remove.
+        #
+        # LIMITE: um PVC criado pelo volumeClaimTemplates de um StatefulSet
+        # não é recurso da Application. O Kubernetes o mantém quando o
+        # StatefulSet sai (retenção padrão whenDeleted: Retain), e ele só
+        # some junto com o namespace. Ver "Destruir" no README.md.
         finalizers = ["resources-finalizer.argocd.argoproj.io"]
 
         # Projeto padrão criado pelo chart do ArgoCD.

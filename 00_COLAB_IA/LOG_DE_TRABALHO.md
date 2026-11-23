@@ -6,6 +6,31 @@ TL;DR: C0 e C1 concluídas em 2026-11-20. C2 em andamento em 2026-11-21: Terrafo
 
 Formato: entrada nova no topo, sem apagar as anteriores. Cada entrada termina com "Estado p/ próximo agente". Horários em America/Sao_Paulo (UTC-03:00).
 
+## 2026-11-23 13:40 — Claude — Revisão da C2 concluída e correções aplicadas
+
+Feito:
+- Workflow `wf_c7818595-765` concluído: 3 revisores (resultado em cache) e o verificador. 18 achados: 1 ALTA, 3 MÉDIAS e 14 BAIXAS. 15 foram CONFIRMADOS e corrigidos em 31 arquivos de `terraform/`, quase todos de documentação e testes. 1 ficou INCERTO: a retenção de backup do RDS no plano FREE, que a documentação oficial não esclarece; fica 7 dias e o README do `cluster` documenta a troca para 1.
+- Decisões do orquestrador aplicadas (D-017): bucket `-an` com `prevent_destroy` (o destroy final usa um `state_bucket_override.tf` local, ignorado pelo Git); `PullOnly` nos nós; `state_bucket` validado pelo sufixo `-<conta>-<região>-an`.
+- Addons do EKS 1.37 conferidos por leitura em us-east-2: os 5 existem (`metrics-server` v0.9.1-eksbuild.2).
+- README principal atualizado: estado das camadas e árvore com `terraform/` e `gitops/`. Contrato da C2 com uma segunda retificação.
+Verificação: relatório do verificador com `fmt -check` limpo, `validate` verde nas 10 pastas, 88 cenários de `terraform test` e 0 falhas, e `security-check` limpo. Reexecução independente da suíte pelo orquestrador registrada no commit.
+Pendências que a revisão deixou para as camadas seguintes:
+- C3: checagem estática de `default_tags` nos 4 `providers.tf` e de `node_tags` no cluster; `id-token: write` só nos jobs que assumem role, e sem `environment:` neles (mudaria o subject do OIDC).
+- C5/C6: StatefulSets com `persistentVolumeClaimRetentionPolicy.whenDeleted: Delete`.
+- C8: o RBAC do self-healing não pode ler Secrets (o `db-schema` tem a senha mestre), criar Pods ou Jobs, nem fazer patch livre em Deployments.
+- Primeiro apply: o Budget usa campos obsoletos na API (`CostFilters`/`CostTypes`), e não se sabe se a API aceita filtrar por tag ainda não ativada.
+- Leitura estrita do REQ-OBR-03: o provedor OIDC nasceu no console na Fase 4 e é adotado por import; recriá-lo pelo código seria decisão do usuário.
+Estado p/ próximo agente: commitar as correções da revisão (só `terraform/` e os documentos), aguardar a finalização da C3 (`wf_a1547d2f-535`) e seguir o plano: validações gerais, commit da C3, CI no GitHub e autorização do primeiro plano na AWS.
+
+## 2026-11-23 13:00 — Claude — Retomada depois do limite de uso
+
+Feito:
+- C4 commitada e enviada (`61ba960`).
+- Revisão da C2 (`wf_c7818595-765`): os três revisores terminaram e o resultado ficou em cache no journal; o verificador parou no limite de uso. Ele foi retomado com `resumeFromRunId` às 12:55, e só ele roda.
+- C3 (`wf_476ffd4c-f67`): os três agentes pararam no limite de uso, mas deixaram em disco `_ci-go.yml`, `_ci-python.yml`, os três chamadores, `terraform-check.yml`, `compose-integration.yml`, `repo-check.yml`, `set-repo-variables.sh`, `docs/CI-CD.md`, `.trivyignore` e as configurações de lint. As notas em `scratchpad/c3/` registram SHAs, versões, digests e decisões.
+- Novo workflow `finalizar-c3-cicd` (`wf_a1547d2f-535`), com 2 agentes em paralelo e donos de arquivos separados: (1) completar e conferir os workflows, criar `gitops-check.yml`, acrescentar o job do robô que grava a tag no overlay e alinhar `docs/CI-CD.md`; (2) rodar localmente cada gate exatamente como os workflows definem e corrigir os achados nos serviços. Achados já conhecidos: errcheck em `donation-service/main.go` (`defer rows.Close()`), W391 no fim de `ngo-service/app.py` e pylint sem as dependências instaladas.
+Estado p/ próximo agente: aguardar os dois workflows. Depois, conferir o resultado deles e rodar de novo as validações: Terraform offline (10 pastas), `scripts/gitops/validate.sh`, `scripts/test-compose.sh`, testes dos serviços, actionlint e `security-check.sh`. Em seguida, commitar a C2 revisada e a C3, conferir a primeira execução do CI no GitHub e pedir ao usuário a autorização do primeiro plano na AWS (P-004). Se um workflow cair de novo, retomar com `resumeFromRunId`: o que terminou fica em cache.
+
 ## 2026-11-22 22:00 — Claude — Retomada: C2 revisão e C3 relançadas; C4 validada
 
 Pedido: o usuário pediu para retomar o trabalho.

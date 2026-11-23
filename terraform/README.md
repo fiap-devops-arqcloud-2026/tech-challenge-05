@@ -8,14 +8,14 @@ destroy segue a ordem inversa. Todo apply e todo destroy passam por um plano
 salvo, revisado e autorizado. A validação offline (formatação, `validate` e
 `terraform test`) roda sem credenciais e sem custo.
 
-Última atualização: 2026-11-21. Fonte: os arquivos `.tf`, os exemplos e os
+Última atualização: 2026-11-23. Fonte: os arquivos `.tf`, os exemplos e os
 lockfiles desta pasta.
 
 ## Raízes
 
 | Raiz | O que cria | Estado no bucket | Lê de | Fica ligada |
 |---|---|---|---|---|
-| [`bootstrap/`](bootstrap/README.md) | Bucket dos estados (versionado, cifrado, sem acesso público, só TLS), provedor OIDC do GitHub (adotado por `import`), Budget mensal filtrado pela tag `Project` e tags de alocação de custo (desligadas no início) | `phase5/prod/bootstrap.tfstate` (local no primeiro apply) | — | O projeto inteiro |
+| [`bootstrap/`](bootstrap/README.md) | Bucket dos estados no namespace regional da conta (versionado, cifrado, sem acesso público, só TLS, com `prevent_destroy`), provedor OIDC do GitHub (adotado por `import`), Budget mensal filtrado pela tag `Project` e tags de alocação de custo (desligadas no início) | `phase5/prod/bootstrap.tfstate` (local no primeiro apply) | — | O projeto inteiro |
 | [`base/`](base/README.md) | VPC `solidarytech-vpc` (2 AZs, um NAT), endpoints de gateway para S3 e DynamoDB, 3 repositórios ECR, fila SQS com DLQ, tabela DynamoDB com PITR e as roles OIDC do CI e do self-healing | `phase5/prod/base.tfstate` | Provedor OIDC do GitHub (data source) | Entre janelas, se preciso, com o NAT desligado |
 | [`cluster/`](cluster/README.md) | EKS 1.37 com node group de 2 nós `m7i-flex.large`, 5 addons gerenciados, provedor OIDC do cluster, RDS PostgreSQL 17, roles IRSA e o access entry do self-healing | `phase5/prod/cluster.tfstate` | `base` | Só durante a janela de trabalho |
 | [`k8s/`](k8s/README.md) | Namespace `solidarytech`, StorageClass `gp3` padrão, Secrets dos bancos, ConfigMap `aws-endpoints`, ServiceAccounts, ArgoCD e a Application do projeto | `phase5/prod/k8s.tfstate` | `base` e `cluster` | Junto com o cluster |
@@ -102,7 +102,7 @@ filtro por tag do Budget e do Cost Explorer, sem nenhum erro visível.
 | Raiz | O que cobra enquanto existe |
 |---|---|
 | `bootstrap` | Armazenamento e requisições do bucket dos estados, que guarda poucos arquivos pequenos. Custo desprezível perto das outras raízes. |
-| `base` | O **NAT Gateway**, cobrado por hora e por GB processado mesmo ocioso, é o maior custo fixo. ECR (por GB armazenado), SQS e DynamoDB (por requisição), PITR (por GB) e as chamadas ao KMS da chave gerenciada da tabela acompanham o uso. Os endpoints de gateway não são cobrados. |
+| `base` | O **NAT Gateway**, cobrado por hora e por GB processado mesmo ocioso, é o maior custo fixo, junto com o IPv4 público do Elastic IP do NAT (cobrado por hora; sai junto quando o NAT é desligado). ECR (por GB armazenado), SQS e DynamoDB (por requisição), PITR (por GB) e as chamadas ao KMS da chave gerenciada da tabela acompanham o uso. Os endpoints de gateway não são cobrados. |
 | `cluster` | A raiz cara: control plane do EKS (por hora), dois nós ON_DEMAND com discos gp3 e o RDS `db.t4g.micro` com armazenamento e backups. Destruída ao fim de cada janela. |
 | `k8s` | Nenhum recurso AWS direto: o ArgoCD roda nos nós do cluster. Os discos EBS dos PVCs que o GitOps pedir à StorageClass são cobrados por GB-mês enquanto existirem. |
 
@@ -138,6 +138,7 @@ porque guardam o ID da conta, e-mails ou segredos:
 | `terraform.tfvars` | Cada raiz, copiado do `terraform.tfvars.example` | Valores das variáveis sem padrão |
 | `backend.hcl` | Cada raiz (no bootstrap, depois da migração) | `bucket` e `region` do backend S3; a chave fica fixa no `versions.tf` |
 | `backend_override.tf` | `bootstrap/`, só no primeiro apply e no encerramento | Troca o backend S3 por estado local |
+| `state_bucket_override.tf` | `bootstrap/`, só no encerramento | Desliga de propósito o `prevent_destroy` do bucket dos estados |
 | `*.tfplan`, `terraform.tfstate*` | Raiz em uso, temporários | Planos salvos e estado local do bootstrap; guardam valores sensíveis em texto puro |
 | `.terraform/` | Cada raiz e módulo | Cache dos providers e módulos baixados pelo `init` |
 
@@ -159,8 +160,9 @@ Variáveis que vêm do `terraform.tfvars` local:
   credencial real.
 - `state_bucket` e `state_region` são as saídas `state_bucket_name` e
   `state_bucket_region` do bootstrap, os mesmos valores do `backend.hcl`. O
-  nome do bucket precisa conter o ID da conta, o que impede ler o estado de
-  um bucket de outra conta.
+  nome do bucket precisa terminar em `-<conta>-<state_region>-an`, o sufixo
+  do namespace regional da conta, que só ela consegue criar: isso impede ler
+  o estado de um bucket de outra conta.
 - Uma variável também pode vir de `TF_VAR_<nome>` no ambiente, desde que não
   esteja no `terraform.tfvars`: o arquivo tem precedência sobre o ambiente.
 
@@ -315,14 +317,17 @@ rm -f terraform/*/*.tfplan
 ### Ao fim de cada janela de trabalho
 
 ```bash
-# Gera o plano de destroy da k8s: a Application sai antes do ArgoCD, e o finalizer dela apaga os PVCs (e os discos EBS).
+# Gera o plano de destroy da k8s: a Application sai antes do ArgoCD, o finalizer dela apaga os recursos declarados no Git e o namespace solidarytech sai em seguida.
 terraform -chdir=terraform/k8s plan -destroy -out=k8s-destroy.tfplan
 
 # Aplica o plano de destroy revisado da k8s.
 terraform -chdir=terraform/k8s apply k8s-destroy.tfplan
 
-# Confere que não sobrou PersistentVolume no cluster; a lista deve vir vazia antes do destroy do cluster.
+# Confere que não sobrou PersistentVolume no cluster; a lista deve vir vazia antes do destroy do cluster (um PV em Released some sozinho em instantes).
 kubectl get pv
+
+# Se a lista acima não vier vazia: mostra os PVCs restantes (os de StatefulSet fora do namespace solidarytech) para apagá-los antes do destroy do cluster, como explica o k8s/README.md.
+kubectl get pvc -A
 
 # Gera o plano de destroy do cluster (EKS, nós, addons, RDS e roles IRSA).
 terraform -chdir=terraform/cluster plan -destroy -out=cluster-destroy.tfplan
@@ -332,6 +337,12 @@ terraform -chdir=terraform/cluster apply cluster-destroy.tfplan
 
 # Lista os discos EBS soltos na região; o esperado é nenhum ID na saída.
 aws ec2 describe-volumes --region us-east-2 --filters Name=status,Values=available --query 'Volumes[].VolumeId' --output text
+
+# Se aparecer algum ID: mostra as tags do disco, para confirmar que é do projeto (Project=SolidaryTech) antes de apagá-lo.
+aws ec2 describe-volumes --region us-east-2 --volume-ids <id> --query 'Volumes[].Tags'
+
+# Apaga o disco órfão do projeto, com autorização do responsável pela conta (irreversível: confira o ID antes).
+aws ec2 delete-volume --region us-east-2 --volume-id <id>
 ```
 
 Depois, uma de duas opções para a base:
@@ -352,10 +363,13 @@ terraform -chdir=terraform/base apply base-destroy.tfplan
 
 ### Encerramento do projeto
 
-O `bootstrap` sai por último, depois de `k8s`, `cluster` e `base`. O estado
-dele volta para um arquivo local, o bucket é esvaziado de todas as versões e
-só então vem o plano de destroy. A sequência completa, com um comentário
-acima de cada comando, está em
+O `bootstrap` sai por último, depois de `k8s`, `cluster` e `base`, e depois
+de coletadas as evidências de custo por tag (o destroy apaga o Budget e
+desativa as tags de custo). O estado dele volta para um arquivo local, o
+bucket é esvaziado de todas as versões (e conferido vazio), o
+`prevent_destroy` do bucket é desligado de propósito por um arquivo de
+override local e só então vem o plano de destroy. A sequência completa, com
+um comentário acima de cada comando, está em
 [`bootstrap/README.md`](bootstrap/README.md#encerramento-do-projeto).
 
 ## Validação offline
@@ -374,14 +388,14 @@ for d in bootstrap base cluster k8s modules/ecr modules/messaging modules/iam-ci
 
 | Pasta | Como o teste roda | O que prova |
 |---|---|---|
-| `bootstrap` | Provider real com credenciais falsas e endpoints numa porta fechada | Bucket protegido (nome, versionamento, AES256, bloqueios, só TLS, lifecycle), Budget com custo bruto, filtro por tag e quatro alertas, tags de custo desligadas por padrão e o import do provedor OIDC |
-| `base` | `mock_provider` | Sub-redes calculadas, ARN do cluster com a conta em uso, endpoints de gateway, recusa de zonas, VPC e conta inválidas e as saídas que `cluster` e `k8s` leem, com os nomes do contrato |
-| `cluster` | `mock_provider` e estado fictício da base | Nome do cluster vindo da base, saídas do contrato com a `k8s`, IRSA só para dois serviços, access entry do self-healing e as proteções de região, bucket, tamanho dos nós e NAT |
+| `bootstrap` | Provider real com credenciais falsas e endpoints numa porta fechada | Bucket protegido (nome e namespace regional da conta, versionamento, AES256, bloqueios, só TLS, lifecycle), Budget com custo bruto, filtro por tag e quatro alertas, tags de custo desligadas por padrão e o import do provedor OIDC |
+| `base` | `mock_provider` | Sub-redes calculadas, ARN do cluster com a conta em uso, endpoints de gateway na route table privada, NAT ligado por padrão e desligável sem levar os endpoints, recusa de zonas, VPC e conta inválidas e as saídas que `cluster` e `k8s` leem, com os nomes do contrato |
+| `cluster` | `mock_provider` e estado fictício da base | Nome do cluster vindo da base, saídas do contrato com a `k8s`, IRSA só para dois serviços, access entry do self-healing e as proteções de região, bucket (namespace regional da conta esperada), tamanho dos nós e NAT |
 | `k8s` | `mock_provider` e estados fictícios | Namespace, StorageClass com as tags, formato dos `DATABASE_URL`, Secret do Job de schema, ConfigMap, IRSA, ArgoCD enxuto e a Application só com `enable_applications` |
 | `modules/iam-ci` | Provider real com credenciais falsas | Trust só da `main` deste repositório, com o audience do STS; recusa de curingas; CI só nos 3 ECR; self-healing só com `eks:DescribeCluster` |
 | `modules/ecr` | Provider real com credenciais falsas | Nomes, tag imutável, scan, AES256, lifecycle de 10 imagens e host do registro |
 | `modules/messaging` | Provider real com credenciais falsas | DLQ com 5 leituras e 14 dias, tabela sob demanda com PITR |
-| `modules/eks` | `mock_provider` | Launch template sem security groups, IMDSv2 com limite 2, tags em instâncias e volumes, gp3 cifrado, acesso por API, suporte STANDARD e os 5 addons |
+| `modules/eks` | `mock_provider` | Launch template sem security groups, IMDSv2 com limite 2, role dos nós só com as três policies do EKS (ECR por `PullOnly`), tags em instâncias e volumes, gp3 cifrado, acesso por API, suporte STANDARD e os 5 addons |
 | `modules/rds` | `mock_provider` e random real | Entrada só do security group do cluster, sem saída, cifragem, PITR, ciclo de vida efêmero e senha alfanumérica |
 | `modules/irsa` | Provider real com credenciais falsas | Trust por ServiceAccount e namespace, só as ações declaradas e recusa de curingas e de emissor com `https://` |
 
@@ -394,13 +408,25 @@ acesso à conta, pull de imagens nem funcionamento na AWS.
 - **Budget sem dados no início.** O filtro por tag só enxerga custo depois
   que `Project`, `Environment` e `CostCenter` são ativadas como tags de
   alocação de custo. A AWS só aceita ativar uma tag depois que ela aparece no
-  faturamento, o que leva até 24 horas a partir do primeiro recurso com ela.
-  Com a infraestrutura de pé há um dia, troque `activate_cost_allocation_tags`
-  para `true` no bootstrap e aplique. Até lá, o Budget mostra US$ 0.
+  faturamento (até 24 horas a partir do primeiro recurso com ela), e a
+  ativação leva até mais 24 horas para valer. Aplique o bootstrap pelo menos
+  um dia antes da primeira janela do cluster e troque
+  `activate_cost_allocation_tags` para `true` antes de subir a base e o
+  cluster. Até a ativação valer, o Budget não vê o custo; o custo anterior a
+  ela só entra no filtro por backfill. Passo a passo em
+  [`bootstrap/README.md`](bootstrap/README.md#tags-de-alocação-de-custo).
+- **Alerta de previsão do Budget.** A AWS só gera a previsão depois de cerca
+  de 5 semanas de custo com a tag. Num ambiente efêmero e recente, quem
+  protege de fato são os alertas do gasto real (50%, 80% e 100%).
 - **Retenção de backup do RDS no plano gratuito.** A conta está no plano
-  gratuito, que pode recusar a retenção de 7 dias. Isso só aparece no apply.
-  Se for recusada, a escolha entre uma retenção menor (janela menor de PITR,
-  com efeito no RPO do DR) e outro plano da conta é do responsável por ela.
+  gratuito. A documentação oficial da AWS não publica limite de retenção para
+  ele (a API aceita de 0 a 35 dias), mas há relatos de contas no plano
+  gratuito em que o RDS recusa mais de 1 dia, e a Fase 4 usou 1 dia nesta
+  conta. O código mantém 7; se o apply do cluster falhar no RDS com
+  `FreeTierRestrictionError`, o resto do cluster fica no estado e um novo
+  plano com `-var=db_backup_retention_days=1` cria só o banco. Sintoma, troca
+  e efeito no RPO do DR (PITR de 24 horas) estão no
+  [`cluster/README.md`](cluster/README.md#retenção-de-backup-do-rds-no-plano-gratuito).
 - **Versões dos addons.** São as mais recentes compatíveis com o EKS 1.37,
   resolvidas na hora do plano. Confira-as no plano salvo; o `metrics-server`
   é addon da comunidade.
@@ -411,11 +437,17 @@ acesso à conta, pull de imagens nem funcionamento na AWS.
 - **Marca `sensitive` perdida entre raízes.** O `terraform_remote_state` não
   preserva a marca das saídas sensíveis. A `k8s` remarca a senha mestre com
   `sensitive()`; quem passar a ler outra saída sensível precisa fazer o mesmo.
+  O `sensitive()` vale só para o local: o data source guarda a senha sem a
+  marca no estado da `k8s`. Não rode `terraform show`,
+  `terraform state show data.terraform_remote_state.cluster` nem
+  `terraform console` nessa raiz com a tela gravada; para conferir saídas,
+  use `terraform output`.
 - **A guarda de conta não cobre tudo.** O `allowed_account_ids` protege só o
   provider AWS. O backend S3, o `terraform_remote_state` e o
   `aws eks get-token` usam as credenciais padrão da máquina. A validação de
-  `state_bucket` (o nome precisa conter o ID da conta) reduz o risco; use um
-  único perfil da AWS CLI em todas as raízes.
+  `state_bucket` (o nome precisa terminar em `-<conta>-<região>-an`, sufixo
+  que só a conta esperada consegue criar) reduz o risco; use um único perfil
+  da AWS CLI em todas as raízes.
 - **Sem NAT, sem imagens.** Os nós ficam em sub-redes privadas e baixam as
   imagens pelo NAT. Com a base em `enable_nat_gateway = false`, o node group
   termina em `NodeCreationFailure`. O plano do cluster avisa quando a VPC não
@@ -424,18 +456,38 @@ acesso à conta, pull de imagens nem funcionamento na AWS.
   ainda não foi aplicado ou já foi destruído, e os providers `kubernetes` e
   `helm` precisam da AWS CLI e da mesma identidade que criou o cluster.
 - **Ordem do destroy.** A `k8s` sai sempre antes do cluster: com o driver EBS
-  CSI ainda no ar, o finalizer da Application apaga os PVCs e os discos. Na
-  Fase 4, sem essa ordem, discos EBS ficaram órfãos depois do destroy e
-  precisaram ser procurados e apagados à mão.
+  CSI ainda no ar, o finalizer da Application apaga os recursos declarados no
+  Git (inclusive PVCs declarados lá), e o destroy do namespace `solidarytech`
+  leva o que sobrou nele, discos incluídos. Na Fase 4, sem essa ordem, discos
+  EBS ficaram órfãos depois do destroy e precisaram ser procurados e apagados
+  à mão.
+- **PVCs de StatefulSet fora do namespace da aplicação.** Um PVC criado pelo
+  `volumeClaimTemplates` de um StatefulSet não é recurso da Application, e o
+  Kubernetes o mantém por padrão (`whenDeleted: Retain`). Num namespace criado
+  pelo ArgoCD, como o da observabilidade, ele sobrevive ao destroy da `k8s` e
+  o disco fica órfão depois do destroy do cluster. Os StatefulSets do GitOps
+  devem usar `persistentVolumeClaimRetentionPolicy.whenDeleted: Delete` (ou ter
+  o namespace declarado no Git); a conferência com `kubectl get pv` e
+  `kubectl get pvc -A` antes do destroy do cluster é a rede de segurança.
 - **Import do provedor OIDC depois de um destroy do bootstrap.** O provedor
   deixa de existir; volte `import_existing_github_oidc_provider` para `false`,
   senão o plano falha com `Cannot import non-existent remote object`.
-- **Bucket dos estados.** Com `force_destroy = false`, o destroy do bootstrap
-  falha enquanto houver qualquer versão no bucket, mas só depois de apagar a
-  policy de TLS, o bloqueio público, a cifragem, o lifecycle, o provedor OIDC
-  e o Budget. Não há `prevent_destroy`: rode esse destroy só no encerramento.
-  O nome do bucket fica no namespace global do S3: se outra conta já tiver um
-  bucket com esse nome, o primeiro apply falha com `BucketAlreadyExists`.
+- **Bucket dos estados.** Fica no namespace regional da conta
+  (`<projeto>-tfstate-<conta>-<região>-an`, `bucket_namespace =
+  "account-regional"`): só esta conta consegue criar um bucket com esse
+  sufixo, então nenhuma outra pode ocupar o nome antes do primeiro apply nem
+  depois do encerramento. Tem `prevent_destroy = true`: o plano de destroy do
+  bootstrap (ou uma mudança que recrie o bucket) para com
+  `Instance cannot be destroyed` antes de apagar qualquer coisa. No
+  encerramento, um `state_bucket_override.tf` local desliga essa trava de
+  propósito. Com `force_destroy = false`, a exclusão ainda falha com o bucket
+  não vazio, mas só depois de o mesmo apply apagar a policy de TLS, o
+  bloqueio público, a cifragem, o lifecycle, o provedor OIDC e o Budget: por
+  isso a sequência do [`bootstrap/README.md`](bootstrap/README.md#encerramento-do-projeto)
+  esvazia o bucket e confere que ficou vazio antes do plano.
+- **Encerramento e tags de custo.** O destroy do bootstrap apaga o Budget e
+  desativa `Project`, `Environment` e `CostCenter` no faturamento. Colete
+  antes as evidências de custo por tag.
 - **Tag imutável no ECR.** Reexecutar o pipeline no mesmo commit não pode
   sobrescrever a tag publicada: o CI precisa pular o push quando a imagem já
   existir.

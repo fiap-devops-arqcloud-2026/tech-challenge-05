@@ -7,7 +7,7 @@
 # =================================================================
 
 output "state_bucket_name" {
-  description = "Bucket dos estados. Vai em bucket = ... do backend.hcl de cada raiz e em state_bucket dos tfvars de cluster e k8s."
+  description = "Bucket dos estados, no namespace regional da conta (<projeto>-tfstate-<conta>-<região>-an). Vai em bucket = ... do backend.hcl de cada raiz e em state_bucket dos tfvars de cluster e k8s."
   value       = aws_s3_bucket.state.bucket
 }
 

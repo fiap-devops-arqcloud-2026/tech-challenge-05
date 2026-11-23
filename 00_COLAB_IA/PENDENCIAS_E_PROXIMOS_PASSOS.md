@@ -20,8 +20,9 @@ Ferramentas: Terraform 1.16.0 e AWS CLI 2.35.11 instalados; Helm e Kustomize sta
   - [x] `terraform/cluster/`: EKS 1.37, node group com launch template, addons, RDS PostgreSQL 17, IRSA do donation e do volunteer, access entry do self-healing.
   - [x] `terraform/k8s/`: namespace, Secrets, ConfigMap, ServiceAccounts, StorageClass gp3, ArgoCD e Application (desligada até a C4).
   - [x] `default_tags` com as tags obrigatórias; `fmt`, `validate` e `terraform test` offline nas 10 pastas (83 cenários, 2026-11-21).
-  - [ ] Revisão adversarial (segurança, correção na AWS, FinOps e docs) com as correções confirmadas aplicadas — em andamento.
-  - [ ] Commit curado da C2 e push na `dev`.
+  - [x] Revisão adversarial (segurança, correção na AWS, FinOps e docs) concluída em 2026-11-23: 18 achados, 15 corrigidos, 1 incerto (retenção do RDS); 88 cenários de teste.
+  - [x] Commit curado da C2 (`5c9d9c0`) e push na `dev`; correções da revisão num commit próprio.
+  - [x] Addons do EKS 1.37 conferidos por leitura (os 5 existem em us-east-2).
   - [ ] Plano salvo de cada raiz apresentado ao usuário antes de qualquer apply (P-004). Esperado no bootstrap: 1 import, recursos novos e a troca de tags do provedor OIDC; conferir também se o plano FREE aceita a retenção de backup do RDS.
 
 Herdado da implementação para as próximas camadas:

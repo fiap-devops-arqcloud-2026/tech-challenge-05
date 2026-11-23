@@ -7,8 +7,9 @@ SolidaryTech recebeu três microsserviços e precisa operá-los com confiabilida
 
 > **Estado:** em construção, por camadas. Os três serviços já rodam em
 > contêineres, com testes e instrumentação, num ambiente local completo
-> (Docker Compose). A infraestrutura na AWS vem a seguir. O andamento de
-> cada camada aparece na tabela abaixo.
+> (Docker Compose). A infraestrutura (Terraform) e os manifestos GitOps
+> estão escritos e validados sem tocar na AWS; a primeira aplicação na
+> conta vem a seguir. O andamento de cada camada aparece na tabela abaixo.
 
 ## Os três serviços
 
@@ -75,9 +76,9 @@ Principais escolhas:
 |---|---|---|
 | C0 | Fundação do repositório | ✅ pronta |
 | C1 | Serviços e contêineres (Dockerfiles, testes, OpenTelemetry, Compose) | ✅ pronta |
-| C2 | Infraestrutura como Código (Terraform) | ⏳ próxima |
-| C3 | CI/CD DevSecOps (GitHub Actions) | pendente |
-| C4 | GitOps e deploy (ArgoCD) | pendente |
+| C2 | Infraestrutura como Código (Terraform) | ✅ código pronto e validado offline; não aplicado na AWS |
+| C3 | CI/CD DevSecOps (GitHub Actions) | ⏳ em andamento |
+| C4 | GitOps e deploy (ArgoCD) | ⏳ manifestos validados localmente; falta rodar no cluster |
 | C5 | Observabilidade e APM | pendente |
 | C6 | SRE: SLIs, SLOs, Error Budget e MTTR | pendente |
 | C7 | FinOps: tags, rightsizing, Forecast | pendente |
@@ -126,23 +127,26 @@ comandos. Os testes de cada serviço estão no README dele, em `services/`.
 ├── compose/                  # Arquivos de apoio do ambiente local (init do banco e da AWS emulada)
 ├── docker-compose.yaml       # Ambiente local completo
 ├── docker-compose.otel.yaml  # Sobreposição com o OpenTelemetry Collector local
+├── terraform/                # Infraestrutura: raízes bootstrap, base, cluster, k8s e módulos
+├── gitops/                   # Manifestos que o ArgoCD aplica no cluster (Kustomize)
 ├── docs/
 │   ├── enunciado/            # README original do Hackathon (cópia sem alterações)
 │   ├── requisitos/           # Mapa de requisitos obrigatórios e bônus
 │   └── aulas-fiap/           # Material das aulas e guias de estudo
-├── scripts/                  # Varredura de segredos e testes de integração
+├── scripts/                  # Varredura de segredos, validação do GitOps e testes de integração
 ├── SECURITY.md               # Política de segurança e credenciais
 └── POSTECH - DCLT - Hackathon - Fase 5.pdf   # Enunciado oficial
 ```
 
-As pastas `terraform/`, `gitops/` e `.github/workflows/` entram nas camadas
-seguintes.
+Os pipelines de CI/CD (`.github/workflows/`) entram com a camada C3.
 
 ## Documentação
 
 - [Enunciado do Hackathon (PDF)](POSTECH%20-%20DCLT%20-%20Hackathon%20-%20Fase%205.pdf)
 - [README original do Hackathon](docs/enunciado/README-coordenador.md)
 - [Mapa de requisitos](docs/requisitos/README.md) — versão interativa em [`REQUISITOS.html`](docs/requisitos/REQUISITOS.html)
+- [Infraestrutura (Terraform)](terraform/README.md) — raízes, ordem de aplicação e de destruição, custos
+- [GitOps](gitops/README.md) — o que o ArgoCD aplica e o que fica com o Terraform
 - [Política de segurança](SECURITY.md)
 
 ## Segurança

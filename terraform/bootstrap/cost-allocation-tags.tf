@@ -7,12 +7,16 @@
 #
 # POR QUE COMEÇA DESLIGADO (activate_cost_allocation_tags = false)
 # A AWS só aceita ativar uma chave que já apareceu no faturamento, o que
-# acontece até 24 h depois de o primeiro recurso com a tag existir. No
+# acontece até 24 h depois de a tag ser aplicada ao primeiro recurso. No
 # primeiro apply do bootstrap nenhum recurso tagueado tem esse tempo, e a
-# ativação falharia. O passo é feito depois, com a infraestrutura de pé:
-# trocar a variável para true e aplicar de novo.
+# ativação falharia. O passo vem depois: trocar a variável para true e
+# aplicar de novo, de preferência um dia depois do primeiro apply do
+# bootstrap (o bucket tagueado já leva as chaves ao faturamento) e ANTES
+# da primeira janela do cluster.
 #
-# Até a ativação, o filtro por tag do Budget fica sem dados (US$ 0).
+# A ativação ainda leva até mais 24 h para valer, e o custo anterior a ela
+# só entra no filtro por tag com um backfill (README.md). Até lá, o
+# filtro por tag do Budget não vê o custo do projeto.
 # =================================================================
 
 locals {

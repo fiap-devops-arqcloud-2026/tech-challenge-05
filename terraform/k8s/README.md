@@ -74,9 +74,20 @@ aws eks update-kubeconfig --region us-east-2 --name solidarytech-eks
 # Abre a interface em http://localhost:8080 (Ctrl+C fecha o túnel).
 kubectl port-forward svc/argocd-server -n argocd 8080:80
 
-# Mostra a senha inicial do usuário admin, que o ArgoCD gera no primeiro start (não fica no estado do Terraform).
+# Mostra a senha inicial do usuário admin, que o ArgoCD gera no primeiro start (não fica no estado do Terraform); a senha sai em texto no terminal, então não rode com a tela gravada.
 kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath='{.data.password}' | base64 -d
+
+# Depois de trocar a senha do admin (na interface: User Info > Update Password), apaga o Secret que guarda a senha inicial em texto.
+kubectl -n argocd delete secret argocd-initial-admin-secret
 ```
+
+A conta `admin` fica ligada (padrão do chart) e controla tudo o que o ArgoCD
+aplica no cluster. A documentação do Argo CD recomenda trocar a senha inicial
+e apagar o `argocd-initial-admin-secret`, que só existe para guardá-la em
+texto; o ArgoCD o recria se for preciso gerar outra senha. Como cada cluster
+novo gera uma senha nova, repita os dois passos a cada janela de trabalho.
+Nenhum dos dois é deploy: os objetos da aplicação continuam vindo só do
+GitOps.
 
 ## Contrato com o GitOps
 
@@ -102,18 +113,36 @@ Sempre **antes** do destroy da raiz cluster.
 # Gera o plano de destroy salvo para revisão.
 terraform plan -destroy -out=k8s-destroy.tfplan
 
-# Aplica o plano revisado: a Application sai primeiro e o ArgoCD apaga tudo o que ela criou, inclusive PVCs (e os discos EBS), antes de ser desinstalado.
+# Aplica o plano revisado: a Application sai primeiro, o ArgoCD apaga os recursos que ela gerencia (os declarados no Git) e depois sai o namespace solidarytech, com o que sobrou nele.
 terraform apply k8s-destroy.tfplan
 
-# Confere que não sobrou volume persistente antes de destruir o cluster (a lista deve vir vazia).
+# Confere que não sobrou volume persistente antes de destruir o cluster (a lista deve vir vazia; um PV em Released some sozinho em instantes, enquanto o driver apaga o disco).
 kubectl get pv
+
+# Se a lista acima não vier vazia: mostra os PVCs que ainda existem e o namespace de cada um.
+kubectl get pvc -A
+
+# Apaga cada PVC listado, com o driver EBS CSI ainda no ar; o PV (reclaim Delete) e o disco EBS saem junto.
+kubectl delete pvc <nome-do-pvc> -n <namespace>
 ```
 
 A Application tem o finalizer `resources-finalizer.argocd.argoproj.io`: o
-uninstall espera (até 10 minutos) o ArgoCD remover os recursos dela. Na Fase 4,
-sem essa ordem, discos EBS de PVCs ficaram órfãos depois do destroy, cobrando.
-Se o ArgoCD não conseguir apagar algum recurso, o destroy para por timeout;
-corrija a causa e rode plan e apply de destroy de novo.
+uninstall espera (até 10 minutos) o ArgoCD remover os recursos que ela
+gerencia, ou seja, os declarados no Git. Na Fase 4, sem essa ordem, discos EBS
+de PVCs ficaram órfãos depois do destroy, cobrando. Se o ArgoCD não conseguir
+apagar algum recurso, o destroy para por timeout; corrija a causa e rode plan
+e apply de destroy de novo.
+
+O finalizer **não** cobre os PVCs criados pelo `volumeClaimTemplates` de um
+StatefulSet (Prometheus e Loki, por exemplo): eles não são recursos da
+Application, e o Kubernetes os mantém quando o StatefulSet sai (retenção
+padrão `whenDeleted: Retain`). No namespace `solidarytech`, eles saem com o
+namespace, que esta raiz apaga. Num namespace criado pelo ArgoCD, como o da
+observabilidade, eles sobrevivem ao destroy desta raiz, e os discos ficam
+órfãos depois do destroy do cluster; por isso a conferência acima. Para evitar
+o caso, os StatefulSets do GitOps devem declarar
+`persistentVolumeClaimRetentionPolicy.whenDeleted: Delete`, ou o namespace
+deles deve ser declarado no Git (aí ele sai junto com a Application).
 
 ## Verificação offline
 

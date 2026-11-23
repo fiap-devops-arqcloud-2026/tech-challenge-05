@@ -25,5 +25,7 @@ budget_alert_emails = ["alertas@example.org"]
 # import_existing_github_oidc_provider = true
 
 # true só depois que as tags aparecerem no faturamento (até 24 h depois do
-# primeiro recurso tagueado); antes disso a AWS recusa a ativação.
+# primeiro recurso tagueado); antes disso a AWS recusa a ativação. Ligue
+# antes da primeira janela do cluster: a ativação leva até mais 24 h para
+# valer, e o custo anterior só entra no filtro com backfill (README.md).
 # activate_cost_allocation_tags = false

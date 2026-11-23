@@ -47,7 +47,10 @@ locals {
   base = data.terraform_remote_state.base.outputs
 
   # Rede: sub-redes privadas (EKS) e o subnet group das sub-redes de
-  # banco (RDS), sem rota para a internet.
+  # banco (RDS). Nenhuma tem rota de ENTRADA a partir da internet (sem
+  # Internet Gateway): as duas usam a route table privada da base, cuja
+  # saída passa pelo NAT. O RDS não sai por ela, porque o security group
+  # dele não tem regra de saída.
   vpc_id                     = local.base.vpc_id
   private_subnet_ids         = local.base.private_subnet_ids
   database_subnet_group_name = local.base.database_subnet_group_name

@@ -12,8 +12,11 @@
 
 locals {
   # Quatro alertas: três sobre o gasto REAL e um sobre a PREVISÃO do mês.
-  # O previsto avisa no meio do mês que o teto vai estourar, ainda a
-  # tempo de desligar o ambiente; o real a 100% confirma que estourou.
+  # O real a 50% e a 80% avisa ainda a tempo de desligar o ambiente; o
+  # real a 100% confirma que estourou. A previsão só funciona depois de
+  # cerca de 5 semanas de custo com a tag (a AWS precisa desse histórico
+  # para prever): fica no código, mas, num ambiente efêmero e recente,
+  # quem protege de fato são os alertas do gasto real.
   budget_notifications = [
     { type = "ACTUAL", threshold = 50 },
     { type = "ACTUAL", threshold = 80 },
@@ -36,8 +39,10 @@ resource "aws_budgets_budget" "monthly" {
   # API do Budgets. format() evita escrever o valor da tag duas vezes.
   #
   # LIMITAÇÃO CONHECIDA: o filtro só enxerga a tag depois que ela é
-  # ATIVADA como tag de alocação de custo (cost-allocation-tags.tf). Até
-  # lá, o Budget mostra US$ 0 mesmo com o ambiente ligado.
+  # ATIVADA como tag de alocação de custo (cost-allocation-tags.tf), e a
+  # ativação leva até 24 h para valer. Até lá, o Budget não vê o custo do
+  # projeto, mesmo com o ambiente ligado; o custo anterior à ativação só
+  # entra no filtro com um backfill (README.md).
   cost_filter {
     name   = "TagKeyValue"
     values = [format("user:Project$%s", local.required_tags.Project)]

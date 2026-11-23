@@ -81,6 +81,14 @@ locals {
   # terraform_remote_state NÃO preserva essa marca (conferido com o
   # Terraform 1.16). Sem o sensitive() abaixo, a senha apareceria em texto
   # no plan se alguém a usasse num output ou num atributo comum.
+  #
+  # LIMITE: o sensitive() vale só para este local. O próprio data source
+  # continua guardando a senha SEM a marca no estado desta raiz, e a mostra
+  # em texto em "terraform show", "terraform state show
+  # data.terraform_remote_state.cluster", "terraform console" e em
+  # mensagens de erro que citem data.terraform_remote_state.cluster.outputs.
+  # Não rode esses comandos nesta raiz com a tela gravada; para conferir
+  # saídas, use "terraform output".
   rds_master_password = sensitive(data.terraform_remote_state.cluster.outputs.rds_master_password)
 
   # Mapa <ServiceAccount> => <ARN da role IRSA> (donation-service e

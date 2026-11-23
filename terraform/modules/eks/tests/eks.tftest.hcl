@@ -6,7 +6,8 @@
 #
 #   1. o launch template NÃO define security groups (senão o EKS tira o
 #      security group do cluster dos nós e o RDS fica inalcançável);
-#   2. IMDSv2 obrigatório, com limite de saltos 2;
+#   2. IMDSv2 obrigatório, com limite de saltos 2, e a role dos nós só
+#      com as três policies do EKS (ECR por PullOnly);
 #   3. as tags obrigatórias chegam às instâncias e aos volumes dos nós;
 #   4. disco raiz gp3 cifrado;
 #   5. acesso só por access entries (API), suporte STANDARD, endpoint
@@ -205,6 +206,20 @@ run "node_group_gerenciado" {
   assert {
     condition     = aws_eks_node_group.this.node_group_name == "solidarytech-nodes" && aws_eks_node_group.this.version == "1.37"
     error_message = "O node group deve ter o nome pedido e a mesma versão do control plane."
+  }
+
+  # Qualquer Pod alcança a role do nó pelo IMDS (limite de saltos 2), por
+  # isso ela leva só as três policies do EKS, e a do ECR é a de pull.
+  assert {
+    condition     = toset(keys(aws_iam_role_policy_attachment.node)) == toset(["AmazonEKSWorkerNodePolicy", "AmazonEKS_CNI_Policy", "AmazonEC2ContainerRegistryPullOnly"])
+    error_message = "A role dos nós deve ter só AmazonEKSWorkerNodePolicy, AmazonEKS_CNI_Policy e AmazonEC2ContainerRegistryPullOnly (não a ReadOnly)."
+  }
+
+  # try(): sem a chave, a asserção falha com a mensagem abaixo, em vez de
+  # um erro de avaliação que pularia os runs seguintes.
+  assert {
+    condition     = try(aws_iam_role_policy_attachment.node["AmazonEC2ContainerRegistryPullOnly"].policy_arn, null) == "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryPullOnly" && try(aws_iam_role_policy_attachment.node["AmazonEC2ContainerRegistryPullOnly"].role, null) == aws_iam_role.node.name
+    error_message = "A policy de pull do ECR deve ser a gerenciada AmazonEC2ContainerRegistryPullOnly, anexada à role dos nós."
   }
 }
 

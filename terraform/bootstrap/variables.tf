@@ -112,7 +112,7 @@ variable "budget_alert_emails" {
 # -----------------------------------------------------------------
 
 variable "activate_cost_allocation_tags" {
-  description = "true ativa Project, Environment e CostCenter como tags de alocação de custo no faturamento. Só funciona depois que as tags aparecem no faturamento (até 24 h após o primeiro recurso com elas); por isso começa em false."
+  description = "true ativa Project, Environment e CostCenter como tags de alocação de custo no faturamento. Só funciona depois que as tags aparecem no faturamento (até 24 h após o primeiro recurso com elas); por isso começa em false. Ligue antes da primeira janela do cluster: a ativação leva até mais 24 h para valer, e o custo anterior só entra no filtro por backfill (README.md)."
   type        = bool
   default     = false
   nullable    = false

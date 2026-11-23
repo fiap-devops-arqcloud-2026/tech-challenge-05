@@ -8,7 +8,7 @@
 #
 # Os valores reais são as saídas state_bucket_name e state_bucket_region
 # da raiz bootstrap. O bucket segue o padrão
-# <projeto>-tfstate-<conta>-<região>.
+# <projeto>-tfstate-<conta>-<região>-an (namespace regional da conta).
 #
 # Os sentinelas são nomes inválidos de propósito: se o arquivo for usado
 # sem edição, o init falha na hora, em vez de procurar (ou gravar) o

@@ -11,8 +11,9 @@
 expected_aws_account_id = "000000000000"
 
 # Bucket e região dos estados: outputs state_bucket_name e
-# state_bucket_region da raiz bootstrap (os mesmos do backend.hcl).
-state_bucket = "solidarytech-tfstate-000000000000-us-east-2"
+# state_bucket_region da raiz bootstrap (os mesmos do backend.hcl). O nome
+# precisa terminar em -<conta acima>-<state_region>-an.
+state_bucket = "solidarytech-tfstate-000000000000-us-east-2-an"
 state_region = "us-east-2"
 
 # false até a pasta do overlay existir na branch observada e as imagens

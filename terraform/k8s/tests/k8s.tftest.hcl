@@ -63,7 +63,7 @@ override_data {
 
 variables {
   expected_aws_account_id = "000000000000"
-  state_bucket            = "solidarytech-tfstate-000000000000-us-east-2"
+  state_bucket            = "solidarytech-tfstate-000000000000-us-east-2-an"
   state_region            = "us-east-2"
 }
 
@@ -406,15 +406,28 @@ run "recusa_cluster_sem_role_irsa" {
   expect_failures = [kubernetes_service_account_v1.irsa]
 }
 
-# O bucket de estado leva o ID da conta no nome; um bucket sem ele (como
-# o de outra conta) é recusado antes de qualquer leitura de estado. O nome
-# usa texto no lugar de outro ID de 12 dígitos, para que a varredura de
-# IDs de conta só encontre a conta fictícia 000000000000.
+# O bucket de estado fica no namespace regional da conta: o nome termina
+# em -<conta>-<região>-an, sufixo que só a própria conta consegue criar.
+# Um bucket de outra conta é recusado antes de qualquer leitura de estado.
+# O nome usa texto no lugar de outro ID de 12 dígitos, para que a
+# varredura de IDs de conta só encontre a conta fictícia 000000000000.
 run "recusa_bucket_de_estado_de_outra_conta" {
   command = plan
 
   variables {
-    state_bucket = "solidarytech-tfstate-outra-conta-us-east-2"
+    state_bucket = "solidarytech-tfstate-outra-conta-us-east-2-an"
+  }
+
+  expect_failures = [var.state_bucket]
+}
+
+# Com a conta certa, mas no namespace global (sem -an): qualquer conta
+# poderia ter criado esse nome, então também é recusado.
+run "recusa_bucket_de_estado_fora_do_namespace_da_conta" {
+  command = plan
+
+  variables {
+    state_bucket = "solidarytech-tfstate-000000000000-us-east-2"
   }
 
   expect_failures = [var.state_bucket]

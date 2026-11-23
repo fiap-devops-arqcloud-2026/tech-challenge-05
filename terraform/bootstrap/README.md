@@ -5,9 +5,9 @@ sobrevive aos destroys de cada janela de uso:
 
 | Recurso | Para quê |
 |---|---|
-| Bucket S3 `<projeto>-tfstate-<conta>-<região>` | Guarda os estados de todas as raízes. Versionado, cifrado (SSE-S3), sem acesso público, sem ACLs, só HTTPS, com limpeza de versões antigas (90 dias) e de uploads incompletos (7 dias). |
+| Bucket S3 `<projeto>-tfstate-<conta>-<região>-an` | Guarda os estados de todas as raízes. Fica no namespace regional da conta (`bucket_namespace = "account-regional"`): só esta conta consegue criar um bucket com esse sufixo. Versionado, cifrado (SSE-S3), sem acesso público, sem ACLs, só HTTPS, com limpeza de versões antigas (90 dias) e de uploads incompletos (7 dias). Protegido por `force_destroy = false` e `prevent_destroy = true`. |
 | Provedor OIDC do GitHub | Permite ao GitHub Actions obter credenciais temporárias da AWS sem chave guardada. A conta já tem o provedor: ele é **adotado** por um bloco `import`, sem ser recriado. |
-| Budget `<projeto>-mensal` | Teto de US$ 50/mês filtrado pela tag `Project=SolidaryTech`, com alertas por e-mail no gasto real (50%, 80%, 100%) e na previsão (100%). Mede o custo bruto: créditos e reembolsos não entram, senão o alerta nunca dispararia numa conta paga por créditos. |
+| Budget `<projeto>-mensal` | Teto de US$ 50/mês filtrado pela tag `Project=SolidaryTech`, com alertas por e-mail no gasto real (50%, 80%, 100%) e na previsão (100%). Mede o custo bruto: créditos e reembolsos não entram, senão o alerta nunca dispararia numa conta paga por créditos. A previsão só existe depois de cerca de 5 semanas de custo com a tag: até lá, quem protege são os alertas do gasto real. |
 | Tags de alocação de custo | Ativa `Project`, `Environment` e `CostCenter` no faturamento. Desligado no início (ver abaixo). |
 
 Na Fase 4 esses itens foram criados à mão, no console ou na CLI. Aqui eles
@@ -91,18 +91,59 @@ terraform plan -out=bootstrap.tfplan
 terraform apply bootstrap.tfplan
 ```
 
-**Tags de alocação de custo.** A AWS só aceita ativar uma tag que já
-apareceu no faturamento, até 24 horas depois do primeiro recurso com ela.
-Com a infraestrutura de pé há um dia, troque
-`activate_cost_allocation_tags` para `true` no `terraform.tfvars` e faça
-plan e apply. Até lá, o filtro por tag do Budget mostra US$ 0.
+## Tags de alocação de custo
+
+O filtro por tag do Budget e o custo por tag no Cost Explorer só enxergam o
+gasto depois que `Project`, `Environment` e `CostCenter` são **ativadas** como
+tags de alocação de custo. São duas esperas: a chave leva até 24 horas para
+aparecer no faturamento depois de aplicada ao primeiro recurso, e a ativação
+leva até mais 24 horas para valer depois do pedido. O custo de antes da
+ativação não entra no filtro, a não ser por backfill. Se a ativação ficar para
+depois da primeira janela do cluster, o Budget não vê o custo mais caro do
+projeto e a evidência de custo por tag perde esse período.
+
+A ordem recomendada é aplicar o bootstrap pelo menos um dia antes da primeira
+janela do cluster (o bucket tagueado já leva as chaves ao faturamento) e
+ativar as tags antes de subir a base e o cluster:
+
+```bash
+# Confere, só lendo, se as três chaves já aparecem no faturamento como tags do usuário ainda inativas.
+aws ce list-cost-allocation-tags --status Inactive --type UserDefined
+
+# Com as chaves listadas, troque activate_cost_allocation_tags para true no terraform.tfvars e gere o plano salvo.
+terraform plan -out=bootstrap.tfplan
+
+# Aplica o plano revisado; a ativação ainda leva até 24 horas para valer.
+terraform apply bootstrap.tfplan
+
+# Opcional: traz para o filtro por tag o custo desde o primeiro dia de um mês dos últimos 12 (uma vez a cada 24 horas).
+aws ce start-cost-allocation-tag-backfill --backfill-from AAAA-MM-01T00:00:00Z
+```
+
+Até a ativação valer, o Budget não vê o custo do projeto; o custo anterior a
+ela só entra no filtro por backfill.
 
 ## Encerramento do projeto
 
 O bootstrap só é destruído no fim do projeto, depois de `k8s`, `cluster` e
-`base`. O bucket tem `force_destroy = false`: o destroy falha enquanto houver
-qualquer versão de objeto dentro dele, o que protege os estados de um destroy
-acidental. A sequência roda numa pasta já inicializada com o backend S3, com
+`base`. O bucket tem duas travas, que protegem os estados de um destroy
+acidental:
+
+- `force_destroy = false`: a exclusão falha enquanto houver qualquer versão de
+  objeto dentro dele;
+- `lifecycle { prevent_destroy = true }`: o próprio plano de destroy para com
+  `Instance cannot be destroyed`, antes de apagar qualquer coisa.
+
+O encerramento esvazia o bucket e desliga a segunda trava **de propósito**,
+com um arquivo de override local (`state_bucket_override.tf`, ignorado pelo
+Git pela regra `*_override.tf`), sem mudar o `state-bucket.tf` versionado.
+
+Antes de começar, colete as evidências de custo por tag (Cost Explorer) e do
+Budget: o destroy apaga o Budget e devolve `Project`, `Environment` e
+`CostCenter` ao estado inativo no faturamento (é o que o provider faz ao
+destruir `aws_ce_cost_allocation_tag`).
+
+A sequência roda no Git Bash, numa pasta já inicializada com o backend S3, com
 autorização do responsável pela conta:
 
 ```bash
@@ -115,15 +156,33 @@ terraform init -migrate-state
 # Guarda o nome do bucket numa variável do shell para os próximos comandos.
 BUCKET="$(terraform output -raw state_bucket_name)"
 
-# Apaga todas as versões e marcadores de exclusão do bucket (os estados antigos); confira antes que as outras raízes já foram destruídas.
-aws s3api list-object-versions --bucket "$BUCKET" --query '[Versions,DeleteMarkers][].[Key,VersionId]' --output text | while read -r key version; do aws s3api delete-object --bucket "$BUCKET" --key "$key" --version-id "$version"; done
+# Apaga todas as versões e marcadores de exclusão (os estados antigos); confira antes que as outras raízes já foram destruídas. O tr tira o \r que a AWS CLI do Windows põe no fim de cada linha (sem ele, cada version-id sai inválido), e o laço para no primeiro erro.
+aws s3api list-object-versions --bucket "$BUCKET" --query '[Versions,DeleteMarkers][].[Key,VersionId]' --output text | tr -d '\r' | while IFS=$'\t' read -r key version; do aws s3api delete-object --bucket "$BUCKET" --key "$key" --version-id "$version" || break; done
+
+# Confere que o bucket ficou vazio: a saída precisa vir vazia; se listar algum par chave e versão, repita o comando anterior antes de seguir.
+aws s3api list-object-versions --bucket "$BUCKET" --query '[Versions,DeleteMarkers][].[Key,VersionId]' --output text | tr -d '\r'
+
+# Opcional, só se as tags foram ativadas por esta raiz: para mantê-las ativas depois do encerramento, tira-as do estado sem desativá-las na AWS.
+terraform state rm 'aws_ce_cost_allocation_tag.required'
+
+# Desliga de propósito o prevent_destroy do bucket, sem mudar o arquivo versionado.
+printf 'resource "aws_s3_bucket" "state" {\n  lifecycle {\n    prevent_destroy = false\n  }\n}\n' > state_bucket_override.tf
 
 # Gera o plano de destroy salvo para revisão.
 terraform plan -destroy -out=bootstrap-destroy.tfplan
 
 # Aplica o plano de destroy revisado.
 terraform apply bootstrap-destroy.tfplan
+
+# Religa a trava para um eventual bootstrap novo e apaga o plano aplicado.
+rm -f state_bucket_override.tf bootstrap-destroy.tfplan
 ```
+
+Sem o bucket vazio, a exclusão dele falha com `BucketNotEmpty`, mas só depois
+de o mesmo apply ter apagado a policy de TLS, o bloqueio público, o provedor
+OIDC e o Budget; por isso a conferência antes do plano. Mesmo depois de
+apagado, o nome continua no namespace regional desta conta: nenhuma outra
+conta consegue criá-lo.
 
 Depois do destroy, o provedor OIDC deixa de existir: volte
 `import_existing_github_oidc_provider` para `false` antes de um novo apply,

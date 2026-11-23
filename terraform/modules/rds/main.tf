@@ -13,7 +13,9 @@
 #     fica no estado do Terraform (bucket cifrado, acesso restrito) e
 #     chega ao cluster como Secret do Kubernetes, criado pela raiz k8s;
 #   - PostgreSQL 17, a mesma versão maior do Compose local;
-#   - backup de 7 dias, que também é a janela do PITR usada pelo DR;
+#   - backup com a retenção pedida pela raiz (7 dias por padrão, ou 1 se
+#     o plano gratuito da conta recusar mais), que também é a janela do
+#     PITR usada pelo DR;
 #   - db.t4g.micro (Graviton), mais barata que a db.t3.micro da Fase 4;
 #   - security group sem regra de saída (ver abaixo).
 # =================================================================
@@ -112,8 +114,11 @@ resource "aws_db_instance" "this" {
   password = random_password.master.result
   port     = local.port
 
-  # Rede: sub-redes de banco da raiz base (sem rota para a internet) e o
-  # firewall acima. Sem IP público: são duas barreiras independentes.
+  # Rede: sub-redes de banco da raiz base, sem rota de entrada a partir da
+  # internet (sem Internet Gateway; a route table é a privada da base, com
+  # saída pelo NAT, que o banco não usa porque o firewall acima não tem
+  # regra de saída). Sem IP público e com o firewall: são duas barreiras
+  # independentes.
   db_subnet_group_name   = var.db_subnet_group_name
   vpc_security_group_ids = [aws_security_group.this.id]
   publicly_accessible    = false

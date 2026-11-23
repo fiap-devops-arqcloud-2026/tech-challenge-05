@@ -65,11 +65,14 @@ variable "state_bucket" {
 
   validation {
     # O allowed_account_ids protege só o provider AWS, não a leitura do
-    # terraform_remote_state. Como o bucket do projeto leva o ID da conta
-    # no nome (<projeto>-tfstate-<conta>-<região>), exigir a conta aqui
-    # impede ler o estado de um bucket de outra conta por engano.
-    condition     = strcontains(var.state_bucket, var.expected_aws_account_id)
-    error_message = "O nome do bucket de estado precisa conter o ID da conta esperada (<projeto>-tfstate-<conta>-<região>)."
+    # terraform_remote_state. O bucket do projeto fica no namespace
+    # regional da conta (<projeto>-tfstate-<conta>-<região>-an), e o S3 só
+    # deixa a própria conta criar um bucket com esse sufixo. Exigir o
+    # sufixo com a conta esperada e a região do bucket garante que o
+    # estado lido é desta conta, e não de um bucket alheio com nome
+    # parecido.
+    condition     = endswith(var.state_bucket, "-${var.expected_aws_account_id}-${var.state_region}-an")
+    error_message = "O bucket de estado precisa estar no namespace regional da conta esperada: o nome termina em -<conta>-<região do bucket>-an, como em <projeto>-tfstate-<conta>-<região>-an."
   }
 }
 
@@ -229,7 +232,8 @@ variable "db_backup_retention_days" {
     Retenção dos backups automáticos do RDS, em dias. É também a janela
     da restauração para um ponto no tempo (PITR), base da proteção dos
     dados de doação na estratégia de DR. 0 desligaria os dois e é
-    recusado.
+    recusado. Se o plano gratuito da conta recusar 7 dias no apply
+    (FreeTierRestrictionError), use 1 (README.md).
   EOT
   type        = number
   default     = 7

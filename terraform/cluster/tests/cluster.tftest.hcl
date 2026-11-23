@@ -108,7 +108,7 @@ override_data {
 
 variables {
   expected_aws_account_id = "000000000000"
-  state_bucket            = "solidarytech-tfstate-000000000000-us-east-2"
+  state_bucket            = "solidarytech-tfstate-000000000000-us-east-2-an"
   state_region            = "us-east-2"
 }
 
@@ -207,15 +207,40 @@ run "base_em_outra_regiao_e_recusada" {
   expect_failures = [data.terraform_remote_state.base]
 }
 
-# O nome do bucket precisa conter o ID da conta esperada. Um bucket sem
-# ele (como o de outra conta) é recusado antes de qualquer leitura de
-# estado. O nome usa texto no lugar de outro ID de 12 dígitos, para que a
-# varredura de IDs de conta só encontre a conta fictícia 000000000000.
+# O nome do bucket precisa terminar em -<conta esperada>-<região>-an, o
+# sufixo do namespace regional da conta, que só ela consegue criar. Um
+# bucket de outra conta é recusado antes de qualquer leitura de estado. O
+# nome usa texto no lugar de outro ID de 12 dígitos, para que a varredura
+# de IDs de conta só encontre a conta fictícia 000000000000.
 run "bucket_de_estado_de_outra_conta_e_recusado" {
   command = plan
 
   variables {
-    state_bucket = "solidarytech-tfstate-outra-conta-us-east-2"
+    state_bucket = "solidarytech-tfstate-outra-conta-us-east-2-an"
+  }
+
+  expect_failures = [var.state_bucket]
+}
+
+# Mesmo com a conta certa no nome, um bucket do namespace global (sem o
+# sufixo -an) pode ter sido criado por qualquer conta: também é recusado.
+run "bucket_de_estado_fora_do_namespace_da_conta_e_recusado" {
+  command = plan
+
+  variables {
+    state_bucket = "solidarytech-tfstate-000000000000-us-east-2"
+  }
+
+  expect_failures = [var.state_bucket]
+}
+
+# A região no sufixo do nome é a região em que o bucket existe; um
+# state_region diferente apontaria o backend para o lugar errado.
+run "bucket_de_estado_de_outra_regiao_e_recusado" {
+  command = plan
+
+  variables {
+    state_region = "us-east-1"
   }
 
   expect_failures = [var.state_bucket]

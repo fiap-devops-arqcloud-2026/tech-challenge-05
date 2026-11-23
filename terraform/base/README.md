@@ -81,17 +81,31 @@ terraform -chdir=terraform/base apply base-destroy.tfplan
 # Formatação de todo o Terraform
 terraform fmt -check -recursive terraform
 
-# Raiz base: dependências sem backend, validação e teste da composição (mock_provider)
+# Raiz base: baixa providers e módulos sem configurar o backend (não acessa o S3)
 terraform -chdir=terraform/base init -backend=false -input=false
+
+# Raiz base: confere sintaxe, tipos e referências
 terraform -chdir=terraform/base validate
+
+# Raiz base: teste da composição com provider simulado (mock_provider)
 terraform -chdir=terraform/base test
 
-# Módulos: cada um tem testes com command = plan e provider sem acesso à AWS
+# Módulo iam-ci: baixa o provider sem backend
 terraform -chdir=terraform/modules/iam-ci init -backend=false -input=false
+
+# Módulo iam-ci: testes da trust e das policies (command = plan, sem acesso à AWS)
 terraform -chdir=terraform/modules/iam-ci test
+
+# Módulo ecr: baixa o provider sem backend
 terraform -chdir=terraform/modules/ecr init -backend=false -input=false
+
+# Módulo ecr: testes dos repositórios (command = plan, sem acesso à AWS)
 terraform -chdir=terraform/modules/ecr test
+
+# Módulo messaging: baixa o provider sem backend
 terraform -chdir=terraform/modules/messaging init -backend=false -input=false
+
+# Módulo messaging: testes da fila e da tabela (command = plan, sem acesso à AWS)
 terraform -chdir=terraform/modules/messaging test
 ```
 

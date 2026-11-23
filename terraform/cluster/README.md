@@ -11,7 +11,7 @@ TL;DR: cria o cluster EKS com o node group, o PostgreSQL gerenciado e as roles I
 | Launch template dos nós | disco raiz gp3 cifrado de 20 GiB, IMDSv2 obrigatório (limite de saltos 2), tags obrigatórias nas instâncias e nos volumes, **sem** security groups |
 | Addons gerenciados | `vpc-cni`, `kube-proxy`, `coredns`, `aws-ebs-csi-driver` (com role IRSA) e `metrics-server`, na versão mais recente compatível |
 | Provedor OIDC do cluster | base do IRSA |
-| RDS PostgreSQL | `solidarytech-postgres`: PostgreSQL 17, `db.t4g.micro`, gp3 de 20 GiB cifrado, uma AZ, privado, backups de 7 dias com PITR, usuário mestre `solidary_admin` com senha gerada pelo Terraform |
+| RDS PostgreSQL | `solidarytech-postgres`: PostgreSQL 17, `db.t4g.micro`, gp3 de 20 GiB cifrado, uma AZ, privado, backups com PITR (7 dias por padrão; ver a retenção no plano gratuito abaixo), usuário mestre `solidary_admin` com senha gerada pelo Terraform |
 | Firewall do RDS | entrada 5432 só do security group do cluster; nenhuma regra de saída |
 | Roles IRSA | `donation-service`: `sqs:SendMessage` na fila; `volunteer-service`: `dynamodb:PutItem` e `dynamodb:Scan` na tabela; `ngo-service` sem role |
 | Access entry do self-healing | role do workflow mapeada ao grupo Kubernetes `solidarytech-self-healing`, sem access policy da AWS (as permissões vêm do RBAC do GitOps) |
@@ -27,10 +27,13 @@ Os bancos `ngo_db` e `donation_db` e os usuários de cada serviço não nascem a
 ## Como aplicar
 
 ```bash
+# Entra na pasta desta raiz, a partir da raiz do repositório
 cd terraform/cluster
 
-# Arquivos locais, ignorados pelo Git: troque os sentinelas e os valores fictícios
+# Cria o backend.hcl local (ignorado pelo Git); troque os sentinelas pelo bucket e pela região reais
 cp backend.hcl.example backend.hcl
+
+# Cria o terraform.tfvars local (ignorado pelo Git); troque os valores fictícios pelos reais
 cp terraform.tfvars.example terraform.tfvars
 
 # Conecta ao backend S3 (bucket e região do backend.hcl; a chave é fixa)
@@ -42,6 +45,40 @@ terraform plan -out=cluster.tfplan
 # Aplica exatamente o plano revisado
 terraform apply cluster.tfplan
 ```
+
+## Retenção de backup do RDS no plano gratuito
+
+A conta está no plano gratuito (FREE) da AWS. A documentação oficial da AWS
+não publica limite de retenção de backup para esse plano: a API do RDS aceita
+de 0 a 35 dias, e o código usa 7. Mesmo assim, há relatos públicos de contas
+no plano gratuito em que o `CreateDBInstance` recusa mais de 1 dia, e a Fase 4
+usou 1 dia nesta mesma conta. O resultado só aparece no apply.
+
+**Sintoma.** O apply termina com erro em `module.rds.aws_db_instance.this`,
+com uma mensagem como `FreeTierRestrictionError: The specified backup
+retention period exceeds the maximum available to free tier customers`. O
+banco não depende do EKS: o restante (cluster, nós, addons, IRSA) segue e fica
+no estado, e só o RDS e as saídas dele faltam. Sem elas, a raiz `k8s` não
+roda.
+
+**Troca para 1 dia.** Gere um novo plano com a retenção de 1 dia; ele deve
+criar só o que faltou:
+
+```bash
+# Gera o plano salvo com 1 dia de retenção (a linha de comando vence o terraform.tfvars)
+terraform plan -var=db_backup_retention_days=1 -out=cluster.tfplan
+
+# Aplica exatamente o plano revisado
+terraform apply cluster.tfplan
+```
+
+Depois disso, grave `db_backup_retention_days = 1` no `terraform.tfvars`: sem
+isso, o próximo plano tentaria voltar a 7 dias e repetiria o erro numa
+modificação do banco. Com 1 dia, a restauração para um ponto no tempo (PITR)
+cobre só as últimas 24 horas, o que vale como RPO na estratégia de DR enquanto
+a conta estiver no plano gratuito; num plano pago, volte para 7.
+
+## Usar o kubectl
 
 Depois do apply, para usar o `kubectl` local:
 
@@ -74,6 +111,7 @@ Ao fim, confira no console ou na CLI se sobrou volume EBS no estado `available` 
 - **Tags no launch template.** O node group não propaga as próprias tags para as instâncias e os volumes; sem elas, o maior custo da conta some do filtro por tag.
 - **Nome do cluster vindo da base.** A policy do self-healing foi montada na base com o ARN desse nome.
 - **Endpoint público aberto (`0.0.0.0/0`).** O self-healing roda em runners hospedados do GitHub, com IPs variáveis; a API continua exigindo credencial AWS e access entry.
+- **IMDS com limite de saltos 2 (custo aceito).** É o padrão do EKS e funcionou na Fase 4, mas deixa qualquer Pod sem `hostNetwork` (os serviços, o gerador de tráfego, o Job de schema) obter a credencial da role do nó, mesmo tendo a própria role IRSA. Essa role carrega a `AmazonEKS_CNI_Policy` (interfaces de rede da conta) e o pull de qualquer repositório ECR da conta (`AmazonEC2ContainerRegistryPullOnly`). Endurecimento possível, numa janela própria e com teste: role IRSA para o `aws-node` no addon `vpc-cni` e a CNI fora da role do nó.
 - **Senha mestra no estado, sem Secrets Manager.** O estado fica no bucket cifrado e de acesso restrito; a raiz `k8s` transforma a senha em Secret do Kubernetes.
 - **Ambiente efêmero.** Sem proteção contra exclusão no cluster e no banco, sem snapshot final; os backups automáticos são apagados com a instância.
 

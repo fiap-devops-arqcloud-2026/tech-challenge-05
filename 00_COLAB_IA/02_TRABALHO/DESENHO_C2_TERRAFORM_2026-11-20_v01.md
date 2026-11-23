@@ -18,6 +18,16 @@ O código já faz, além do texto abaixo:
 - **Testes** em todas as 10 pastas (4 raízes e 6 módulos), não só no `iam-ci`: a seção 8 vale para todas.
 - **Retenção de backup do RDS**: 7 dias pedem confirmação no plano FREE (a Fase 4 usou 1 dia nesta conta); o resultado da revisão fica no README do `cluster`.
 
+## Retificação — 2026-11-23 (revisão adversarial concluída)
+
+- Revisão em três frentes (segurança e IAM; correção na AWS; FinOps, requisitos e docs) com verificador: 18 achados (1 ALTA, 3 MÉDIAS, 14 BAIXAS), 15 confirmados e corrigidos, 1 incerto. Os testes passaram de 83 para 88 cenários.
+- **Retenção do RDS (incerto):** a documentação oficial só diz "0 a 35 dias" e não cita limite para o plano FREE. Fica 7; se o apply recusar (`FreeTierRestrictionError`), o README do `cluster` descreve a troca para 1 dia. Com 1 dia o PITR continua; a janela de volta cai para 24 h.
+- **Validação do `state_bucket`** em `cluster` e `k8s` passou a exigir o sufixo `-<conta>-<state_region>-an`: só o bucket da conta esperada é aceito.
+- **Tags de alocação de custo:** ativar até 24 h antes da primeira janela do cluster (o backfill existe), para o Budget filtrado por tag ter dados.
+- **Addons do EKS 1.37** conferidos por leitura em 2026-11-23, em us-east-2: vpc-cni v1.23.3-eksbuild.2, coredns v1.14.7-eksbuild.35, kube-proxy v1.37.0-eksbuild.39, aws-ebs-csi-driver v1.68.1-eksbuild.1 e metrics-server v0.9.1-eksbuild.2.
+- **Riscos que só o primeiro apply revela:** o Budget usa `CostFilters`/`CostTypes`, marcados como obsoletos na API (o provider 6.73 ainda os usa); não se sabe se a API aceita filtrar por uma tag ainda não ativada.
+- **Endurecimentos opcionais, fora do escopo atual:** role IRSA para o `aws-node`, com a policy do CNI fora da role do nó; route table própria para as sub-redes de banco; AppProject próprio no ArgoCD.
+
 ## 1. Convenções para todas as raízes
 
 - **Terraform** `required_version = ">= 1.11.0, < 2.0.0"` (o `use_lockfile` do backend S3 exige 1.11+; local: 1.16.0).

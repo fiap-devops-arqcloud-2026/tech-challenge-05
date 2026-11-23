@@ -43,17 +43,22 @@ resource "aws_iam_role" "node" {
   assume_role_policy = data.aws_iam_policy_document.node_assume.json
 }
 
-# As três policies gerenciadas que o EKS documenta para os nós (as mesmas
-# da Fase 4). As permissões dos serviços NÃO entram aqui: cada Pod que
-# fala com a AWS usa a própria role IRSA (módulo irsa).
+# As três policies gerenciadas que o EKS documenta para os nós. As
+# permissões dos serviços NÃO entram aqui: cada Pod que fala com a AWS usa
+# a própria role IRSA (módulo irsa). Mas a role do nó continua alcançável
+# por qualquer Pod (ver o limite de saltos do IMDS no launch template),
+# por isso ela leva o mínimo.
 resource "aws_iam_role_policy_attachment" "node" {
   for_each = toset([
     # Registrar o nó no cluster e receber trabalho.
     "AmazonEKSWorkerNodePolicy",
     # Plugin de rede da VPC (aws-node): atribuir IPs da VPC aos Pods.
     "AmazonEKS_CNI_Policy",
-    # Baixar imagens do ECR: as dos serviços e as dos próprios addons.
-    "AmazonEC2ContainerRegistryReadOnly",
+    # Baixar imagens do ECR: as dos serviços e as dos próprios addons. A
+    # PullOnly é a que o guia atual do EKS indica para os nós: só o
+    # necessário para baixar imagens, sem listar nem descrever
+    # repositórios e imagens, como a ReadOnly usada na Fase 4 permitia.
+    "AmazonEC2ContainerRegistryPullOnly",
   ])
 
   role       = aws_iam_role.node.name
@@ -106,6 +111,16 @@ resource "aws_launch_template" "node" {
     # Pods sem hostNetwork, como os de alguns addons, perdem o acesso
     # ao serviço de metadados. Os serviços da aplicação não dependem
     # dele: suas credenciais vêm do IRSA.
+    #
+    # CUSTO ACEITO DESTA ESCOLHA: com o limite 2, QUALQUER Pod do nó (os
+    # serviços, o gerador de tráfego, o Job de schema) alcança o serviço
+    # de metadados e pode obter a credencial da role do nó, mesmo tendo a
+    # própria role IRSA. Essa role carrega a AmazonEKS_CNI_Policy (criar,
+    # anexar e apagar interfaces de rede na conta) e o pull de qualquer
+    # repositório ECR da conta. Endurecimento possível, fora do primeiro
+    # apply por exigir teste de ordem: role IRSA própria para o aws-node
+    # (service_account_role_arn do addon vpc-cni) e a CNI fora da role do
+    # nó.
     http_put_response_hop_limit = 2
   }
 

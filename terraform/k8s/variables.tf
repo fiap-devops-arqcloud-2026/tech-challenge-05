@@ -63,11 +63,12 @@ variable "state_bucket" {
   validation {
     # Mesma regra da raiz cluster. O allowed_account_ids protege só o
     # provider AWS: não protege a leitura dos estados remotos nem o token
-    # do "aws eks get-token". Como o bucket do projeto leva o ID da conta
-    # no nome (<projeto>-tfstate-<conta>-<região>), exigir a conta aqui
-    # impede ler, por engano, os estados de um bucket de outra conta.
-    condition     = strcontains(var.state_bucket, var.expected_aws_account_id)
-    error_message = "state_bucket precisa conter o ID da conta esperada (<projeto>-tfstate-<conta>-<região>)."
+    # do "aws eks get-token". O bucket do projeto fica no namespace
+    # regional da conta (<projeto>-tfstate-<conta>-<região>-an), e o S3 só
+    # deixa a própria conta criar um bucket com esse sufixo: exigi-lo com a
+    # conta esperada impede ler, por engano, os estados de outra conta.
+    condition     = endswith(var.state_bucket, "-${var.expected_aws_account_id}-${var.state_region}-an")
+    error_message = "state_bucket precisa estar no namespace regional da conta esperada: o nome termina em -<conta>-<região do bucket>-an, como em <projeto>-tfstate-<conta>-<região>-an."
   }
 }
 

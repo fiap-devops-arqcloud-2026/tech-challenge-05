@@ -23,7 +23,7 @@ variable "vpc_id" {
 }
 
 variable "db_subnet_group_name" {
-  description = "DB subnet group criado pela raiz base com as sub-redes de banco (sem rota para a internet)."
+  description = "DB subnet group criado pela raiz base com as sub-redes de banco (sem rota de entrada a partir da internet; a saída da route table privada passa pelo NAT)."
   type        = string
 }
 

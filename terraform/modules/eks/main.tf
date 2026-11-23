@@ -125,8 +125,10 @@ resource "aws_eks_cluster" "this" {
   # Sem enabled_cluster_log_types: os logs do control plane no CloudWatch
   # são cobrados por GB ingerido e armazenado, e nenhum requisito do
   # projeto depende deles. Os Secrets do Kubernetes já são cifrados em
-  # repouso pelo EKS (criptografia envelope padrão, com chave gerenciada
-  # pela AWS), o que dispensa uma chave KMS própria, cobrada por mês.
+  # repouso pelo EKS (criptografia envelope padrão do EKS para Kubernetes
+  # 1.28 ou mais novo, com uma chave de propriedade da AWS, a "AWS owned
+  # key", que não aparece no KMS da conta), o que dispensa uma chave KMS
+  # própria, cobrada por mês.
 
   # A policy precisa estar anexada antes de o EKS assumir a role: sem o
   # depends_on, os dois poderiam ser criados em paralelo e o cluster
