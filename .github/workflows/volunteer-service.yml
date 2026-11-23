@@ -1,0 +1,78 @@
+# =================================================================
+# CI/CD do volunteer-service (Python/Flask, DynamoDB, porta 8083)
+# =================================================================
+# Arquivo fino de propósito: decide QUANDO o pipeline roda e passa o
+# serviço e a pasta. O QUE roda (teste, lint, SAST, SCA, imagem, a
+# publicação no ECR e a gravação da tag nova no GitOps) fica em
+# _ci-python.yml, o mesmo do ngo-service: uma correção lá vale para os
+# dois. Com um arquivo por serviço, cada um tem o próprio histórico na aba
+# Actions e os próprios checks no PR.
+# Detalhes de cada barreira: docs/CI-CD.md.
+# =================================================================
+
+name: volunteer-service (CI/CD)
+
+on:
+  # PR com destino na dev ou na main: barra o problema antes do merge.
+  pull_request:
+    branches: [dev, main]
+    # Só acorda quando muda o serviço, este arquivo, o reutilizável ou o
+    # .trivyignore da raiz (uma exceção de CVE aceita ali muda o resultado
+    # das barreiras do Trivy; na main, libera a publicação). Mudança só
+    # nos .md do serviço não entra na imagem nem nos testes e não roda
+    # nada (na main, publicaria uma imagem igual à anterior).
+    paths:
+      - "services/volunteer-service/**"
+      - "!services/volunteer-service/**/*.md"
+      - ".github/workflows/volunteer-service.yml"
+      - ".github/workflows/_ci-python.yml"
+      - ".trivyignore"
+  # Push na dev: confere o que foi integrado. Push na main (merge do PR):
+  # confere e, se tudo passar, publica a imagem no ECR e grava a tag nova
+  # no overlay do GitOps.
+  push:
+    branches: [dev, main]
+    # Mesma lista do pull_request.
+    paths:
+      - "services/volunteer-service/**"
+      - "!services/volunteer-service/**/*.md"
+      - ".github/workflows/volunteer-service.yml"
+      - ".github/workflows/_ci-python.yml"
+      - ".trivyignore"
+  # Botão "Run workflow" na aba Actions: reexecuta as barreiras sem commit
+  # e nunca publica (a publicação exige o evento push na main).
+  workflow_dispatch:
+
+# Teto de permissões do GITHUB_TOKEN no workflow: só leitura do código.
+permissions:
+  contents: read
+
+# Um grupo por workflow, evento e ref. Num PR ou na dev, um push novo
+# cancela a rodada anterior da mesma branch ou do mesmo PR. Na main, a
+# rodada em andamento nunca é cancelada, para não interromper uma publicação
+# no meio: o push seguinte espera a vez (com vários pushes seguidos, o
+# GitHub mantém na fila só o mais recente, que contém os anteriores). O
+# evento no nome impede que um "Run workflow" na main tome o lugar de um
+# push que espera na fila para publicar.
+concurrency:
+  group: volunteer-service-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+jobs:
+  ci:
+    # Aparece como prefixo dos jobs do reutilizável: "volunteer-service / Teste (pytest)".
+    name: volunteer-service
+    uses: ./.github/workflows/_ci-python.yml
+    # Teto do que o reutilizável pode pedir: cada job de lá declara só o
+    # que usa. As duas permissões de escrita chegam a um job cada, e esses
+    # dois só rodam num push na main: id-token: write ao publish (token
+    # OIDC da AWS) e contents: write ao gitops (commit do robô no
+    # overlay). Os outros jobs ficam em leitura. O commit do robô é feito
+    # com o GITHUB_TOKEN e, por regra do GitHub, não dispara nenhum
+    # workflow.
+    permissions:
+      contents: write
+      id-token: write
+    with:
+      service: volunteer-service
+      working-directory: services/volunteer-service

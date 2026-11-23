@@ -33,14 +33,22 @@ Herdado da implementação para as próximas camadas:
 
 ## Camadas seguintes
 
-- [ ] C3 — CI/CD DevSecOps (inclui lint e SAST dos três serviços e `go test -race` no Linux).
+- [ ] C3 — CI/CD DevSecOps:
+  - [x] 9 workflows: `_ci-go.yml` e `_ci-python.yml` (testes, lint, SAST, SCA, imagem com Trivy, publicação no ECR por OIDC só em push na `main` e o robô do GitOps), 3 chamadores, `terraform-check`, `compose-integration`, `repo-check` e `gitops-check`. Actions fixadas por SHA (43 `uses`, conferidos) e ferramentas por versão e digest.
+  - [x] Ensaio local de cada gate nos 3 serviços, nas mesmas versões e digests do CI, todos verdes depois de três correções: errcheck no donation, W391 no ngo e pylint com as dependências instaladas (nota 9,47). actionlint sem achados. Compose 13/13 depois das correções.
+  - [x] Robô do GitOps simulado num clone descartável: 132 conferências, 0 falhas (idempotência, três robôs concorrentes, conflito de rebase, revert, trava contra versão antiga e contra mudança fora da linha `image`).
+  - [x] `docs/CI-CD.md` (o que roda em cada evento, gates, OIDC de 15 min, robô, como voltar uma versão, reprodução local) e `scripts/github/set-repo-variables.sh` (não executado).
+  - [ ] Commit da C3 e a primeira execução no GitHub (push na `dev`).
+  - [ ] Prova de que as barreiras derrubam, numa branch descartável (roteiro em `docs/CI-CD.md`).
+  - [ ] Depois do apply da base: `scripts/github/set-repo-variables.sh` (grava Variables no GitHub; pede autorização) e a primeira publicação no ECR num push na `main`.
+  - Observações: o Trivy acha 8 CRITICAL no Alpine da imagem oficial do Kustomize 5.8.3 (o binário tem 0), usada só em ferramenta com `--network none`; trocar o digest quando sair imagem corrigida. O govulncheck aponta GO-2022-0646 e GO-2022-0635 no aws-sdk-go v1 (S3 Crypto, não chamado; sem correção na v1).
 - [ ] C4 — GitOps (ArgoCD), adiantada em 2026-11-22 enquanto a C2 é revisada e a C3 escrita:
   - [x] `gitops/base/`: Deployments, Services e PDB dos 3 serviços (requests/limits, probes, não root, disco somente leitura), Job `db-schema` PreSync idempotente e gerador de tráfego; `gitops/overlays/prod/` com tags marcadoras.
   - [x] `scripts/gitops/validate.sh` verde: cópias de SQL, render com o Kustomize 5.8.3, dono único (nada do Terraform no GitOps), kubeconform estrito, kube-linter e shellcheck.
   - [x] `apply.sh` do Job testado contra PostgreSQL 17 real, duas vezes (idempotente, troca de senha, menor privilégio).
   - [x] Varredura de segredos aceita o ID da conta só no formato `<conta>.dkr.ecr.` em `gitops/` (o robô do CI grava o registro no overlay).
-  - [ ] Workflow `gitops-check.yml` rodando `scripts/gitops/validate.sh` (depois da C3, para não disputar `.github/workflows/`).
-  - [ ] Job do CI que grava `<registro>/solidarytech/<svc>:<sha>` no overlay com commit do robô na `main` (`kustomize edit set image`, tentativas com rebase).
+  - [x] Workflow `gitops-check.yml` rodando `scripts/gitops/validate.sh` (imagens das ferramentas fixadas por digest).
+  - [x] Job do CI que grava `<registro>/solidarytech/<svc>:<sha>` no overlay com commit do robô na `main` (Kustomize 5.8.3, até 5 tentativas com rebase), simulado; roda de verdade só no primeiro push na `main` com as Variables gravadas.
   - [ ] Teste do gerador de tráfego no Compose (depois da C3, que também usa o Compose e as mesmas portas).
   - [ ] Na AWS (depois do apply autorizado da C2 e das imagens no ECR): `enable_applications = true`, Application Synced/Healthy, Job de schema concluído, fluxo pela rede do cluster.
 - [ ] C5 — Observabilidade e APM.

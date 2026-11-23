@@ -6,6 +6,19 @@ TL;DR: C0 e C1 concluídas em 2026-11-20. C2 em andamento em 2026-11-21: Terrafo
 
 Formato: entrada nova no topo, sem apagar as anteriores. Cada entrada termina com "Estado p/ próximo agente". Horários em America/Sao_Paulo (UTC-03:00).
 
+## 2026-11-23 18:40 — Claude — C3 pronta e ensaiada; integração com a C4
+
+Feito:
+- Workflow `finalizar-c3-cicd` (`wf_a1547d2f-535`) concluído com os 2 agentes.
+  - CI: conferiu e completou os 9 workflows, criou o `gitops-check.yml` e o job do robô do GitOps nos dois reutilizáveis (Kustomize 5.8.3 por digest, `--network none`, trava que só aceita mudança nas linhas `image`, 5 tentativas com rebase), alinhou o `docs/CI-CD.md` e fixou por digest as imagens do `scripts/gitops/validate.sh`.
+  - Ensaio: cada gate rodado localmente nas versões do CI, com três correções (`defer func() { _ = rows.Close() }()` no donation, W391 no ngo e o pylint com as dependências instaladas) e as configurações `.golangci.yml`, `.flake8`, `.pylintrc` e `.trivyignore` (só comentários).
+- Integração pelo orquestrador:
+  - `--ignorefile ''` nos dois relatórios do Trivy de cada reutilizável (sem isso, o Trivy lê o `.trivyignore` do diretório atual por padrão e um CVE aceito sumiria do relatório; a flag foi testada no Trivy 0.76.2).
+  - README principal, AGENTS.md (comando do `validate.sh` e link para os comandos de reprodução), `terraform/README.md` (a varredura de segredos já vê arquivos novos) e `gitops/README.md` (link para como voltar uma versão).
+Verificação (local, 2026-11-23): actionlint 1.7.12 nos 9 workflows, sem achados; `scripts/gitops/validate.sh` verde (11 objetos; kubeconform 11/11; kube-linter e shellcheck sem achados); `security-check` limpo; Compose 13/13 depois das correções de lint. Relatado pelo ensaio: Go com 14 testes e 59,5% de cobertura com `-race`, golangci, gosec e govulncheck verdes; ngo 17 e volunteer 8 testes; flake8 0, pylint 9,47 e 9,x, bandit 0, pip-audit 0, Trivy fs 0; robô simulado com 132 conferências e 0 falhas.
+Não feito: nenhuma execução no GitHub ainda (acontece com o push deste commit na `dev`); Variables do repositório (dependem do apply da base e de autorização); prova de barreira derrubando (roteiro no `docs/CI-CD.md`).
+Estado p/ próximo agente: conferir a primeira execução dos workflows no GitHub depois do push (`gh run list --branch dev`) e corrigir o que falhar no runner Linux. Em seguida, pedir ao usuário a autorização do primeiro plano na AWS (P-004): bootstrap com o `backend_override.tf` local, como no `terraform/bootstrap/README.md`.
+
 ## 2026-11-23 13:40 — Claude — Revisão da C2 concluída e correções aplicadas
 
 Feito:

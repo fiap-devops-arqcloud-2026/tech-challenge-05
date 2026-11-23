@@ -77,7 +77,7 @@ Principais escolhas:
 | C0 | Fundação do repositório | ✅ pronta |
 | C1 | Serviços e contêineres (Dockerfiles, testes, OpenTelemetry, Compose) | ✅ pronta |
 | C2 | Infraestrutura como Código (Terraform) | ✅ código pronto e validado offline; não aplicado na AWS |
-| C3 | CI/CD DevSecOps (GitHub Actions) | ⏳ em andamento |
+| C3 | CI/CD DevSecOps (GitHub Actions) | ⏳ pipelines prontos e ensaiados localmente; primeira execução no GitHub em curso |
 | C4 | GitOps e deploy (ArgoCD) | ⏳ manifestos validados localmente; falta rodar no cluster |
 | C5 | Observabilidade e APM | pendente |
 | C6 | SRE: SLIs, SLOs, Error Budget e MTTR | pendente |
@@ -138,7 +138,9 @@ comandos. Os testes de cada serviço estão no README dele, em `services/`.
 └── POSTECH - DCLT - Hackathon - Fase 5.pdf   # Enunciado oficial
 ```
 
-Os pipelines de CI/CD (`.github/workflows/`) entram com a camada C3.
+Os pipelines de CI/CD ficam em `.github/workflows/`; o que roda em cada
+evento, os gates e como reproduzi-los localmente estão em
+[docs/CI-CD.md](docs/CI-CD.md).
 
 ## Documentação
 

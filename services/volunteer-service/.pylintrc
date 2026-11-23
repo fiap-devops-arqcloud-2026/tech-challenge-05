@@ -1,0 +1,52 @@
+# =================================================================
+# pylint — configuração do volunteer-service
+# =================================================================
+# Lida pelo job "Lint" do CI (.github/workflows/_ci-python.yml) e por quem
+# roda "pylint" dentro desta pasta. O CI falha quando:
+#   - a nota fica abaixo de fail-under (9.0, numa escala de 0 a 10); ou
+#   - aparece qualquer mensagem de erro (E) ou fatal (F), seja qual for a
+#     nota (fail-on): erro do pylint costuma ser bug de verdade (nome
+#     inexistente, import que não resolve, chamada com argumento errado).
+# Convenções (C), refatorações (R) e avisos (W) aparecem no log e pesam na
+# nota; acumulados, derrubam pela nota.
+#
+# Difere do .pylintrc do ngo-service só em ignored-modules.
+# Exceção pontual vai na própria linha ("# pylint: disable=<mensagem>"),
+# com um comentário dizendo por quê, como já fazem app.py e os testes.
+#
+# Reproduzir localmente: docs/CI-CD.md, seção "Como reproduzir localmente".
+# =================================================================
+
+[MAIN]
+# Mesma versão do Python da imagem (Dockerfile: ARG PYTHON_VERSION=3.13):
+# o pylint confere a sintaxe e a biblioteca padrão dessa versão.
+py-version = 3.13
+
+# Nota mínima. 9.0 deixa passar poucos achados de convenção (um docstring
+# faltando aqui e ali), mas não um módulo inteiro sem cuidado.
+fail-under = 9.0
+
+# Erros e falhas fatais derrubam sempre, mesmo com a nota acima do mínimo.
+fail-on = E,F
+
+# Pastas locais que não são código do serviço (ambiente virtual criado
+# dentro da pasta), puladas na análise recursiva (pylint --recursive=y .).
+ignore = .venv,venv
+
+[BASIC]
+# Funções de teste (test_*) já dizem no nome o que conferem; um docstring
+# só repetiria o nome. O resto do código continua exigindo docstring.
+# "^_" (nomes privados) é o padrão do pylint e continua valendo.
+no-docstring-rgx = ^_|^test_
+
+[FORMAT]
+# Mesmo limite do flake8 (.flake8).
+max-line-length = 120
+
+[TYPECHECK]
+# telemetry.py é o mesmo arquivo nos dois serviços Python e só importa a
+# instrumentação do psycopg2 quando chamado com postgres=True. O
+# volunteer-service usa o DynamoDB, não o PostgreSQL, e não instala esse
+# pacote (requirements.txt), então o import não resolve aqui; no
+# ngo-service, que usa, ele é conferido normalmente.
+ignored-modules = opentelemetry.instrumentation.psycopg2

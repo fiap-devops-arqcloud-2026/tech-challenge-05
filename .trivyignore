@@ -1,0 +1,21 @@
+# =================================================================
+# Exceções do Trivy — vulnerabilidades aceitas, uma a uma
+# =================================================================
+# Lido pelas barreiras CRITICAL do Trivy nos pipelines dos serviços
+# (.github/workflows/_ci-go.yml e _ci-python.yml): no scan das dependências
+# (fs) e no scan da imagem. Os relatórios HIGH e CRITICAL dos mesmos jobs NÃO
+# aplicam este arquivo: um CVE aceito continua aparecendo a cada execução.
+#
+# Hoje não há exceção: nenhum CVE está aceito.
+#
+# Uma exceção só entra por PR, quando não há correção possível a tempo (sem
+# versão corrigida da biblioteca ou da imagem base) e o risco foi avaliado.
+# Formato: na linha de cima, um comentário com a data, o motivo e quem
+# aprovou; na linha do CVE, um prazo com exp:AAAA-MM-DD. Vencido o prazo, a
+# linha deixa de valer e o CVE volta a derrubar o pipeline, obrigando uma
+# nova avaliação. Exemplo (fictício):
+#
+#   # 2026-12-01: sem versão corrigida da biblioteca X; a função afetada
+#   # não é chamada pelo serviço. Aprovado por <responsável>.
+#   CVE-0000-00000 exp:2027-01-31
+# =================================================================

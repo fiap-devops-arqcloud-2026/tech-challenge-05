@@ -40,7 +40,8 @@ gitops/
 4. O ArgoCD detecta o commit e aplica: primeiro o Job de schema (hook
    PreSync, idempotente), depois os Deployments, com atualização sem queda.
 
-Voltar uma versão é reverter o commit do robô.
+Voltar uma versão é reverter o commit do robô (passo a passo em
+[docs/CI-CD.md](../docs/CI-CD.md#como-voltar-uma-versão)).
 
 ## Decisões que valem saber
 

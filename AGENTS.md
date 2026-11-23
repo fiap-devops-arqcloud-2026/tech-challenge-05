@@ -53,4 +53,9 @@ bash scripts/test-compose.sh
 terraform fmt -check -recursive terraform && for d in terraform/bootstrap terraform/base terraform/cluster terraform/k8s terraform/modules/*/; do terraform -chdir="$d" init -backend=false -input=false >/dev/null && terraform -chdir="$d" validate && terraform -chdir="$d" test || break; done
 ```
 
-No Windows (Git Bash), use `MSYS_NO_PATHCONV=1` antes do `docker run` com volume e `PYTHON="py -I"` antes do `test-compose.sh`. A ordem de aplicação na AWS (só com autorização do usuário e plano salvo) está em `terraform/README.md`. Os comandos do GitOps entram aqui na C4.
+```bash
+# Validação offline dos manifestos GitOps: render com o Kustomize do ArgoCD, schema estrito, boas práticas, shellcheck e regra de dono único
+bash scripts/gitops/validate.sh
+```
+
+No Windows (Git Bash), use `MSYS_NO_PATHCONV=1` antes do `docker run` com volume e `PYTHON="py -I"` antes do `test-compose.sh`. A ordem de aplicação na AWS (só com autorização do usuário e plano salvo) está em `terraform/README.md`. Cada gate do CI (testes, lint, SAST, SCA e scan da imagem) pode ser reproduzido localmente com os comandos de `docs/CI-CD.md`, seção "Como reproduzir localmente".

@@ -21,11 +21,17 @@ set -euo pipefail
 root_dir="$(git rev-parse --show-toplevel)"
 cd "$root_dir"
 
-# Versões fixadas: as mesmas em qualquer máquina e no CI.
-KUSTOMIZE_IMAGE="registry.k8s.io/kustomize/kustomize:v5.8.3" # a do ArgoCD 3.6.2
-KUBECONFORM_IMAGE="ghcr.io/yannh/kubeconform:v0.8.0"
-KUBE_LINTER_IMAGE="stackrox/kube-linter:v0.8.3"
-SHELLCHECK_IMAGE="koalaman/shellcheck:v0.11.0"
+# Versões fixadas: as mesmas em qualquer máquina e no CI. Cada imagem vai
+# com o digest (do índice multiplataforma ou, no Kustomize, que só tem
+# linux/amd64, do manifesto único): o Docker baixa exatamente este conteúdo,
+# mesmo que a tag seja republicada, e a tag fica só como referência legível.
+# Digests conferidos em 2026-11-23 (docker buildx imagetools inspect).
+# O Kustomize é o mesmo do job gitops dos pipelines dos serviços, que
+# grava a tag nova no overlay.
+KUSTOMIZE_IMAGE="registry.k8s.io/kustomize/kustomize:v5.8.3@sha256:429eda4a1c76a7de458d0c4ca3ded9b5d764899ff6bdaeccc1d98b1b6ee873e4" # a do ArgoCD 3.6.2
+KUBECONFORM_IMAGE="ghcr.io/yannh/kubeconform:v0.8.0@sha256:faffaf43f95aa6425306e1ab8d6fcad72acb9049158f38e574c085ea1ec0f64e"
+KUBE_LINTER_IMAGE="stackrox/kube-linter:v0.8.3@sha256:f2bfce7879206d32f69ab6572c376f916643f54ca291ac38cf7d01ef591ff3f9"
+SHELLCHECK_IMAGE="koalaman/shellcheck:v0.11.0@sha256:61862eba1fcf09a484ebcc6feea46f1782532571a34ed51fedf90dd25f925a8d"
 # O repositório de schemas do kubeconform vai até o Kubernetes 1.34. Os
 # objetos usados aqui (Deployment, Service, PDB, Job, ConfigMap) têm APIs
 # estáveis, iguais na 1.37 do cluster.

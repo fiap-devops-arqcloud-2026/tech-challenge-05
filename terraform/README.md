@@ -399,9 +399,10 @@ for d in bootstrap base cluster k8s modules/ecr modules/messaging modules/iam-ci
 | `modules/rds` | `mock_provider` e random real | Entrada só do security group do cluster, sem saída, cifragem, PITR, ciclo de vida efêmero e senha alfanumérica |
 | `modules/irsa` | Provider real com credenciais falsas | Trust por ServiceAccount e namespace, só as ações declaradas e recusa de curingas e de emissor com `https://` |
 
-A varredura de segredos (`bash scripts/security-check.sh`) olha só arquivos
-rastreados pelo Git: rode depois do `git add`. Validação offline não prova
-acesso à conta, pull de imagens nem funcionamento na AWS.
+A varredura de segredos (`bash scripts/security-check.sh`) olha os arquivos
+rastreados e também os novos que o `.gitignore` não cobre, então pega um
+segredo antes do `git add`. Validação offline não prova acesso à conta, pull
+de imagens nem funcionamento na AWS.
 
 ## Problemas conhecidos
 

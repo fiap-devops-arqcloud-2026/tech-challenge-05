@@ -179,7 +179,10 @@ func (a *App) DonationHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, `{"error":"Erro interno"}`, http.StatusInternalServerError)
 			return
 		}
-		defer rows.Close()
+		// Devolve a conexão ao pool em qualquer saída. O erro do Close chega
+		// depois de a resposta ser escrita e não mudaria nada nela: é
+		// descartado de propósito, como os outros "_ =" deste arquivo.
+		defer func() { _ = rows.Close() }()
 
 		donations := []Donation{}
 		for rows.Next() {

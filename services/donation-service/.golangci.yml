@@ -1,0 +1,39 @@
+# =================================================================
+# golangci-lint v2 — configuração do donation-service
+# =================================================================
+# Lida pelo job "Lint" do CI (.github/workflows/_ci-go.yml) e por quem roda
+# "golangci-lint run" nesta pasta. Mínima de propósito: o conjunto padrão da
+# ferramenta mais a checagem de formatação, sem exceções.
+#
+# Exceção pontual vai na própria linha ("//nolint:<linter> // <motivo>"); o
+# preferível é tratar o erro ou descartá-lo de forma explícita ("_ =").
+#
+# Reproduzir localmente (mesma imagem e digest do CI): docs/CI-CD.md, seção
+# "Como reproduzir localmente".
+# =================================================================
+
+# Formato de configuração da linha 2.x (obrigatório na v2).
+version: "2"
+
+run:
+  # Teto da análise. O job do CI tem o próprio timeout-minutes; este evita
+  # que uma análise travada consuma o job inteiro.
+  timeout: 5m
+
+linters:
+  # "standard" = errcheck (erro ignorado), govet (construções suspeitas),
+  # ineffassign (atribuição sem efeito), staticcheck (bugs e simplificações)
+  # e unused (código morto). Todos apontam defeito real, não estilo.
+  default: standard
+
+formatters:
+  enable:
+    # Código fora do padrão do gofmt vira achado do lint: o formato oficial
+    # do Go não é opinião, e diff de formatação esconde a mudança de verdade.
+    - gofmt
+
+issues:
+  # 0 = sem limite: mostra todos os achados de uma vez, em vez de cortar em
+  # 50 por linter e 3 iguais (padrão), o que esconderia parte do trabalho.
+  max-issues-per-linter: 0
+  max-same-issues: 0
