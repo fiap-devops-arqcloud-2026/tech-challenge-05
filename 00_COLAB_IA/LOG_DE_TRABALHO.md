@@ -1,10 +1,18 @@
 # Log de trabalho
 
-TL;DR: C0, C1 e C3 concluídas (CI verde no GitHub); C2 validada e revisada; C4 com os manifestos validados. Em 2026-11-24 o bootstrap foi aplicado na AWS (bucket de estado, Budget e provedor OIDC adotado), com o estado no S3. Próximo: autorização do apply da base com o NAT desligado.
+TL;DR: C0, C1 e C3 concluídas (CI verde no GitHub); C2 validada e revisada; C4 com os manifestos validados. Na AWS (2026-11-24): bootstrap e base aplicados (bucket de estado, Budget, OIDC, VPC sem NAT, ECR, fila, tabela e roles do CI). Próximo: Variables do GitHub e PR para a main, ambos com autorização.
 
 Última atualização: 2026-11-24, Claude.
 
 Formato: entrada nova no topo, sem apagar as anteriores. Cada entrada termina com "Estado p/ próximo agente". Horários em America/Sao_Paulo (UTC-03:00).
+
+## 2026-11-24 14:15 — Claude — Base aplicada na AWS (sem NAT)
+
+Pedido do usuário: "Sim, aplicar a base".
+Feito: `terraform -chdir=terraform/base apply base.tfplan` (14:09:11 → 14:10:19): `Apply complete! Resources: 36 added, 0 changed, 0 destroyed.` Um plano gerado logo depois deu "No changes". Planos e texto do apply guardados em `02_TRABALHO/validacao-local-base-2026-11-24/` (ignorada).
+Verificação (leitura na conta, us-east-2): 0 NAT Gateway e 0 EIP; VPC `10.0.0.0/16` com as 4 tags obrigatórias; endpoints de gateway S3 e DynamoDB `available`; ECR `solidarytech/{ngo,donation,volunteer}-service` com IMMUTABLE e scan no push; fila `solidary-donations` com SSE e redrive para `solidary-donations-dlq` depois de 5 recebimentos; tabela `SolidaryTechVolunteers` ACTIVE, PAY_PER_REQUEST, chave `volunteer_id`, SSE ENABLED e PITR ENABLED; role `solidarytech-github-ci` com trust `sub` = `repo:fiap-devops-arqcloud-2026@287716251/tech-challenge-05@1454212968:ref:refs/heads/main` e `aud` = `sts.amazonaws.com`; role `solidarytech-github-self-healing` criada.
+Observação: o commit `9f11b97` levou só a matriz do plano, porque um script de atualização dos documentos falhou; o diário e as pendências entraram no commit seguinte.
+Estado p/ próximo agente: bootstrap e base existem na AWS; cluster e k8s não. Próximo: gravar as Variables do repositório com `scripts/github/set-repo-variables.sh` (pede autorização; antes, `--dry-run` mostra o que seria gravado). Depois: PR `dev` → `main` (pede autorização) para os pipelines publicarem as imagens no ECR. Para usar a base, cada máquina precisa do `terraform/base/backend.hcl` e do `terraform.tfvars` locais (copiar dos `.example`, com o bucket e a conta reais).
 
 ## 2026-11-24 12:05 — Claude — Plano salvo da base gerado (aguardando autorização)
 

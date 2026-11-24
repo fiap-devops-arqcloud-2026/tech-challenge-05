@@ -1,13 +1,13 @@
 # Pendências e próximos passos
 
-TL;DR: C0, C1 e C3 concluídas (CI verde no GitHub); C4 com os manifestos validados; C2 validada e revisada. Primeiro recurso na AWS em 2026-11-24: o bootstrap (bucket de estado, Budget de US$ 50/mês, provedor OIDC adotado), com o estado já no S3. Próximo passo: o usuário autorizar o apply da base, com o NAT desligado (o plano salvo é gerado e apresentado antes).
+TL;DR: C0, C1 e C3 concluídas (CI verde no GitHub); C4 com os manifestos validados; C2 validada e revisada. Na AWS, desde 2026-11-24: bootstrap (bucket de estado, Budget, OIDC) e base (VPC sem NAT, endpoints, 3 ECR, fila com DLQ, tabela com PITR, roles do CI). Próximo: gravar as Variables do GitHub e abrir o PR para a main, cada um com autorização do usuário.
 
 Última atualização: 2026-11-24, Claude.
 
 ## Fase AWS — ordem combinada (cada apply só com autorização do usuário, P-004)
 
 1. [x] Bootstrap aplicado em 2026-11-24 ("Pode fazer o bucket s3"): bucket `solidarytech-tfstate-<conta>-us-east-2-an` (versionado, AES256, os 4 bloqueios públicos, só TLS, `prevent_destroy`), Budget `solidarytech-mensal` (US$ 50, alertas ACTUAL a 50/80/100% e FORECASTED a 100%, para o e-mail informado pelo usuário) e provedor OIDC do GitHub importado (só as tags mudaram). Estado em `phase5/prod/bootstrap.tfstate`. Evidências locais em `02_TRABALHO/validacao-local-bootstrap-2026-11-24/`, ignorada pelo Git.
-2. [ ] Base com `enable_nat_gateway = false`: VPC, endpoints de gateway, 3 ECR, fila com DLQ, tabela, roles do CI e do self-healing. Sem NAT, o custo fixo fica perto de zero. Plano salvo gerado em 2026-11-24 (`terraform/base/base.tfplan`, local): 36 a criar, 0 a mudar, 0 a destruir, sem NAT nem EIP. Aguarda a autorização do usuário.
+2. [x] Base aplicada em 2026-11-24 ("Sim, aplicar a base"), com `enable_nat_gateway = false`: 36 recursos, 0 NAT e 0 EIP, plano seguinte com "No changes". Conteúdo: VPC, endpoints de gateway, 3 ECR, fila com DLQ, tabela, roles do CI e do self-healing. Sem NAT, o custo fixo fica perto de zero. Plano salvo gerado em 2026-11-24 (`terraform/base/base.tfplan`, local): 36 a criar, 0 a mudar, 0 a destruir, sem NAT nem EIP. Aguarda a autorização do usuário.
 3. [ ] Variables do repositório com `scripts/github/set-repo-variables.sh`, a partir das saídas da base. Grava configuração no GitHub; pede autorização.
 4. [ ] PR `dev` → `main` e merge (pede autorização): os pipelines publicam as 3 imagens no ECR e o robô grava as tags no overlay.
 5. [ ] Tags de alocação de custo: `activate_cost_allocation_tags = true` no bootstrap, quando as chaves aparecerem no faturamento (até 24 h depois dos primeiros recursos tagueados).
@@ -74,7 +74,7 @@ Herdado da implementação para as próximas camadas:
 |---|---|---|---|
 | P-002 | Criar a conta nova do PagerDuty (trial) perto da gravação e guardar a Integration Key no `.env` local. Campos marcados `A PREENCHER (PagerDuty)`. | Usuário | C8 |
 | P-003 | Prazo, hora e canal de entrega (Q-06, Q-07); nomes, RMs e usernames dos integrantes; onde o vídeo será hospedado. | Usuário | C10 (o prazo também orienta o calendário) |
-| P-004 | Autorização específica para cada apply/destroy, com o plano salvo apresentado antes. Perfil da AWS CLI: `default`, o único configurado. Bootstrap autorizado e aplicado em 2026-11-24; próxima: a base. | Usuário | C2 em diante |
+| P-004 | Autorização específica para cada apply/destroy, com o plano salvo apresentado antes. Perfil da AWS CLI: `default`, o único configurado. Bootstrap e base autorizados e aplicados em 2026-11-24; próximos: Variables do GitHub e PR para a `main`. | Usuário | C2 em diante |
 | P-005 | Conferir se o plano do New Relic tem detecção de anomalias (Applied Intelligence). | Agente com o usuário | C8 |
 | P-006 | Aprovar metas SRE: SLOs, janela e termos do SLA, propostos pelo agente depois de medir. | Usuário | C6 |
 | P-007 | Aprovar RTO e RPO-alvo das doações, propostos pelo agente depois do ensaio de restore. | Usuário | C9 |

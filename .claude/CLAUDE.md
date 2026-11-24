@@ -1,6 +1,6 @@
 # Hackathon Fase 5 (SolidaryTech) — contexto para assistentes
 
-TL;DR: C0, C1 e C3 concluídas (CI verde no GitHub); C2 (Terraform) validada e revisada; C4 (GitOps) com os manifestos validados. Na AWS, só o bootstrap existe (bucket de estado, Budget, provedor OIDC adotado), aplicado em 2026-11-24. Próximo: apply da base com o NAT desligado, que precisa de autorização do usuário.
+TL;DR: C0, C1 e C3 concluídas (CI verde no GitHub); C2 (Terraform) validada e revisada; C4 (GitOps) com os manifestos validados. Na AWS existem o bootstrap e a base (sem NAT), aplicados em 2026-11-24; cluster e k8s não. Próximo: Variables do GitHub e PR para a main, cada um com autorização do usuário.
 
 Última atualização: 2026-11-24, Claude.
 
