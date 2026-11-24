@@ -1,10 +1,23 @@
 # Log de trabalho
 
-TL;DR: C0 e C1 concluídas em 2026-11-20. C2 em andamento em 2026-11-21: Terraform das quatro raízes escrito e validado offline, revisão adversarial em curso, nada aplicado na AWS.
+TL;DR: C0, C1 e C3 concluídas (CI verde no GitHub); C2 validada e revisada; C4 com os manifestos validados. Em 2026-11-24 o bootstrap foi aplicado na AWS (bucket de estado, Budget e provedor OIDC adotado), com o estado no S3. Próximo: autorização do apply da base com o NAT desligado.
 
-Última atualização: 2026-11-21, Claude.
+Última atualização: 2026-11-24, Claude.
 
 Formato: entrada nova no topo, sem apagar as anteriores. Cada entrada termina com "Estado p/ próximo agente". Horários em America/Sao_Paulo (UTC-03:00).
+
+## 2026-11-24 11:50 — Claude — Bootstrap aplicado na AWS: primeiro recurso da Fase 5
+
+Pedido do usuário: "Pode fazer o bucket s3. O e-mail é [informado no chat]. Quais os proximos passos? Caso seus creditos estejam perto de acabar nunca se esqueça de atualizar o projeto antes para que o proximo agente ou voce retome de onde parou." O e-mail não está no repositório: fica só em `terraform/bootstrap/terraform.tfvars` (local, ignorado pelo Git) e no AWS Budgets.
+Feito:
+- O plano anterior tinha o e-mail de exemplo, então foi refeito com o e-mail real: `Plan: 1 to import, 8 to add, 1 to change, 0 to destroy`, sem `must be replaced`, e o e-mail não aparece no texto (variável `sensitive`).
+- `terraform apply bootstrap.tfplan` (11:38:53 → 11:39:59): `Apply complete! Resources: 1 imported, 8 added, 1 changed, 0 destroyed.`
+- Etapa 2 do README do bootstrap: `backend.hcl` local gerado pelos outputs, `backend_override.tf` removido e `terraform init -migrate-state -force-copy -backend-config=backend.hcl` (o `-force-copy` responde "yes" à cópia do estado sem prompt). Plano seguinte: "No changes". Objeto `phase5/prod/bootstrap.tfstate` (21.845 bytes) no bucket.
+- Desvio do README, para não apagar nada: as cópias locais (`terraform.tfstate`, os dois planos) foram movidas para `00_COLAB_IA/02_TRABALHO/validacao-local-bootstrap-2026-11-24/` (ignorada pelo Git), junto com o texto do plano e do apply.
+- Nova regra do usuário registrada (D-018) no LEIA-PRIMEIRO, no AGENTS.md e no `.claude/CLAUDE.md`.
+Verificação (leitura na conta, 11:45): bucket com versionamento Enabled, AES256, os 4 bloqueios públicos, `BucketOwnerEnforced` e policy negando `aws:SecureTransport = false`; tags `Project=SolidaryTech`, `Environment=Production`, `CostCenter=NGO-Core` e `ManagedBy=Terraform` no bucket e no provedor OIDC (a tag `fiap=fase4` saiu); Budget `solidarytech-mensal` com 50.0 MONTHLY COST, alertas ACTUAL 50/80/100 e FORECASTED 100, 1 assinante. Os `.terraform.lock.hcl` não mudaram.
+Resolvido: a API do Budgets aceitou o filtro por tag ainda não ativada (era risco aberto na revisão da C2).
+Estado p/ próximo agente: só o bootstrap existe na AWS. Próximo: gerar o plano salvo da base com `enable_nat_gateway = false` (`terraform/base/backend.hcl` e `terraform.tfvars` locais, a partir do `backend.hcl` do bootstrap e da conta) e pedir ao usuário a autorização do apply. A ordem completa da fase AWS está em PENDENCIAS, seção "Fase AWS".
 
 ## 2026-11-23 23:10 — Claude — Primeira execução do CI no GitHub: tudo verde
 

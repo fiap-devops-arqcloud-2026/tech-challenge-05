@@ -25,7 +25,7 @@ O código já faz, além do texto abaixo:
 - **Validação do `state_bucket`** em `cluster` e `k8s` passou a exigir o sufixo `-<conta>-<state_region>-an`: só o bucket da conta esperada é aceito.
 - **Tags de alocação de custo:** ativar até 24 h antes da primeira janela do cluster (o backfill existe), para o Budget filtrado por tag ter dados.
 - **Addons do EKS 1.37** conferidos por leitura em 2026-11-23, em us-east-2: vpc-cni v1.23.3-eksbuild.2, coredns v1.14.7-eksbuild.35, kube-proxy v1.37.0-eksbuild.39, aws-ebs-csi-driver v1.68.1-eksbuild.1 e metrics-server v0.9.1-eksbuild.2.
-- **Riscos que só o primeiro apply revela:** o Budget usa `CostFilters`/`CostTypes`, marcados como obsoletos na API (o provider 6.73 ainda os usa); não se sabe se a API aceita filtrar por uma tag ainda não ativada.
+- **Riscos que só o primeiro apply revela:** o Budget usa `CostFilters`/`CostTypes`, marcados como obsoletos na API (o provider 6.73 ainda os usa); não se sabe se a API aceita filtrar por uma tag ainda não ativada. **Resolvido em 2026-11-24:** o apply do bootstrap criou o Budget com o filtro `user:Project$SolidaryTech` antes da ativação da tag, sem erro.
 - **Endurecimentos opcionais, fora do escopo atual:** role IRSA para o `aws-node`, com a policy do CNI fora da role do nó; route table própria para as sub-redes de banco; AppProject próprio no ArgoCD.
 
 ## 1. Convenções para todas as raízes

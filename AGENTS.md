@@ -25,6 +25,7 @@ TL;DR: Projeto SolidaryTech (Hackathon Fase 5, POSTECH DevOps e Arquitetura Clou
 
 - Marque a entrega em PENDENCIAS, atualize a matriz do PLANO_DE_ACAO e registre no topo do LOG (data, hora, agente, o que foi feito, verificação e "Estado p/ próximo agente").
 - Se a tarefa fechar uma camada, faça um commit curado na `dev` (Conventional Commits, em português).
+- Se o crédito ou o limite de uso estiver perto do fim, faça isso ANTES de continuar: registre no LOG o estado exato e o próximo passo, atualize PENDENCIAS e commite e envie o que estiver consistente (pedido do usuário, D-018).
 
 ## Comandos úteis
 

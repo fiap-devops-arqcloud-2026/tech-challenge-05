@@ -1,8 +1,17 @@
 # Pendências e próximos passos
 
-TL;DR: C0 e C1 concluídas. C2 em andamento: leituras na conta feitas, as quatro raízes Terraform escritas e validadas offline (10 pastas, 83 cenários de teste), revisão adversarial em curso. Depois dela: commit e os planos salvos para o usuário autorizar. Nenhum recurso AWS existe nem foi criado na Fase 5.
+TL;DR: C0, C1 e C3 concluídas (CI verde no GitHub); C4 com os manifestos validados; C2 validada e revisada. Primeiro recurso na AWS em 2026-11-24: o bootstrap (bucket de estado, Budget de US$ 50/mês, provedor OIDC adotado), com o estado já no S3. Próximo passo: o usuário autorizar o apply da base, com o NAT desligado (o plano salvo é gerado e apresentado antes).
 
-Última atualização: 2026-11-21, Claude.
+Última atualização: 2026-11-24, Claude.
+
+## Fase AWS — ordem combinada (cada apply só com autorização do usuário, P-004)
+
+1. [x] Bootstrap aplicado em 2026-11-24 ("Pode fazer o bucket s3"): bucket `solidarytech-tfstate-<conta>-us-east-2-an` (versionado, AES256, os 4 bloqueios públicos, só TLS, `prevent_destroy`), Budget `solidarytech-mensal` (US$ 50, alertas ACTUAL a 50/80/100% e FORECASTED a 100%, para o e-mail informado pelo usuário) e provedor OIDC do GitHub importado (só as tags mudaram). Estado em `phase5/prod/bootstrap.tfstate`. Evidências locais em `02_TRABALHO/validacao-local-bootstrap-2026-11-24/`, ignorada pelo Git.
+2. [ ] Base com `enable_nat_gateway = false`: VPC, endpoints de gateway, 3 ECR, fila com DLQ, tabela, roles do CI e do self-healing. Sem NAT, o custo fixo fica perto de zero. O plano salvo é gerado e apresentado antes do apply.
+3. [ ] Variables do repositório com `scripts/github/set-repo-variables.sh`, a partir das saídas da base. Grava configuração no GitHub; pede autorização.
+4. [ ] PR `dev` → `main` e merge (pede autorização): os pipelines publicam as 3 imagens no ECR e o robô grava as tags no overlay.
+5. [ ] Tags de alocação de custo: `activate_cost_allocation_tags = true` no bootstrap, quando as chaves aparecerem no faturamento (até 24 h depois dos primeiros recursos tagueados).
+6. [ ] Janela do cluster, combinada com o usuário (referência de custo da Fase 4: cerca de US$ 0,41/h com tudo ligado): NAT ligado na base, `cluster` (EKS, RDS, IRSA), `k8s` com `enable_applications = true` (ArgoCD e a Application), Job de schema e fluxo pela rede do cluster. Destroy na ordem inversa ao fim da janela.
 
 ## Como usar
 
@@ -23,7 +32,8 @@ Ferramentas: Terraform 1.16.0 e AWS CLI 2.35.11 instalados; Helm e Kustomize sta
   - [x] Revisão adversarial (segurança, correção na AWS, FinOps e docs) concluída em 2026-11-23: 18 achados, 15 corrigidos, 1 incerto (retenção do RDS); 88 cenários de teste.
   - [x] Commit curado da C2 (`5c9d9c0`) e push na `dev`; correções da revisão num commit próprio.
   - [x] Addons do EKS 1.37 conferidos por leitura (os 5 existem em us-east-2).
-  - [ ] Plano salvo de cada raiz apresentado ao usuário antes de qualquer apply (P-004). Esperado no bootstrap: 1 import, recursos novos e a troca de tags do provedor OIDC; conferir também se o plano FREE aceita a retenção de backup do RDS.
+  - [x] Bootstrap: plano salvo apresentado, autorizado e aplicado em 2026-11-24 (1 importado, 8 criados, 1 alterado, 0 destruído); estado migrado para o S3 e plano seguinte com "No changes".
+  - [ ] Base, cluster e k8s: plano salvo de cada raiz apresentado ao usuário antes do apply (P-004). No cluster, conferir se o plano FREE aceita 7 dias de retenção de backup do RDS.
 
 Herdado da implementação para as próximas camadas:
 - C3: o workflow de verificação do Terraform roda `init -backend=false`, `validate` e `test` nas 10 pastas (4 raízes e 6 módulos), sem credencial AWS; o push da imagem pula quando a tag imutável já existe no ECR (a role do CI tem `ecr:DescribeImages` para isso); as Variables do repositório saem dos outputs da base (`aws_region`, `ecr_registry`, `ci_role_arn`, `self_healing_role_arn`, `eks_cluster_name`).
@@ -64,7 +74,7 @@ Herdado da implementação para as próximas camadas:
 |---|---|---|---|
 | P-002 | Criar a conta nova do PagerDuty (trial) perto da gravação e guardar a Integration Key no `.env` local. Campos marcados `A PREENCHER (PagerDuty)`. | Usuário | C8 |
 | P-003 | Prazo, hora e canal de entrega (Q-06, Q-07); nomes, RMs e usernames dos integrantes; onde o vídeo será hospedado. | Usuário | C10 (o prazo também orienta o calendário) |
-| P-004 | Perfil da AWS CLI a usar e autorização específica para cada apply/destroy, com o plano salvo apresentado antes. | Usuário | C2 em diante |
+| P-004 | Autorização específica para cada apply/destroy, com o plano salvo apresentado antes. Perfil da AWS CLI: `default`, o único configurado. Bootstrap autorizado e aplicado em 2026-11-24; próxima: a base. | Usuário | C2 em diante |
 | P-005 | Conferir se o plano do New Relic tem detecção de anomalias (Applied Intelligence). | Agente com o usuário | C8 |
 | P-006 | Aprovar metas SRE: SLOs, janela e termos do SLA, propostos pelo agente depois de medir. | Usuário | C6 |
 | P-007 | Aprovar RTO e RPO-alvo das doações, propostos pelo agente depois do ensaio de restore. | Usuário | C9 |

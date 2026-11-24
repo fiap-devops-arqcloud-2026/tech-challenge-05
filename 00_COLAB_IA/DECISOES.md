@@ -1,10 +1,16 @@
 # Decisões
 
-TL;DR: D-001 a D-015 registradas em 2026-11-20, antes de qualquer código de infraestrutura. Escopo só obrigatório, conta e região da Fase 4 com ambiente efêmero, New Relic e Slack reaproveitados, PagerDuty em conta nova, DR pela Opção A (Velero), Budget de US$ 50/mês, README do coordenador em `docs/enunciado/`, fluxo dev → PR → main. D-016 (C1): versões de linguagem, imagens base e dependências dos serviços. D-017 (C2): desenho do Terraform e ajustes depois da implementação.
+TL;DR: D-001 a D-015 registradas em 2026-11-20, antes de qualquer código de infraestrutura. Escopo só obrigatório, conta e região da Fase 4 com ambiente efêmero, New Relic e Slack reaproveitados, PagerDuty em conta nova, DR pela Opção A (Velero), Budget de US$ 50/mês, README do coordenador em `docs/enunciado/`, fluxo dev → PR → main. D-016 (C1): versões de linguagem, imagens base e dependências dos serviços. D-017 (C2): desenho do Terraform e ajustes depois da implementação. D-018: atualizar o projeto antes de os créditos acabarem.
 
-Última atualização: 2026-11-20, Claude.
+Última atualização: 2026-11-24, Claude.
 
 Formato: contexto, decisão, alternativas, status. Quem decidiu aparece no título: "usuário" quando a resposta veio dele (citada entre aspas), "agente" quando é escolha técnica reversível, tomada com base no pedido e registrada para veto. Herança: IDs da Fase 4 levam o prefixo F4- (F4-D-018); os da Fase 3, F3-.
+
+## D-018 — Atualizar o projeto antes de os créditos acabarem (2026-11-24, usuário)
+
+Contexto: o trabalho foi interrompido várias vezes por limite de uso e por falha de rede, com agentes em segundo plano perdendo o que tinham feito.
+Decisão: pedido do usuário: "Caso seus creditos estejam perto de acabar nunca se esqueça de atualizar o projeto antes para que o proximo agente ou voce retome de onde parou." Regra para qualquer agente: ao perceber que o crédito ou o limite de uso está perto do fim, ou antes de uma pausa ou de um trabalho longo em segundo plano, parar o que estiver fazendo e, primeiro, registrar no LOG o estado exato e o próximo passo, atualizar PENDENCIAS e commitar e enviar para a `dev` o que estiver consistente. Trabalho incompleto fica fora do commit e descrito no LOG. Agentes em segundo plano gravam o progresso enquanto trabalham.
+Status: vigente.
 
 ## D-017 — Desenho do Terraform da C2 (2026-11-21, agente)
 
@@ -61,7 +67,7 @@ Status: vigente; aplicada na C1.
 Contexto: na Fase 4 o bucket de estado, o provedor OIDC do GitHub e o Budget nasceram fora do Terraform. A Fase 5 proíbe infraestrutura clicada (REQ-OBR-03). O bucket da Fase 4 foi removido em 2026-11-12; o provedor OIDC do GitHub foi mantido na conta, segundo o encerramento da Fase 4.
 Decisão: raiz `terraform/bootstrap/` que cria o bucket de estado (versionado, cifrado, bloqueio público e policy só TLS) e o Budget (D-008), e importa o provedor OIDC existente com bloco `import`, sem recriá-lo. O estado do bootstrap começa local e é migrado para o próprio bucket logo após o primeiro apply. A existência do provedor é conferida na C2, antes do plano.
 Alternativas: recriar o provedor (ação destrutiva fora do código) ou só lê-lo por data source (continuaria fora do código).
-Status: vigente; aplicada na C2.
+Status: aplicada em 2026-11-24 com autorização do usuário ("Pode fazer o bucket s3"): bucket de estado criado no namespace regional da conta e provedor OIDC importado sem recriação (só as tags mudaram); estado do bootstrap migrado para `phase5/prod/bootstrap.tfstate`.
 
 ## D-011 — Atribuição e documentos públicos (2026-11-20, agente)
 
@@ -89,7 +95,7 @@ Status: vigente; aplicada na C1.
 Contexto: cerca de US$ 126 de crédito; a stack da Fase 4 custava cerca de US$ 0,41/h ligada. O Budget da Fase 4 (US$ 80) foi criado fora do Terraform e continua existindo.
 Decisão: resposta do usuário: "US$ 50/mês (Recomendado)". Budget mensal de US$ 50 criado pelo Terraform (raiz bootstrap), filtrado pela tag `Project=SolidaryTech`, com alertas por e-mail a 50%, 80% e 100%. O e-mail fica só num tfvars local ignorado pelo Git. O Budget da Fase 4 não é alterado.
 Alternativas: US$ 80/mês, como na Fase 4.
-Status: vigente; aplicada na C2.
+Status: aplicada em 2026-11-24: Budget `solidarytech-mensal` criado pelo Terraform (raiz bootstrap), com alertas ACTUAL a 50, 80 e 100% e FORECASTED a 100%. O e-mail informado pelo usuário está só no tfvars local e no AWS Budgets. A AWS aceitou o filtro por uma tag ainda não ativada no faturamento.
 
 ## D-007 — README do coordenador (2026-11-20, usuário)
 

@@ -16,6 +16,7 @@ Plataforma SolidaryTech (Hackathon da Fase 5 da POSTECH DevOps e Arquitetura Clo
 4. Continuar da primeira entrega não concluída. Verificar arquivos já salvos antes de repetir trabalho.
 5. Ao concluir cada entrega: marcar em PENDENCIAS, atualizar a matriz do plano e registrar no LOG (entrada nova no topo, sem apagar as antigas, terminando em "Estado p/ próximo agente").
 6. Ao fim de cada camada: commit curado na `dev` (D-006) e teste de handoff (outro agente consegue continuar só com AGENTS.md → LEIA-PRIMEIRO → PENDENCIAS → LOG).
+7. **Crédito ou limite de uso perto do fim (D-018):** pare e, antes de qualquer outra coisa, registre no LOG o estado exato e o próximo passo, atualize PENDENCIAS e commite e envie o que estiver consistente. O que estiver incompleto fica fora do commit e descrito no LOG. Faça o mesmo antes de pausas e de trabalhos longos em segundo plano.
 
 IDs: D-### decisões, P-### pendências que dependem de alguém, F-### achados. Herança da Fase 4 com prefixo F4-, da Fase 3 com F3-.
 
