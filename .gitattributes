@@ -1,0 +1,16 @@
+# Normaliza fim de linha: o Git guarda LF e entrega LF na cópia de trabalho.
+# Scripts shell com CRLF quebram dentro de contêineres e runners Linux
+# ("bad interpreter: /bin/bash^M"), e o mesmo vale para YAML e Dockerfile.
+* text=auto eol=lf
+
+# Binários: sem conversão de fim de linha nem diff textual.
+*.pdf binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.zip binary
+*.pptx binary
+*.docx binary
+*.xlsx binary

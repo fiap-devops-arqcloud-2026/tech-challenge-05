@@ -1,0 +1,16 @@
+# Garante pelo menos uma réplica do donation-service de pé durante
+# interrupções voluntárias (dreno de nó, atualização do node group).
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: donation-service
+  labels:
+    app.kubernetes.io/name: donation-service
+spec:
+  minAvailable: 1
+  # Pod que não está saudável pode ser removido mesmo assim: sem isso, uma
+  # réplica em CrashLoop travaria o dreno do nó (e a atualização do cluster).
+  unhealthyPodEvictionPolicy: AlwaysAllow
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: donation-service

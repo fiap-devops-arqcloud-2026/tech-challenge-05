@@ -1,0 +1,15 @@
+# =================================================================
+# EXEMPLO de backend.hcl — raiz bootstrap
+# =================================================================
+# Usado a partir da ETAPA 2 do README (migração do estado local para o
+# S3). O backend.hcl real é ignorado pelo Git e é gerado a partir dos
+# outputs do primeiro apply (state_bucket_name e state_bucket_region). O
+# bucket fica no namespace regional da conta, no formato
+# <projeto>-tfstate-<conta>-<região>-an.
+#
+# O bucket abaixo é uma SENTINELA: o S3 não aceita maiúsculas em nomes de
+# bucket, então o init falha de propósito se o exemplo for usado sem
+# troca. A chave (key) não entra aqui: ela é fixa em versions.tf.
+# =================================================================
+bucket = "SUBSTITUIR-PELO-OUTPUT-state_bucket_name"
+region = "us-east-2"

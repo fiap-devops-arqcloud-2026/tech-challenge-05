@@ -1,0 +1,18 @@
+# Dependências de execução do volunteer-service, com versão fixa.
+# Versões conferidas no PyPI em 2026-11-20. As recebidas (Flask 2.2.2,
+# gunicorn 20.1.0, boto3 1.26.50, python-dotenv 0.21.0) foram atualizadas:
+# o Flask 2.2.2 não importa com o Werkzeug 3 que o pip instala sem trava,
+# as versões antigas têm vulnerabilidades conhecidas e o boto3 atual lê
+# AWS_ENDPOINT_URL (teste local com emulador).
+Flask==3.1.3
+Werkzeug==3.1.9
+gunicorn==27.0.1
+python-dotenv==1.2.4
+boto3==1.44.8
+
+# OpenTelemetry: API/SDK 1.45.x e instrumentações 0.66bx são da mesma família.
+opentelemetry-api==1.45.2
+opentelemetry-sdk==1.45.2
+opentelemetry-exporter-otlp-proto-http==1.45.2
+opentelemetry-instrumentation-flask==0.66b2
+opentelemetry-instrumentation-botocore==0.66b2

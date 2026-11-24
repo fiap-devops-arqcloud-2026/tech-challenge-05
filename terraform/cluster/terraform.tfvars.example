@@ -1,0 +1,41 @@
+# =================================================================
+# EXEMPLO DE VALORES — raiz cluster
+# =================================================================
+# Copie para terraform.tfvars (ignorado pelo Git) e troque os valores
+# FICTÍCIOS abaixo pelos reais:
+#   cp terraform.tfvars.example terraform.tfvars
+#
+# Com a conta 000000000000 o plano falha de propósito: o provider recusa
+# credenciais de qualquer conta real (allowed_account_ids). Em vez do
+# arquivo, os valores podem vir de variáveis de ambiente, como
+# TF_VAR_expected_aws_account_id.
+# =================================================================
+
+# Obrigatórios (sem padrão no código).
+expected_aws_account_id = "000000000000"
+
+# Saídas state_bucket_name e state_bucket_region da raiz bootstrap; os
+# mesmos valores do backend.hcl. O nome do bucket precisa terminar em
+# -<conta acima>-<state_region>-an (validação da variável).
+state_bucket = "solidarytech-tfstate-000000000000-us-east-2-an"
+state_region = "us-east-2"
+
+# Opcionais: os valores abaixo são os padrões do código. Descomente só o
+# que precisar mudar.
+# project_name                         = "solidarytech"
+# aws_region                           = "us-east-2"
+# kubernetes_version                   = "1.37"
+# node_instance_type                   = "m7i-flex.large"
+# node_desired_size                    = 2
+# node_min_size                        = 2
+# node_max_size                        = 3
+# node_disk_size_gb                    = 20
+# cluster_endpoint_public_access_cidrs = ["0.0.0.0/0"]
+# db_instance_class                    = "db.t4g.micro"
+# db_engine_version                    = "17"
+# db_allocated_storage_gb              = 20
+
+# Se o plano gratuito da conta recusar 7 dias no apply
+# (FreeTierRestrictionError), troque para 1 (ver README.md).
+# db_backup_retention_days             = 7
+# app_namespace                        = "solidarytech"

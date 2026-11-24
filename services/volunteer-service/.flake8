@@ -1,0 +1,30 @@
+# =================================================================
+# flake8 — configuração dos serviços Python
+# =================================================================
+# O mesmo conteúdo vale para ngo-service e volunteer-service. É lida pelo
+# job "Lint" do CI (.github/workflows/_ci-python.yml) e por quem roda
+# "flake8" dentro da pasta do serviço.
+#
+# O CI falha com QUALQUER achado. Os códigos padrão do flake8 (E e W do
+# pycodestyle, F do pyflakes e C90 do mccabe) apontam erro, código morto ou
+# desvio do PEP 8, não preferência pessoal. Exceção pontual vai na própria
+# linha ("# noqa: <código>"), com um comentário dizendo por quê.
+#
+# Reproduzir localmente: docs/CI-CD.md, seção "Como reproduzir localmente".
+# (O flake8 não aceita comentário no fim da linha de uma opção: cada
+# explicação fica na linha de cima.)
+# =================================================================
+
+[flake8]
+# 120 colunas, o mesmo limite do pylint (.pylintrc). O padrão de 79 vem dos
+# terminais de 80 colunas; com mensagens de log e nomes descritivos, 120
+# evita quebras artificiais sem atrapalhar a leitura no diff.
+max-line-length = 120
+
+# Complexidade ciclomática máxima por função (C901): acima de 10 caminhos,
+# a função fica difícil de ler e de cobrir por completo com testes.
+max-complexity = 10
+
+# Pastas locais que não são código do serviço (ambiente virtual e cache do
+# pytest). As padrão (.git, __pycache__ e outras) continuam excluídas.
+extend-exclude = .venv,venv,.pytest_cache

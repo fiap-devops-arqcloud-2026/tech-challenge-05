@@ -1,0 +1,206 @@
+# =================================================================
+# VERIFICAÇÃO DO TERRAFORM — sem credencial da AWS e sem custo
+# =================================================================
+# O que faz, a cada mudança em terraform/:
+#   1. fmt: confere a formatação de todo o Terraform, recursivamente;
+#   2. validate e test: uma rodada por pasta, em paralelo (as 4 raízes e os
+#      6 módulos próprios), com init sem backend, conferência do lockfile,
+#      validate e terraform test.
+#
+# Por que roda sem AWS:
+#   - init -backend=false não lê o bucket dos estados no S3;
+#   - validate confere sintaxe, tipos e referências sem configurar provider;
+#   - os testes usam mock_provider ou um provider com credenciais falsas,
+#     apontado para uma porta fechada (ver o cabeçalho de cada .tftest.hcl).
+# Por isso este workflow não pede id-token: write nem lê Variable da AWS:
+# ele não consegue falar com a conta, nem por engano.
+#
+# O que NÃO prova: que o plano funciona na conta, que as cotas comportam os
+# recursos ou que o apply termina. Plano e apply acontecem fora do CI, com
+# plano salvo e autorização do responsável pela conta (terraform/README.md).
+#
+# Reproduzir localmente: docs/CI-CD.md, seção "Como reproduzir localmente".
+# =================================================================
+
+name: Terraform (verificação offline)
+
+on:
+  # PR com destino na dev ou na main: barra o erro antes do merge.
+  pull_request:
+    branches: [dev, main]
+    # Só acorda quando o Terraform (ou este arquivo) muda. Mudança só nos
+    # README de terraform/ não altera nenhum resultado e não roda nada.
+    paths:
+      - "terraform/**"
+      - "!terraform/**/*.md"
+      - ".github/workflows/terraform-check.yml"
+  # Push na dev e na main: confere o que acabou de ser integrado.
+  push:
+    branches: [dev, main]
+    # Mesma lista do pull_request.
+    paths:
+      - "terraform/**"
+      - "!terraform/**/*.md"
+      - ".github/workflows/terraform-check.yml"
+  # Botão "Run workflow" na aba Actions, para reexecutar sem commit.
+  workflow_dispatch:
+
+# Teto de permissões do GITHUB_TOKEN: só leitura do código.
+permissions:
+  contents: read
+
+# Um grupo por workflow e ref. Num PR ou na dev, um push novo cancela a
+# rodada anterior da mesma branch ou do mesmo PR. Na main, a rodada em
+# andamento nunca é cancelada: o push seguinte espera a vez (com vários
+# pushes seguidos, o GitHub mantém na fila só o mais recente).
+concurrency:
+  group: terraform-check-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+# bash com -e e -o pipefail em todos os passos run.
+defaults:
+  run:
+    shell: bash
+
+env:
+  # Mesma versão usada localmente pelo projeto; os versions.tf aceitam
+  # ">= 1.11.0, < 2.0.0".
+  TF_VERSION: "1.16.0"
+  # Saída sem as dicas de "próximo comando", pensadas para uso interativo.
+  TF_IN_AUTOMATION: "1"
+  # Nenhum comando pode parar esperando resposta no terminal.
+  TF_INPUT: "0"
+
+jobs:
+  # ===============================================================
+  # BARREIRA 1 — formatação
+  # ===============================================================
+  # Derruba quando algum .tf ou .tftest.hcl difere do terraform fmt.
+  # Por quê: diff de formatação esconde a mudança real na revisão do PR.
+  # O -diff mostra no log exatamente o que mudar.
+  fmt:
+    name: fmt (formatação)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Nada aqui faz push: o token não fica gravado no .git do runner.
+          persist-credentials: false
+
+      - name: Instalar o Terraform
+        uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          # Sem o wrapper, a saída e o código de erro são os do próprio terraform.
+          terraform_wrapper: false
+
+      - name: terraform fmt -check
+        run: terraform fmt -check -recursive -diff terraform
+
+  # ===============================================================
+  # BARREIRA 2 — lockfile, validate e test, uma pasta por job
+  # ===============================================================
+  # Cada raiz e cada módulo é um módulo raiz independente para o init, o
+  # validate e o test. A matriz roda as 10 pastas em paralelo, e
+  # fail-fast: false deixa todas terminarem: uma rodada mostra todos os
+  # problemas, não só o primeiro.
+  #
+  # Derruba quando:
+  #   - a pasta não tem .terraform.lock.hcl versionado, ou o init precisou
+  #     mudar o lockfile além do checksum do Linux (provider sem trava ou
+  #     versão diferente da travada);
+  #   - init falha: provider ou módulo inexistente, ou um provider baixado
+  #     que não confere com os checksums do lockfile versionado;
+  #   - validate falha: erro de sintaxe, tipo ou referência quebrada entre
+  #     arquivos e módulos;
+  #   - test falha: alguma regra escrita nos .tftest.hcl deixou de valer
+  #     (tags obrigatórias, trust OIDC presa à main, contratos entre raízes,
+  #     validações das variáveis).
+  validate:
+    name: validate e test (${{ matrix.dir }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        dir:
+          - bootstrap
+          - base
+          - cluster
+          - k8s
+          - modules/ecr
+          - modules/messaging
+          - modules/iam-ci
+          - modules/eks
+          - modules/rds
+          - modules/irsa
+    env:
+      # Os comandos leem a pasta por variável de ambiente, não por expressão
+      # dentro do script.
+      TF_DIR: terraform/${{ matrix.dir }}
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Instalar o Terraform
+        uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+
+      # Sem lockfile versionado, o init escolheria as versões mais novas que
+      # as restrições permitem, e o CI testaria providers diferentes dos que
+      # fazem o apply.
+      - name: Conferir que o lockfile está versionado
+        run: |
+          if ! git ls-files --error-unmatch -- "$TF_DIR/.terraform.lock.hcl" >/dev/null 2>&1; then
+            echo "::error::${TF_DIR}/.terraform.lock.hcl não está no Git. Rode terraform init na pasta e versione o lockfile."
+            exit 1
+          fi
+
+      # Baixa os providers nas versões travadas pelo lockfile versionado e o
+      # módulo de VPC do registro. -backend=false: sem estado e sem S3.
+      # O pacote baixado é conferido com os checksums zh: do lockfile. Como
+      # o lockfile versionado só traz o checksum h1: da plataforma de quem o
+      # gerou, o init acrescenta o de linux_amd64, só na cópia do runner; a
+      # versão usada continua sendo a travada. Por isso não há
+      # -lockfile=readonly aqui: com ele, o init termina com aviso, mas o
+      # validate recusa o provider instalado (docs/CI-CD.md, "Limites
+      # conhecidos"). O passo seguinte faz a conferência que o readonly faria.
+      - name: terraform init (sem backend)
+        run: terraform -chdir="$TF_DIR" init -backend=false -input=false
+
+      # Aceita só linhas novas de checksum h1: (o do Linux). Qualquer outra
+      # diferença (bloco de provider novo, versão ou restrição trocada) quer
+      # dizer que o lockfile versionado não cobre a configuração: o job
+      # falha e mostra o que o init mudou.
+      - name: Conferir o lockfile depois do init
+        run: |
+          lockfile="$TF_DIR/.terraform.lock.hcl"
+          changes="$(git diff --no-color -U0 -- "$lockfile")"
+          # Linhas alteradas, sem os cabeçalhos --- e +++ do diff, menos as
+          # linhas novas de checksum h1:.
+          unexpected="$(printf '%s\n' "$changes" \
+            | grep -E '^[+-]' \
+            | grep -vE '^(\+\+\+|---)( |$)' \
+            | grep -vE '^\+[[:space:]]+"h1:[A-Za-z0-9+/=]+",$' || true)"
+          if [[ -n "$unexpected" ]]; then
+            echo "::error file=${lockfile}::o terraform init mudou o lockfile além do checksum h1: do Linux. Rode terraform init na pasta e versione o .terraform.lock.hcl."
+            printf '%s\n' "$unexpected"
+            exit 1
+          fi
+          echo "Lockfile conferido: as versões usadas são as travadas no Git."
+
+      - name: terraform validate
+        run: terraform -chdir="$TF_DIR" validate
+
+      - name: terraform test
+        run: terraform -chdir="$TF_DIR" test

@@ -1,0 +1,516 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>SRE — Site Reliability Engineering — Guia de estudo · Hackathon Fase 5</title><style>
+    :root{
+      --bg:#eef2f8; --surface:#ffffff; --surface-2:#e7eef7; --panel:#f5f8fc;
+      --ink:#132339; --ink-soft:#4c5f79; --ink-faint:#7787a0;
+      --line:#d3ddea; --line-soft:#e2e9f2;
+      --accent:#2f6ae0; --accent-ink:#1c4aa8; --accent-wash:#e7eefb;
+      --brass:#b26a10; --brass-wash:#f6ecdd;
+      --ok:#2c8159; --warn:#a9741a; --no:#7a869a;
+      --serif:Georgia,"Iowan Old Style","Palatino Linotype","Times New Roman",serif;
+      --sans:"Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+      --mono:"Cascadia Code",Consolas,"SFMono-Regular",ui-monospace,monospace;
+    }
+    @media (prefers-color-scheme:dark){:root{
+      --bg:#0c1725; --surface:#152539; --surface-2:#101f31; --panel:#132234;
+      --ink:#e6edf6; --ink-soft:#a4b6cc; --ink-faint:#7488a2;
+      --line:#26394f; --line-soft:#1d2d40;
+      --accent:#6c9cf1; --accent-ink:#9cbdf8; --accent-wash:#16273f;
+      --brass:#e0a552; --brass-wash:#241c11; --ok:#59bf8c; --warn:#e0a552; --no:#7f8aa0;
+    }}
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.6;-webkit-font-smoothing:antialiased}
+    .wrap{max-width:900px;margin:0 auto;padding:clamp(20px,4vw,52px) clamp(16px,4vw,32px)}
+    .masthead{border-bottom:2px solid var(--ink);padding-bottom:22px;margin-bottom:34px}
+    .eyebrow{font-family:var(--mono);font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:var(--accent-ink);margin:0 0 12px}
+    .masthead h1{font-family:var(--serif);font-weight:700;font-size:clamp(1.9rem,5.6vw,3rem);line-height:1.05;margin:0;text-wrap:balance}
+    .masthead .sub{font-size:clamp(1rem,2.4vw,1.18rem);color:var(--ink-soft);margin:.5em 0 0;max-width:62ch}
+    .meta{font-family:var(--mono);font-size:.74rem;color:var(--ink-faint);margin-top:16px;display:flex;flex-wrap:wrap;gap:6px 18px}
+    h2{font-family:var(--serif);font-weight:700;font-size:clamp(1.4rem,3.4vw,1.9rem);margin:52px 0 6px;text-wrap:balance}
+    .section-rule{height:3px;width:56px;background:var(--accent);border-radius:2px;margin:14px 0 24px}
+    p{max-width:68ch}
+    .lead{color:var(--ink-soft);margin:0 0 22px;max-width:66ch}
+    strong{color:var(--ink)}
+    a{color:var(--accent-ink);text-underline-offset:3px}
+    .intro{display:grid;gap:16px;grid-template-columns:1fr 1fr}
+    @media(max-width:620px){.intro{grid-template-columns:1fr}}
+    .intro .box{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px 22px}
+    .intro .box h3{margin:0 0 8px;font-size:1.05rem;font-family:var(--sans);font-weight:700}
+    .intro .box p{margin:0;font-size:.96rem;color:var(--ink-soft);max-width:none}
+    .intro .box.hi{border-color:var(--brass);background:var(--brass-wash)}
+    .glossary{background:var(--panel);border:1px solid var(--line-soft);border-radius:14px;padding:clamp(16px,3vw,26px);display:grid;grid-template-columns:1fr 1fr;gap:2px 26px}
+    @media(max-width:640px){.glossary{grid-template-columns:1fr}}
+    .term{padding:11px 0;border-bottom:1px solid var(--line-soft)}
+    .term .k{font-family:var(--mono);font-weight:700;color:var(--accent-ink);font-size:.92rem}
+    .term .full{font-style:italic;color:var(--ink-faint);font-size:.86rem;margin-left:6px}
+    .term .d{display:block;color:var(--ink-soft);font-size:.94rem;margin-top:2px}
+    .lessons{display:flex;flex-direction:column;gap:18px}
+    .lesson{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:clamp(18px,3vw,26px);transition:border-color .18s ease}
+    .lesson:hover{border-color:var(--accent)}
+    .lesson-head{display:flex;gap:16px;align-items:flex-start;margin-bottom:16px}
+    .num{font-family:var(--serif);font-size:2.1rem;font-weight:700;line-height:1;color:var(--accent);min-width:1.6em;font-variant-numeric:tabular-nums}
+    .lesson-head h3{margin:2px 0 8px;font-size:clamp(1.12rem,2.6vw,1.3rem);font-family:var(--sans);font-weight:700;line-height:1.25}
+    .badge{display:inline-block;font-family:var(--mono);font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:20px;border:1px solid currentColor}
+    .badge.ok{color:var(--ok)}
+    .badge.warn{color:var(--warn)}
+    .badge.no{color:var(--no)}
+    .facets{margin:0;display:grid;gap:14px}
+    .facets > div{display:grid;grid-template-columns:150px 1fr;gap:4px 18px;align-items:baseline}
+    @media(max-width:600px){.facets > div{grid-template-columns:1fr}}
+    .facets dt{font-family:var(--mono);font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--accent-ink);margin:0}
+    .facets dd{margin:0;color:var(--ink-soft);font-size:.97rem}
+    .facets dd.proj{color:var(--ink)}
+    .facets .use{color:var(--brass)}
+    code{font-family:var(--mono);font-size:.86em;background:var(--accent-wash);color:var(--accent-ink);padding:1px 6px;border-radius:5px}
+    .flow{margin:0;padding:0;list-style:none;counter-reset:flow;display:grid;gap:12px}
+    .flow li{counter-increment:flow;display:grid;grid-template-columns:38px 1fr;gap:13px;align-items:start;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:15px 17px}
+    .flow li::before{content:counter(flow);display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:var(--accent-wash);color:var(--accent-ink);font-family:var(--mono);font-size:.78rem;font-weight:700}
+    .flow strong{display:block;margin-bottom:2px}
+    .flow span{color:var(--ink-soft);font-size:.95rem}
+    .tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+    table{border-collapse:collapse;width:100%;min-width:680px;font-size:.92rem}
+    th,td{text-align:left;padding:11px 15px;border-bottom:1px solid var(--line-soft)}
+    thead th{background:var(--surface-2);font-family:var(--mono);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft)}
+    tbody tr:last-child td{border-bottom:none}
+    td .s{font-family:var(--mono);font-size:.78rem;font-weight:700}
+    td .s.ok{color:var(--ok)}
+    td .s.warn{color:var(--warn)}
+    td .s.no{color:var(--no)}
+    td .num2{font-family:var(--serif);font-weight:700;color:var(--accent)}
+    .note{margin-top:20px;padding:16px 18px;border-left:4px solid var(--brass);background:var(--brass-wash);color:var(--ink-soft)}
+    .note strong{display:block;margin-bottom:3px}
+    .sources{display:grid;grid-template-columns:1fr 1fr;gap:8px 22px;margin:0;padding:0;list-style:none}
+    .sources li{border-bottom:1px solid var(--line-soft);padding:8px 0;font-size:.92rem}
+    @media(max-width:640px){.sources{grid-template-columns:1fr}}
+    footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--line);color:var(--ink-faint);font-size:.86rem}
+    :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+    @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+  /* Extensões Fase 4 — mesmas em todos os guias */
+.wrap{overflow-wrap:anywhere}.badge{letter-spacing:.03em;margin:2px 3px 2px 0;text-decoration:none;max-width:100%}.badge.obrigatorio{color:#a3323d;background:#fff0f1}.badge.bonus{color:#21613d;background:#edf8ef}.badge.sugestao{color:#1c4aa8;background:#e7eefb}.badge.complemento-badge{color:#725000;background:#fff5dc}.legend,.toc{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px 22px;margin:20px 0}.legend p{font-size:.9rem;color:var(--ink-soft);margin-bottom:0}.toc ol{columns:2;column-gap:32px;padding-left:20px}.toc li{break-inside:avoid;margin-bottom:7px}.complemento{border-left:4px solid var(--accent);background:var(--accent-wash);padding:16px 20px;margin:20px 0}.complemento>strong{display:block}.source,figcaption{font-size:.86rem;color:var(--ink-soft)}pre{white-space:pre;overflow:auto;max-width:100%;padding:18px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);line-height:1.55}pre code{padding:0;background:none;color:var(--ink)}figure{margin:22px 0}.source-list{margin-top:18px}summary{cursor:pointer;color:var(--accent-ink);font-weight:600}details{margin:12px 0;padding:12px 16px;border:1px solid var(--line);border-radius:8px}.skip{position:absolute;top:-100px;left:12px}.skip:focus{top:12px;background:var(--surface);padding:10px;z-index:100}.diagram{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:20px 0}.diagram .node{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;flex:1;min-width:130px}.lesson p:last-child{margin-bottom:0}section{scroll-margin-top:20px}h3{line-height:1.35}.warning{border-left:4px solid var(--brass);padding:14px 18px;background:var(--brass-wash)}@media(max-width:640px){.toc ol{columns:1}.meta{font-size:.7rem}.lesson-head{gap:10px}.sources{grid-template-columns:1fr}}@media(prefers-color-scheme:dark){.badge.obrigatorio{color:#ffb3bc;background:#381f29}.badge.bonus{color:#a7e4bb;background:#173123}.badge.sugestao{color:#b5cdff;background:#16273f}.badge.complemento-badge{color:#f1d592;background:#302817}}@media print{body{background:white;color:black}.wrap{max-width:none;padding:0}.toc,.skip{display:none}.lesson,.complemento{break-inside:avoid}.tablewrap{overflow:visible}table{min-width:0}pre{white-space:pre-wrap}.badge{background:none!important;color:black!important}a{color:black}details>*{display:block}}
+
+/* Extensões Hackathon Fase 5 — mesmas em todos os guias */
+.badge.duvida{color:#5b3fa8;background:#f1ecfd}
+.maplinks{font-size:.93rem;margin:16px 0 0;max-width:none}
+.maplinks a{font-weight:600}
+.guide-nav{display:flex;flex-wrap:wrap;gap:6px;margin-top:16px}
+.guide-nav a{font-family:var(--mono);font-size:.72rem;text-decoration:none;padding:4px 11px;border:1px solid var(--line);border-radius:20px;color:var(--ink-soft);background:var(--surface)}
+.guide-nav a:hover{border-color:var(--accent);color:var(--accent-ink)}
+.guide-nav a[aria-current]{border-color:var(--accent);color:var(--accent-ink);background:var(--accent-wash);font-weight:700}
+.guide-nav a.maplink{border-color:var(--brass);color:var(--brass)}
+a.rid{font-family:var(--mono);font-size:.86em;font-weight:700;text-decoration:none;white-space:nowrap}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0}
+.split.three{grid-template-columns:1fr 1fr 1fr}
+@media(max-width:760px){.split,.split.three{grid-template-columns:1fr}}
+.split .col{background:var(--surface);border:1px solid var(--line);border-top:4px solid var(--line);border-radius:14px;padding:16px 18px}
+.split .col.obr{border-top-color:#c2414f}
+.split .col.bon{border-top-color:#2f8a55}
+.split .col.sug{border-top-color:var(--accent)}
+.split .col h3{margin:0 0 4px;font-size:1.02rem;font-family:var(--sans)}
+.split .col > p{font-size:.88rem;color:var(--ink-faint);margin:0 0 8px}
+.split ul{list-style:none;margin:0;padding:0;max-width:none}
+.split li{padding:9px 0;border-bottom:1px solid var(--line-soft);font-size:.93rem;color:var(--ink-soft);margin:0}
+.split li:last-child{border-bottom:none}
+.split li .badge{display:table;margin:0 0 5px}
+.split li strong{color:var(--ink)}
+.split li .li-note{display:block;color:var(--ink-soft);font-size:.88rem;margin-top:2px}
+.hk{border-left:4px solid var(--brass);background:var(--brass-wash);padding:16px 20px;margin:20px 0;border-radius:0 12px 12px 0}
+.hk > strong:first-child{display:block;margin-bottom:6px;color:var(--brass)}
+.hk p{margin:6px 0}
+.hk ul,.hk ol{margin:6px 0;padding-left:20px}
+.hk p:last-child,.hk ul:last-child{margin-bottom:0}
+figure.example{margin:18px 0}
+figure.example figcaption{font-family:var(--mono);font-size:.74rem;letter-spacing:.03em;margin-bottom:6px;color:var(--brass)}
+figure.example pre{margin:0}
+h4{font-size:1.04rem;margin:26px 0 8px;font-family:var(--sans)}
+.math{font-family:var(--mono);font-size:.9rem;background:var(--panel);border:1px solid var(--line-soft);border-radius:10px;padding:12px 16px;margin:12px 0;overflow-x:auto}
+.memo{margin-top:18px;padding:12px 16px;border:1px dashed var(--line);border-radius:10px;background:var(--panel)}
+.memo strong:first-child{color:var(--accent-ink)}
+.tablewrap + .source{margin-top:8px}
+td code,li code{white-space:nowrap}
+@media(max-width:640px){td code,li code{white-space:normal}}
+@media(prefers-color-scheme:dark){.badge.duvida{color:#cdbdff;background:#272042}.split .col.obr{border-top-color:#e06a78}.split .col.bon{border-top-color:#59bf8c}}
+@media print{.guide-nav,.maplinks{display:none}.hk{break-inside:avoid}}
+</style></head>
+<body><a class="skip" href="#conteudo">Ir ao conteúdo</a><main class="wrap" id="conteudo"><header class="masthead"><p class="eyebrow">FIAP · Hackathon Fase 5 · Guia de estudo 02</p><h1>SRE — Site Reliability Engineering</h1><p class="sub">Cinco aulas para transformar confiabilidade em números: SLI, SLO, Error Budget, Golden Signals, MTTR, runbooks e post-mortems.</p><div class="meta"><span>Gerado em 2026-11-11 · Claude</span><span>5 arquivo(s) · 83 páginas</span><span>Introdutório a intermediário</span><span>Desafio: SolidaryTech</span></div><p class="maplinks"><a href="../../requisitos/REQUISITOS.html">🗺️ Mapa de requisitos — obrigatórios × bônus</a> · <a href="../../requisitos/README.md">versão Markdown</a> · <a href="../POSTECH%20-%20DCLT%20-%20Hackathon%20-%20Fase%205.pdf">enunciado do Hackathon (PDF)</a></p><details class="source-list"><summary>Arquivos-fonte usados integralmente</summary><ul class="sources"><li><a href="POSTECH%20-%20SRE%20%28Site%20Reliability%20Engineering%29%20-%20Aula%201.pdf">POSTECH - SRE (Site Reliability Engineering) - Aula 1.pdf</a><br><span class="source">16 páginas · leitura integral do texto</span></li><li><a href="POSTECH%20-%20SRE%20%28Site%20Reliability%20Engineering%29%20-%20Aula%202.pdf">POSTECH - SRE (Site Reliability Engineering) - Aula 2.pdf</a><br><span class="source">17 páginas · leitura integral do texto</span></li><li><a href="POSTECH%20-%20SRE%20%28Site%20Reliability%20Engineering%29%20-%20Aula%203.pdf">POSTECH - SRE (Site Reliability Engineering) - Aula 3.pdf</a><br><span class="source">16 páginas · leitura integral do texto</span></li><li><a href="POSTECH%20-%20SRE%20%28Site%20Reliability%20Engineering%29%20-%20Aula%204.pdf">POSTECH - SRE (Site Reliability Engineering) - Aula 4.pdf</a><br><span class="source">16 páginas · leitura integral do texto</span></li><li><a href="POSTECH%20-%20SRE%20%28Site%20Reliability%20Engineering%29%20-%20Aula%205.pdf">POSTECH - SRE (Site Reliability Engineering) - Aula 5.pdf</a><br><span class="source">18 páginas · leitura integral do texto</span></li></ul></details><nav class="guide-nav" aria-label="Guias da Fase 5"><a href="../00.Welcome%20to%20Multicloud%2C%20custos%20e%20IA/GUIA-ESTUDO-Welcome-to-Multicloud-custos-e-IA.html">00 · Welcome</a><a href="../01.Multicloud%20e%20Seguran%C3%A7a/GUIA-ESTUDO-Multicloud-e-Seguranca.html">01 · Multicloud e Segurança</a><a href="../02.SRE%20%28Site%20Reliability%20Engineering%29/GUIA-ESTUDO-SRE-Site-Reliability-Engineering.html" aria-current="page">02 · SRE</a><a href="../03.FinOps/GUIA-ESTUDO-FinOps.html">03 · FinOps</a><a href="../04.IT%20Service%20Management%20e%20AIOPs/GUIA-ESTUDO-IT-Service-Management-e-AIOps.html">04 · ITSM e AIOps</a><a href="../../requisitos/REQUISITOS.html" class="maplink">🗺️ Mapa de requisitos</a></nav></header>
+<aside class="legend" aria-label="Legenda dos selos"><span class="badge obrigatorio">🔴 Obrigatório</span> <span class="badge bonus">🟢 Bônus / diferencial</span> <span class="badge sugestao">🔵 Sugestão</span> <span class="badge complemento-badge">📘 Complemento</span><p><strong>Obrigatório</strong> é o que o enunciado do Hackathon exige. <strong>Bônus</strong> é diferencial: vai além do mínimo pedido, usa a alternativa não escolhida ou aplica algo do material oficial que o enunciado não exige — <em>o PDF não promete pontos extras</em>. <strong>Sugestão</strong> é recomendação autoral para facilitar a entrega. <strong>Complemento</strong> é explicação ou exemplo autoral, não é texto nem exigência da FIAP. Páginas seguem a contagem física do PDF, a partir de 1.</p></aside>
+<nav class="toc" aria-label="Sumário"><strong>Neste guia</strong><ol><li><a href="#visao-geral">Confiabilidade vira número — e número vira decisão</a></li><li><a href="#obrigatorio-bonus">Obrigatório × Bônus neste módulo</a></li><li><a href="#mapa">Mapa de conceitos e vocabulário</a></li><li><a href="#aula-1">Aula 1 — Cultura SRE vs DevOps</a></li><li><a href="#aula-2">Aula 2 — SLOs e Error Budget</a></li><li><a href="#aula-3">Aula 3 — Golden Metrics</a></li><li><a href="#aula-4">Aula 4 — Gestão de Incidentes</a></li><li><a href="#aula-5">Aula 5 — Post-Mortem e Runbooks</a></li><li><a href="#kit">Kit SRE da SolidaryTech: do SLI ao relatório</a></li><li><a href="#aplicacao">Da aula à entrega: o que verificar</a></li><li><a href="#outros-modulos">Como este módulo se conecta aos outros</a></li><li><a href="#revisao">Revisão rápida e autoavaliação</a></li><li><a href="#limites">Fidelidade, fontes e pontos a confirmar</a></li><li><a href="#conexao">Conexão com o Hackathon Fase 5</a></li></ol></nav>
+<section id="visao-geral"><h2>Confiabilidade vira número — e número vira decisão</h2><div class="section-rule"></div>
+<div class="intro"><div class="box"><h3>Em miúdos</h3><p>SRE é tratar a confiabilidade como problema de engenharia: escolher o que medir do ponto de vista de quem usa, combinar uma meta realista e usar a margem de erro para decidir quando acelerar e quando frear. Quando algo quebra, o time responde com papéis claros e roteiros prontos, e depois aprende sem caçar culpados.</p></div><div class="box hi"><h3>No Hackathon</h3><p>A frente 1 do enunciado é toda SRE: no mínimo dois SLIs para o <code>donation-service</code> — o Hot Path das doações —, um SLO para cada, um Dashboard SRE com o consumo do Error Budget e a prova, no relatório, de que observabilidade e automação reduzem o MTTR. A seção SRE do relatório ainda exige o <strong>SLA</strong> formal.</p></div></div>
+<p>Ordem de estudo recomendada: <strong>Aula 1</strong> dá o vocabulário e a cultura; <strong>Aula 2</strong> é o núcleo da frente 1 (SLI, SLO, SLA e Error Budget); <strong>Aula 3</strong> mostra de onde saem os SLIs (Golden Signals); <strong>Aula 4</strong> liga SRE ao PCN da frente 4 (MTTR, RTO e RPO); <strong>Aula 5</strong> liga SRE ao ciclo de incidentes da frente 3 (runbooks e post-mortem). No fim, a seção <a href="#kit">Kit SRE da SolidaryTech</a> junta tudo num exemplo pronto para adaptar.</p>
+<p><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-15">OBRIGATÓRIO · REQ-OBR-15</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-16">OBRIGATÓRIO · REQ-OBR-16</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-17">OBRIGATÓRIO · REQ-OBR-17</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-18">OBRIGATÓRIO · REQ-OBR-18</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-42">OBRIGATÓRIO · REQ-OBR-42</a></p>
+<aside class="warning"><strong>Limite do material disponível.</strong> Foram lidos os cinco PDFs completos (83 páginas). Os vídeos de Hands On, scripts e dashboards citados não estão na pasta, e várias definições aparecem em figuras (imagens) que a extração de texto não alcança — por exemplo, os pilares de continuidade da Aula 4, p. 6. Nesses pontos, o guia usa a definição usual de mercado, marcada como 📘 Complemento. Consultas PromQL, YAML e Markdown são exemplos autorais e precisam ser validados no ambiente do grupo.</aside>
+</section>
+
+<section id="obrigatorio-bonus"><h2>Obrigatório × Bônus neste módulo</h2><div class="section-rule"></div>
+<p class="lead">O 🔴 é o piso: sem ele há dedução direta (enunciado, p. 6). O 🟢 só compensa depois que o piso estiver pronto e demonstrado. O 🔵 é atalho autoral para cumprir os dois com menos risco.</p>
+<div class="split three">
+<div class="col obr"><h3>🔴 Obrigatório</h3><p>O enunciado cobra; este módulo ensina.</p><ul>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-15">OBRIGATÓRIO · REQ-OBR-15</a> <strong>≥ 2 SLIs do donation-service</strong></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-16">OBRIGATÓRIO · REQ-OBR-16</a> <strong>Um SLO para cada SLI</strong></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-17">OBRIGATÓRIO · REQ-OBR-17</a> <strong>Dashboard SRE: SLOs e Error Budget</strong></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-37">OBRIGATÓRIO · REQ-OBR-37</a> <strong>Demo: Dashboard SRE com SLOs calculados</strong></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-18">OBRIGATÓRIO · REQ-OBR-18</a> <strong>Relatório: como o MTTR é reduzido</strong></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-42">OBRIGATÓRIO · REQ-OBR-42</a> <strong>Seção SRE: SLI, SLO e SLA formais</strong></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-14">OBRIGATÓRIO · REQ-OBR-14</a> <strong>Automação de resposta a incidentes</strong> <span class="li-note">Marcado como [INCERTO] — ver a dúvida no mapa.</span></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-36">OBRIGATÓRIO · REQ-OBR-36</a> <strong>Demo: traces no APM e alertas</strong></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-26">OBRIGATÓRIO · REQ-OBR-26</a> <strong>RTO e RPO dos dados de doação</strong> <span class="li-note">A Aula 4 explica; o documento é da frente 4.</span></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-24">OBRIGATÓRIO · REQ-OBR-24</a> <strong>Ciclo de vida do incidente desenhado</strong> <span class="li-note">As Aulas 4 e 5 dão ciclo e papéis; o desenho é da frente 3.</span></li>
+</ul></div>
+<div class="col bon"><h3>🟢 Bônus / diferencial</h3><p>Vai além do mínimo; sem pontos extras prometidos.</p><ul>
+<li><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-11">BÔNUS · REQ-BON-11</a> <strong>Mais de dois SLIs no donation-service</strong></li>
+<li><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-12">BÔNUS · REQ-BON-12</a> <strong>SLOs para os outros serviços ou SLO composto</strong></li>
+<li><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-13">BÔNUS · REQ-BON-13</a> <strong>Alertas por burn rate do Error Budget</strong></li>
+<li><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-14">BÔNUS · REQ-BON-14</a> <strong>Gate de Error Budget no pipeline</strong></li>
+<li><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-15">BÔNUS · REQ-BON-15</a> <strong>Runbooks versionados (Runbook-as-Code)</strong></li>
+<li><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-16">BÔNUS · REQ-BON-16</a> <strong>Post-mortem blameless de um incidente simulado</strong></li>
+<li><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-17">BÔNUS · REQ-BON-17</a> <strong>Game Day / Chaos Engineering</strong></li>
+<li><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-01">BÔNUS · REQ-BON-01</a> <strong>Health checks nas probes e no pipeline</strong></li>
+</ul></div>
+<div class="col sug"><h3>🔵 Sugestões</h3><p>Recomendações autorais, não exigências.</p><ul>
+<li><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-04">SUGESTÃO · SUG-04</a> <strong>SLIs limpos: sem /health, com recording rules</strong></li>
+<li><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-05">SUGESTÃO · SUG-05</a> <strong>Medir a publicação assíncrona no SQS</strong></li>
+<li><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-06">SUGESTÃO · SUG-06</a> <strong>Tráfego sintético contínuo</strong></li>
+<li><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-07">SUGESTÃO · SUG-07</a> <strong>Carimbos de tempo de cada incidente</strong></li>
+<li><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-19">SUGESTÃO · SUG-19</a> <strong>Falar a língua da diretoria</strong></li>
+</ul></div>
+</div>
+</section>
+
+<section id="mapa"><h2>Mapa de conceitos e vocabulário</h2><div class="section-rule"></div>
+<div class="tablewrap"><table><thead><tr><th scope="col">Conceito</th><th scope="col">Em uma frase</th><th scope="col">Onde cai no Hackathon</th><th scope="col">Fonte</th></tr></thead><tbody>
+<tr><td>SLI</td><td>Indicador medido do ponto de vista de quem usa: taxa de sucesso, latência, falhas.</td><td>No mínimo dois para o <code>donation-service</code>.</td><td><a href="POSTECH%20-%20SRE%20%28Site%20Reliability%20Engineering%29%20-%20Aula%202.pdf#page=5">Aula 2, p. 5</a>; <a href="POSTECH%20-%20SRE%20%28Site%20Reliability%20Engineering%29%20-%20Aula%201.pdf#page=6">Aula 1, p. 6</a></td></tr>
+<tr><td>SLO</td><td>Meta para o SLI num período (ex.: 99,9% em um mês).</td><td>Um para cada SLI.</td><td><a href="POSTECH%20-%20SRE%20%28Site%20Reliability%20Engineering%29%20-%20Aula%202.pdf#page=5">Aula 2, p. 5</a></td></tr>
+<tr><td>SLA</td><td>Contrato com o cliente, derivado do SLO, com cláusulas e consequências.</td><td>Seção SRE do relatório (com as ONGs parceiras).</td><td><a href="POSTECH%20-%20SRE%20%28Site%20Reliability%20Engineering%29%20-%20Aula%202.pdf#page=5">Aula 2, p. 5</a></td></tr>
+<tr><td>Error Budget</td><td>A margem entre 100% e o SLO: o quanto ainda se pode falhar.</td><td>Consumo no Dashboard SRE.</td><td><a href="POSTECH%20-%20SRE%20%28Site%20Reliability%20Engineering%29%20-%20Aula%202.pdf#page=6">Aula 2, p. 6</a></td></tr>
+<tr><td>Burn rate</td><td>Velocidade com que o budget é consumido.</td><td>Base de alertas inteligentes (bônus).</td><td><a href="POSTECH%20-%20SRE%20%28Site%20Reliability%20Engineering%29%20-%20Aula%202.pdf#page=6">Aula 2, p. 6 e 9</a></td></tr>
+<tr><td>Golden Signals</td><td>Latência, tráfego, erros e saturação.</td><td>Matéria-prima dos SLIs e da demo.</td><td><a href="POSTECH%20-%20SRE%20%28Site%20Reliability%20Engineering%29%20-%20Aula%203.pdf#page=5">Aula 3, p. 5–7</a></td></tr>
+<tr><td>MTTD · MTTA · MTTR</td><td>Tempos médios de detectar, reconhecer e recuperar.</td><td>Relatório: como o MTTR cai.</td><td><a href="POSTECH%20-%20SRE%20%28Site%20Reliability%20Engineering%29%20-%20Aula%204.pdf#page=5">Aula 4, p. 5–6</a></td></tr>
+<tr><td>RTO · RPO</td><td>Tempo máximo para voltar · perda máxima de dados aceitável.</td><td>PCN dos dados de doação.</td><td><a href="POSTECH%20-%20SRE%20%28Site%20Reliability%20Engineering%29%20-%20Aula%204.pdf#page=7">Aula 4, p. 7</a></td></tr>
+<tr><td>Runbook</td><td>Roteiro passo a passo para um problema conhecido.</td><td>Reduz MTTR; versionado é bônus.</td><td><a href="POSTECH%20-%20SRE%20%28Site%20Reliability%20Engineering%29%20-%20Aula%205.pdf#page=6">Aula 5, p. 6</a></td></tr>
+<tr><td>Post-mortem blameless</td><td>Análise pós-incidente focada no sistema, não em culpados.</td><td>Fim do ciclo de incidente (frente 3).</td><td><a href="POSTECH%20-%20SRE%20%28Site%20Reliability%20Engineering%29%20-%20Aula%205.pdf#page=6">Aula 5, p. 6–8</a></td></tr>
+</tbody></table></div>
+<div class="glossary">
+<div class="term"><span class="k">CAMS</span><span class="full">Culture, Automation, Measurement, Sharing</span><span class="d">Os quatro pilares do manifesto DevOps (Aula 1, p. 5).</span></div>
+<div class="term"><span class="k">DORA</span><span class="d">Métricas de entrega (frequência, lead time, falhas, recuperação) usadas no lado DevOps (Aula 1, p. 5 e 7).</span></div>
+<div class="term"><span class="k">IDP</span><span class="full">Internal Developer Platform</span><span class="d">Plataforma interna que padroniza pipelines, observabilidade e segurança (Aula 1, p. 7–8).</span></div>
+<div class="term"><span class="k">P50 · P95 · P99</span><span class="d">Percentis de latência: o típico e a cauda longa, onde mora a dor do usuário (Aula 3, p. 5).</span></div>
+<div class="term"><span class="k">Hot Path</span><span class="d">Caminho crítico; no enunciado, o processamento de doações (p. 2).</span></div>
+<div class="term"><span class="k">Incident Commander</span><span class="d">Quem coordena a resposta e prioriza decisões durante o incidente (Aula 4, p. 8).</span></div>
+<div class="term"><span class="k">Chaos Engineering</span><span class="d">Injetar falhas controladas para validar resiliência, RTO e RPO (Aula 4, p. 9).</span></div>
+<div class="term"><span class="k">SLO-driven observability</span><span class="d">Painéis e alertas guiados por metas de confiabilidade, não por métricas soltas (Aula 1, p. 8–9).</span></div>
+</div>
+</section>
+
+<section id="aula-1"><h2>Aula 1 — Cultura SRE vs DevOps</h2><div class="section-rule"></div><article class="lesson"><div class="lesson-head"><span class="num">01</span><div><h3>Cultura e engenharia, lado a lado</h3><span class="badge ok">Ficha de aula · 16 p.</span></div></div>
+<p><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-01">OBRIGATÓRIO · REQ-OBR-01</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-04">OBRIGATÓRIO · REQ-OBR-04</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-15">OBRIGATÓRIO · REQ-OBR-15</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-16">OBRIGATÓRIO · REQ-OBR-16</a></p>
+<dl class="facets"><div><dt>Em miúdos</dt><dd>DevOps derrubou o muro entre quem desenvolve e quem opera; SRE trouxe régua e método para a confiabilidade. Um explica por que colaborar e automatizar; o outro, como medir e decidir.</dd></div><div><dt>Tecnicamente</dt><dd>O DevOps nasce em 2009 (DevOpsDays) e se resume em CAMS — cultura, automação, medição e compartilhamento. O SRE nasce no Google no início dos anos 2000, com Ben Treynor Sloss, e se apoia em três pilares: SLI, SLO e Error Budget. Se o budget é consumido rápido, o time pausa lançamentos até estabilizar.</dd></div></dl>
+<p class="source">Fonte: <a href="POSTECH%20-%20SRE%20%28Site%20Reliability%20Engineering%29%20-%20Aula%201.pdf#page=5">Aula 1, p. 5–6</a>.</p>
+<div class="tablewrap"><table><thead><tr><th scope="col">Aspecto</th><th scope="col">DevOps</th><th scope="col">SRE</th></tr></thead><tbody>
+<tr><td>Natureza</td><td>Movimento cultural</td><td>Disciplina de engenharia</td></tr>
+<tr><td>Foco</td><td>Velocidade e colaboração</td><td>Confiabilidade e automação</td></tr>
+<tr><td>Como mede</td><td>Métricas de entrega (DORA)</td><td>SLIs e SLOs, a partir dos Golden Signals</td></tr>
+<tr><td>O que entrega</td><td>CI/CD, pipelines, IaC</td><td>Health-checks, alertas, runbooks</td></tr>
+<tr><td>Resultado</td><td>Agilidade</td><td>Estabilidade com segurança</td></tr>
+</tbody></table></div>
+<p class="source">Fonte: <a href="POSTECH%20-%20SRE%20%28Site%20Reliability%20Engineering%29%20-%20Aula%201.pdf#page=7">Aula 1, p. 7</a>.</p>
+<h4>Da maturidade à Platform Engineering</h4>
+<p>Quando cada squad cria o próprio pipeline e o próprio monitoramento, autonomia vira dispersão. A resposta da aula é a Platform Engineering: uma IDP que oferece provisionamento self-service e já embute padrões de observabilidade e segurança, com governança central e flexibilidade local.</p>
+<p class="source">Fonte: <a href="POSTECH%20-%20SRE%20%28Site%20Reliability%20Engineering%29%20-%20Aula%201.pdf#page=7">Aula 1, p. 7–8</a>.</p>
+<h4>Observabilidade orientada a SLO</h4>
+<p>O monitoramento tradicional pergunta “está funcionando?”; a observabilidade moderna pergunta “por que não está?” e “quanto isso afeta o usuário e o negócio?”. Na prática, o alerta deixa de disparar por CPU em 80% e passa a disparar quando o SLO de latência é violado — o exemplo da aula usa 300 ms no p95 —, e a prioridade do incidente passa a ser o impacto no Error Budget. O OpenTelemetry aparece como o padrão aberto que torna essa medição consistente entre ferramentas.</p>
+<p class="source">Fonte: <a href="POSTECH%20-%20SRE%20%28Site%20Reliability%20Engineering%29%20-%20Aula%201.pdf#page=8">Aula 1, p. 8–9</a>.</p>
+<p>O Hands On (p. 4) anuncia três vídeos, incluindo a automação de health-checks no pipeline de CI/CD para barrar falhas antes do cliente. As tendências citadas (p. 11–12) são SLO-driven observability, AIOps com auto-remediação para reduzir MTTR, Platform Engineering e a dupla FinOps + SRE.</p>
+<aside class="hk"><strong>🎯 No Hackathon</strong>
+<ul><li>A <strong>Regra de Ouro</strong> (sem <code>kubectl</code> manual, sem console clicado, sem voo cego) é CAMS levado a sério: automação e medição como regra, não como exceção.</li>
+<li>Troque alertas de recurso por alertas de impacto: em vez de “CPU do <code>donation-service</code> acima de 80%”, use “latência p95 de <code>POST /donations</code> acima da meta”. A CPU continua útil — mas para o rightsizing da frente FinOps.</li>
+<li>O <code>/health</code> que já existe nos três serviços é o ponto de partida para o health-check no pipeline citado no Hands On — um diferencial <a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-01">BÔNUS · REQ-BON-01</a>.</li>
+<li>“FinOps + SRE” é literalmente a soma das frentes 1 e 2: cortar recursos no rightsizing não pode derrubar o SLO.</li></ul></aside>
+<p class="memo"><strong>Para memorizar:</strong> DevOps = cultura e fluxo (o porquê); SRE = medição e automação da confiabilidade (o como); Platform Engineering = os dois padronizados em escala.</p>
+</article></section>
+
+<section id="aula-2"><h2>Aula 2 — SLOs e Error Budget</h2><div class="section-rule"></div><article class="lesson"><div class="lesson-head"><span class="num">02</span><div><h3>Medir o que importa e gastar a margem de erro com consciência</h3><span class="badge ok">Ficha de aula · 17 p.</span></div></div>
+<p><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-15">OBRIGATÓRIO · REQ-OBR-15</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-16">OBRIGATÓRIO · REQ-OBR-16</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-17">OBRIGATÓRIO · REQ-OBR-17</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-42">OBRIGATÓRIO · REQ-OBR-42</a><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-14">BÔNUS · REQ-BON-14</a><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-13">BÔNUS · REQ-BON-13</a></p>
+<dl class="facets"><div><dt>Em miúdos</dt><dd>O SLI é o termômetro, o SLO é a temperatura aceitável e o Error Budget é quanto ainda se pode errar no mês. Com budget sobrando, o time arrisca e lança; com o budget no fim, o time estabiliza.</dd></div><div><dt>Tecnicamente</dt><dd>O ciclo é SLI → SLO → SLA. SLIs são medidas objetivas (taxa de sucesso, latência percebida, transações falhas); o SLO é a meta (ex.: 99,9% das requisições de uma API com sucesso no mês); o SLA é o contrato formal derivado dos SLOs, com cláusulas legais e penalidades. Para um SLO de 99,9%, o budget é 0,1% de falhas no mês.</dd></div></dl>
+<p class="source">Fonte: <a href="POSTECH%20-%20SRE%20%28Site%20Reliability%20Engineering%29%20-%20Aula%202.pdf#page=5">Aula 2, p. 5–6</a>.</p>
+<h4>O que faz um bom SLI</h4>
+<div class="tablewrap"><table><thead><tr><th scope="col">Critério da aula</th><th scope="col">Significado</th><th scope="col">Aplicação no donation-service</th></tr></thead><tbody>
+<tr><td>Relevante para o cliente</td><td>Reflete a experiência, não o componente.</td><td>“A doação foi aceita?” e “foi aceita rápido?” — não “a CPU está alta?”.</td></tr>
+<tr><td>Mensurável automaticamente</td><td>Sai de logs, métricas ou traces.</td><td>Spans e métricas HTTP do OpenTelemetry, já exigidos na frente 0.</td></tr>
+<tr><td>Estável no tempo</td><td>Comparável entre períodos.</td><td>Mesma definição e mesma janela (ex.: 30 dias corridos) do início ao fim.</td></tr>
+</tbody></table></div>
+<p class="source">Fonte: <a href="POSTECH%20-%20SRE%20%28Site%20Reliability%20Engineering%29%20-%20Aula%202.pdf#page=7">Aula 2, p. 7</a>.</p>
+<p>A aula também propõe SLOs de jornada: no e-commerce, o checkout combina autenticação, carrinho e pagamento num SLO composto (p. 7–8). Para metas realistas, use dados históricos, impacto no negócio e tolerância do usuário; 100% gera frustração e custo, e um bom ponto de partida é ficar ligeiramente acima da média recente (p. 8).</p>
+<h4>Error Budget como política</h4>
+<p>No exemplo da aula, um SLO de 99,9% tem o budget de 0,1% consumido em dez dias depois de duas falhas — e os lançamentos são suspensos até a confiabilidade voltar (p. 7). Políticas de governança definem a frequência de cálculo, limites de burn rate, critérios de congelamento de deploys e escalonamento; empresas maduras também compartilham budget entre times que servem a mesma jornada (p. 8–9).</p>
+<p>O Hands On (p. 4) mostra exatamente o que o Hackathon pede e um pouco mais: extrair disponibilidade e taxa de sucesso de logs de acesso, visualizar o consumo do budget em tempo real, configurar painéis e alertas no Grafana e criar uma regra no CI/CD que <strong>bloqueia deploys</strong> quando o budget passa do limite.</p>
+<p class="source">Fonte: <a href="POSTECH%20-%20SRE%20%28Site%20Reliability%20Engineering%29%20-%20Aula%202.pdf#page=4">Aula 2, p. 4 e 7–9</a>.</p>
+<h4>Do SLO à linguagem do board</h4>
+<p>A aula converte confiabilidade em dinheiro: um SLO de 99,95% equivale a cerca de 20 minutos de indisponibilidade por mês; se cada minuto parado custa R$ 10 mil, o budget vale R$ 200 mil. A pergunta deixa de ser “quantos noves precisamos?” e passa a ser “quanto risco podemos pagar para inovar?”.</p>
+<p class="source">Fonte: <a href="POSTECH%20-%20SRE%20%28Site%20Reliability%20Engineering%29%20-%20Aula%202.pdf#page=9">Aula 2, p. 9–10</a>.</p>
+<aside class="hk"><strong>🎯 No Hackathon — a conta que a diretoria entende</strong>
+<p>Com SLO de 99,9% em 30 dias corridos (43.200 minutos), o budget é de <strong>43,2 minutos</strong> — ou 1 falha a cada 1.000 doações. Se uma campanha na TV traz, em média, R$ 1.500 por minuto em doações (número hipotético), esses 43 minutos representam cerca de <strong>R$ 65 mil</strong> em doações em risco. É essa tradução que o pitch executivo precisa <a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-33">OBRIGATÓRIO · REQ-OBR-33</a><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-19">SUGESTÃO · SUG-19</a>.</p>
+<p>O <strong>SLA</strong> com as ONGs deriva do SLO, mas é mais folgado e tem consequências. Como a SolidaryTech é sem fins lucrativos, as consequências podem ser compromissos (comunicado em 24 h, post-mortem em 5 dias úteis, plano de ação) em vez de multas. Ver o modelo no <a href="#kit">Kit SRE</a>.</p></aside>
+<aside class="note"><strong>Ressalva do original</strong>A figura da p. 6 traz a legenda “Brun Rate”: é a grafia do material para <em>burn rate</em>. A pirâmide SRE e os resumos das p. 6 e 10 estão em imagem; o texto do guia segue as definições escritas nas p. 5–9.</aside>
+<p class="memo"><strong>Para memorizar:</strong> SLI mede; SLO promete internamente; SLA contrata externamente. Error Budget = 1 − SLO. Burn rate = velocidade de gasto do budget.</p>
+</article></section>
+
+<section id="aula-3"><h2>Aula 3 — Golden Metrics</h2><div class="section-rule"></div><article class="lesson"><div class="lesson-head"><span class="num">03</span><div><h3>Os quatro sinais vitais de um serviço</h3><span class="badge ok">Ficha de aula · 16 p.</span></div></div>
+<p><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-15">OBRIGATÓRIO · REQ-OBR-15</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-37">OBRIGATÓRIO · REQ-OBR-37</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-12">OBRIGATÓRIO · REQ-OBR-12</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-13">OBRIGATÓRIO · REQ-OBR-13</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-04">OBRIGATÓRIO · REQ-OBR-04</a></p>
+<dl class="facets"><div><dt>Em miúdos</dt><dd>Latência é quanto o usuário espera; tráfego, quanto trabalho chega; erros, quanto falha; saturação, quão perto do limite o sistema está. Juntos, funcionam como pulso e pressão num exame médico.</dd></div><div><dt>Tecnicamente</dt><dd>Os Four Golden Signals foram propostos pelo Google SRE para medir a saúde de sistemas distribuídos. Latência se lê em percentis (P50, P90, P99), porque a média esconde a cauda longa; erros se leem em taxa sobre o total; saturação se lê em tendência, não só no valor atual.</dd></div></dl>
+<p class="source">Fonte: <a href="POSTECH%20-%20SRE%20%28Site%20Reliability%20Engineering%29%20-%20Aula%203.pdf#page=5">Aula 3, p. 5–7</a>.</p>
+<div class="tablewrap"><table><thead><tr><th scope="col">Sinal</th><th scope="col">O que a aula ensina</th><th scope="col">No donation-service (Go + PostgreSQL + SQS)</th></tr></thead><tbody>
+<tr><td>Latência</td><td>Tempo entre requisição e resposta; percentis mostram a cauda longa.</td><td>p95/p99 de <code>POST /donations</code>, que inclui o <code>INSERT</code> no PostgreSQL.</td></tr>
+<tr><td>Tráfego</td><td>Volume por unidade de tempo: RPS em APIs, mensagens por minuto em filas.</td><td>Doações por segundo; eventos enviados ao SQS por minuto; picos após a TV.</td></tr>
+<tr><td>Erros</td><td>5xx, timeouts, exceções e falhas de dependências, em taxa percentual.</td><td>HTTP 500 “Erro interno” ao salvar; log “Falha ao despachar evento SQS” — que <em>não</em> muda o status HTTP.</td></tr>
+<tr><td>Saturação</td><td>Proximidade do limite: CPU, memória, threads, conexões de banco, filas.</td><td>CPU/memória versus <code>limits</code>, conexões do banco, profundidade da fila SQS.</td></tr>
+</tbody></table></div>
+<p class="source">Fonte: <a href="POSTECH%20-%20SRE%20%28Site%20Reliability%20Engineering%29%20-%20Aula%203.pdf#page=5">Aula 3, p. 5–7</a>.</p>
+<h4>Correlacionar é o segredo</h4>
+<ol class="flow">
+<li><div><strong>Latência alta + tráfego constante</strong><span>Gargalo interno: código ineficiente ou recurso bloqueado.</span></div></li>
+<li><div><strong>Latência alta + tráfego alto</strong><span>Sobrecarga da infraestrutura — capacidade insuficiente para o pico.</span></div></li>
+<li><div><strong>Erros altos + saturação baixa</strong><span>Falha lógica ou bug: não adianta escalar.</span></div></li>
+</ol>
+<p class="source">Fonte: <a href="POSTECH%20-%20SRE%20%28Site%20Reliability%20Engineering%29%20-%20Aula%203.pdf#page=7">Aula 3, p. 7</a>.</p>
+<p>Na prática, a aula recomenda painéis simples que contem uma história, alertas baseados em SLO em vez de limiares arbitrários e percentis em vez de médias (p. 8). Lembra também os três pilares: métricas dizem que algo está errado; logs e traces dizem por quê. Por fim, apresenta a observabilidade preditiva — ferramentas que aprendem o “normal” de cada serviço e apontam desvios antes do alerta —, ponte direta para o AIOps da frente 3 <a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-23">OBRIGATÓRIO · REQ-OBR-23</a>.</p>
+<p class="source">Fonte: <a href="POSTECH%20-%20SRE%20%28Site%20Reliability%20Engineering%29%20-%20Aula%203.pdf#page=8">Aula 3, p. 8–9</a>.</p>
+<aside class="hk"><strong>🎯 No Hackathon — duas histórias para a demo</strong>
+<ul><li><strong>Pico após a TV:</strong> tráfego sobe, latência sobe e as conexões do banco saturam → sobrecarga. Resposta: capacidade (HPA <a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-02">BÔNUS · REQ-BON-02</a>) e rightsizing correto — tema da frente FinOps.</li>
+<li><strong>Erro 500 com saturação baixa:</strong> credencial do banco inválida ou bug → escalar não resolve; o caminho é rollback via GitOps e o runbook.</li>
+<li><strong>Ponto cego do Hot Path:</strong> o <code>donation-service</code> responde <code>201</code> e publica o evento no SQS numa goroutine; se a publicação falhar, o SLI HTTP continua verde <a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-05">SUGESTÃO · SUG-05</a>.</li>
+<li>O <code>volunteer-service</code> filtra voluntários com <code>Scan</code> no DynamoDB: a latência cresce com a tabela. O próprio código sugere um índice secundário <a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-03">BÔNUS · REQ-BON-03</a>.</li></ul></aside>
+<p class="memo"><strong>Para memorizar:</strong> latência em percentil, erro em taxa, saturação em tendência — e sempre os quatro juntos.</p>
+</article></section>
+
+<section id="aula-4"><h2>Aula 4 — Gestão de Incidentes</h2><div class="section-rule"></div><article class="lesson"><div class="lesson-head"><span class="num">04</span><div><h3>Quando cada minuto custa: MTTR, RTO e RPO</h3><span class="badge ok">Ficha de aula · 16 p.</span></div></div>
+<p><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-18">OBRIGATÓRIO · REQ-OBR-18</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-26">OBRIGATÓRIO · REQ-OBR-26</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-25">OBRIGATÓRIO · REQ-OBR-25</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-24">OBRIGATÓRIO · REQ-OBR-24</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-14">OBRIGATÓRIO · REQ-OBR-14</a></p>
+<dl class="facets"><div><dt>Em miúdos</dt><dd>Falha vai acontecer. A diferença está em quanto tempo se leva para perceber, reagir e voltar — e em quanto dado se pode perder. Isso se decide antes do incidente, junto com o negócio.</dd></div><div><dt>Tecnicamente</dt><dd>A aula apresenta MTTD, MTTA, MTTR, RTO e RPO como o vocabulário da continuidade, liga RTO/RPO ao BCP e ao DR, e descreve o ciclo de resposta adotado pelo Google SRE e pelo NIST SP 800-61: detecção, mitigação, resolução e aprendizado.</dd></div></dl>
+<p class="source">Fonte: <a href="POSTECH%20-%20SRE%20%28Site%20Reliability%20Engineering%29%20-%20Aula%204.pdf#page=5">Aula 4, p. 5–8</a>.</p>
+<aside class="complemento"><strong>📘 Complemento — definições usuais (as da aula estão em figura, p. 6)</strong>
+<div class="tablewrap"><table><thead><tr><th scope="col">Sigla</th><th scope="col">Pergunta que responde</th><th scope="col">Exemplo SolidaryTech</th></tr></thead><tbody>
+<tr><td>MTTD</td><td>Quanto tempo, em média, até perceber a falha?</td><td>Da falha no banco ao alerta em Firing.</td></tr>
+<tr><td>MTTA</td><td>Quanto tempo até alguém (ou algo) assumir o alerta?</td><td>Do alerta ao <em>acknowledge</em> no PagerDuty.</td></tr>
+<tr><td>MTTR</td><td>Quanto tempo até o serviço voltar? (o enunciado usa <em>Mean Time To Recovery</em>)</td><td>Da falha até as doações voltarem a responder <code>201</code>.</td></tr>
+<tr><td>RTO</td><td>Qual o tempo máximo aceitável fora do ar após um desastre?</td><td>Meta do PCN: em quanto tempo as doações voltam se a região cair.</td></tr>
+<tr><td>RPO</td><td>Quanto dado, medido em tempo, se aceita perder?</td><td>Quantos minutos de doações registradas podem se perder.</td></tr>
+</tbody></table></div></aside>
+<h4>BCP, DR e o preço do RTO</h4>
+<p>O BCP mantém o negócio operando, mesmo parcialmente; o DR restaura dados, sistemas e infraestrutura. Um RTO agressivo (1 minuto) exige redundância complexa e cara; um RTO mais flexível (30 minutos) pode equilibrar custo e impacto. Por isso RTO e RPO são decisão conjunta de TI e negócio.</p>
+<p class="source">Fonte: <a href="POSTECH%20-%20SRE%20%28Site%20Reliability%20Engineering%29%20-%20Aula%204.pdf#page=7">Aula 4, p. 7</a>.</p>
+<h4>Papéis e ciclo de resposta</h4>
+<div class="tablewrap"><table><thead><tr><th scope="col">Papel</th><th scope="col">Responsabilidade (aula)</th><th scope="col">Na SolidaryTech</th></tr></thead><tbody>
+<tr><td>Incident Commander</td><td>Coordena ações e prioriza decisões.</td><td>Pessoa de plantão da plataforma.</td></tr>
+<tr><td>Communications Lead</td><td>Mantém stakeholders informados.</td><td>Fala com a diretoria e com as ONGs parceiras.</td></tr>
+<tr><td>Operations / SREs</td><td>Executam a mitigação técnica.</td><td>Time que opera EKS, banco e pipelines.</td></tr>
+<tr><td>Postmortem Owner</td><td>Conduz a análise posterior e registra aprendizados.</td><td>Responsável pelo post-mortem blameless.</td></tr>
+</tbody></table></div>
+<p class="source">Fonte: <a href="POSTECH%20-%20SRE%20%28Site%20Reliability%20Engineering%29%20-%20Aula%204.pdf#page=8">Aula 4, p. 8</a>.</p>
+<p>Ferramentas como PagerDuty, FireHydrant e Rootly automatizam a coordenação. O incidente só termina quando as causas foram entendidas, documentadas e prevenidas, por meio de post-mortems blameless (p. 8). A aula fecha com Chaos Engineering — Gremlin, Litmus e Chaos Mesh — para provar que RTO e RPO são alcançáveis, e com três estágios de maturidade: reativo, preditivo e proativo (p. 9).</p>
+<p class="source">Fonte: <a href="POSTECH%20-%20SRE%20%28Site%20Reliability%20Engineering%29%20-%20Aula%204.pdf#page=8">Aula 4, p. 8–10</a>.</p>
+<aside class="note"><strong>Atenção ao termo “preditivo”</strong>Na Aula 4 (p. 9), “preditivo” é um estágio de maturidade: já há alertas e planos, mas pouco testados. No enunciado (p. 3 e 5), “gestão preditiva” significa usar AIOps para antecipar incidentes. São sentidos diferentes — no relatório, deixe claro qual está usando.</aside>
+<aside class="hk"><strong>🎯 No Hackathon</strong>
+<ul><li><strong>MTTR com dados:</strong> registre os carimbos de tempo de cada incidente simulado e calcule MTTD, MTTA e MTTR <a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-07">SUGESTÃO · SUG-07</a>. Na Fase 4 (ToggleMaster), a cadeia automatizada levou 2 min 50 s da falha ao HTTP 200 — boa linha de base para comparar.</li>
+<li><strong>RTO/RPO das doações:</strong> doação é dinheiro e confiança, então o RPO tende a minutos e o RTO a dezenas de minutos. Cada minuto a menos custa infraestrutura — leve o trade-off ao pitch e ao Forecast.</li>
+<li><strong>Velero não guarda o banco gerenciado:</strong> se as doações vivem num PostgreSQL gerenciado (ex.: RDS), o backup do estado do cluster não cobre esses dados. O RPO depende do backup do próprio banco. Detalhes no <a href="../01.Multicloud%20e%20Seguran%C3%A7a/GUIA-ESTUDO-Multicloud-e-Seguranca.html">01 — Multicloud e Segurança</a>.</li>
+<li><strong>Game Day:</strong> medir o RTO numa simulação, como o Nubank faz (p. 11), é diferencial <a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-17">BÔNUS · REQ-BON-17</a><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-36">BÔNUS · REQ-BON-36</a>.</li></ul></aside>
+<p class="memo"><strong>Para memorizar:</strong> MTTD/MTTA/MTTR medem a resposta; RTO/RPO são metas de continuidade. Detecção → mitigação → resolução → aprendizado, sempre em ciclo.</p>
+</article></section>
+
+<section id="aula-5"><h2>Aula 5 — Post-Mortem e Runbooks</h2><div class="section-rule"></div><article class="lesson"><div class="lesson-head"><span class="num">05</span><div><h3>Do manual à automação, sem caçar culpados</h3><span class="badge ok">Ficha de aula · 18 p.</span></div></div>
+<p><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-15">BÔNUS · REQ-BON-15</a><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-16">BÔNUS · REQ-BON-16</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-14">OBRIGATÓRIO · REQ-OBR-14</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-18">OBRIGATÓRIO · REQ-OBR-18</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-24">OBRIGATÓRIO · REQ-OBR-24</a></p>
+<dl class="facets"><div><dt>Em miúdos</dt><dd>Runbook é a receita para resolver um problema conhecido sem depender da memória de alguém; post-mortem é o relato honesto do que aconteceu, para não acontecer de novo. Com o tempo, a receita vira automação.</dd></div><div><dt>Tecnicamente</dt><dd>Um bom runbook é reproduzível, auditável (versionado em Git), revisado periodicamente e caminha para a automação. O post-mortem responde o que aconteceu, por que e como evitar, com foco em causas sistêmicas. Se uma tarefa é feita mais de uma vez, documente; depois, automatize.</dd></div></dl>
+<p class="source">Fonte: <a href="POSTECH%20-%20SRE%20%28Site%20Reliability%20Engineering%29%20-%20Aula%205.pdf#page=6">Aula 5, p. 6–7</a>.</p>
+<h4>O que entra num post-mortem</h4>
+<p>Resumo do incidente (impacto, duração e serviços afetados), como foi detectado, hipóteses levantadas, causa raiz confirmada e ações corretivas e preventivas com responsáveis e prazos (p. 7). Blameless não é ausência de responsabilidade: é responsabilidade coletiva pelo aprendizado (p. 8).</p>
+<ol class="flow">
+<li><div><strong>Detecção</strong><span>O sistema identifica o comportamento anômalo.</span></div></li>
+<li><div><strong>Diagnóstico</strong><span>O time usa runbooks para entender o que acontece.</span></div></li>
+<li><div><strong>Correção</strong><span>As ações descritas restauram o serviço.</span></div></li>
+<li><div><strong>Aprendizado</strong><span>O post-mortem registra causas e melhorias.</span></div></li>
+<li><div><strong>Automação</strong><span>O que se repete vira automático e reduz o MTTR.</span></div></li>
+</ol>
+<p class="source">Fonte: <a href="POSTECH%20-%20SRE%20%28Site%20Reliability%20Engineering%29%20-%20Aula%205.pdf#page=8">Aula 5, p. 8</a>.</p>
+<h4>Do manual à automação</h4>
+<p>PagerDuty, Rundeck e ArgoCD orquestram respostas automáticas. O exemplo da aula: o Prometheus detecta latência elevada, o PagerDuty notifica o time, o Rundeck executa o runbook “restart-checkout”, o ArgoCD reaplica o estado correto via GitOps e uma IA gera o rascunho do post-mortem para revisão humana. A tendência é tratar runbooks e post-mortems como código, versionados no mesmo ciclo GitOps.</p>
+<p class="source">Fonte: <a href="POSTECH%20-%20SRE%20%28Site%20Reliability%20Engineering%29%20-%20Aula%205.pdf#page=9">Aula 5, p. 9 e 12–13</a>.</p>
+<p>O Hands On (p. 4) cria runbooks em Markdown no GitHub para casos como uma API respondendo 503 ou uma fila saturada, apresenta um modelo completo de post-mortem blameless e encerra com o vídeo “Do Manual à Automação”.</p>
+<aside class="hk"><strong>🎯 No Hackathon</strong>
+<p>A Fase 4 já tinha uma cadeia “do manual à automação” (alerta → PagerDuty/Slack → GitHub Actions → restart). Reaplicada aos novos serviços, ela sustenta o item de MTTR e o ciclo de incidentes <a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-01">SUGESTÃO · SUG-01</a>. Atenção a um detalhe de GitOps: o ArgoCD corrige <em>desvios</em> em relação ao Git; se a versão quebrada está no Git, o conserto é reverter o commit.</p>
+<figure class="example"><figcaption>📘 Exemplo autoral — runbook versionado em <code>docs/runbooks/RB-DON-01.md</code></figcaption><pre><code># RB-DON-01 — donation-service retornando 5xx
+Gatilho: alerta "DonationErrorBudgetFastBurn" (burn rate &gt; 14,4 em 1 h)
+Impacto: doações recusadas; consumo acelerado do error budget
+
+## Diagnóstico
+1. Dashboard SRE → linha "Golden Metrics": erros sobem com saturação baixa?
+2. Loki: {service_name="donation-service"} |= "Erro ao salvar doação"
+3. APM: abrir um trace com erro e ver o span do INSERT no PostgreSQL
+4. Banco: conexões, CPU e status da instância
+
+## Mitigação
+- Versão nova com defeito → git revert no repositório GitOps (ArgoCD sincroniza)
+- Credencial inválida → corrigir o segredo pelo fluxo GitOps, nunca à mão
+- Banco indisponível → acionar o PCN (estratégia de DR)
+
+## Validação
+- POST de teste em /donations retorna 201
+- Taxa de 5xx &lt; 0,1% por 10 minutos; burn rate de volta abaixo de 1
+
+## Depois
+- Abrir o post-mortem blameless (modelo em docs/postmortems/)</code></pre></figure>
+<p>Os textos “Erro ao salvar doação” e “Falha ao despachar evento SQS” são as mensagens de log reais do <code>donation-service</code> no <a href="https://github.com/dougls/hackathon-DCLT">repositório-fonte</a>; os labels do Loki dependem de como a coleta for configurada.</p></aside>
+<p class="memo"><strong>Para memorizar:</strong> runbook antes e durante; post-mortem depois; automação para tudo o que se repete.</p>
+</article></section>
+
+<section id="kit"><h2>Kit SRE da SolidaryTech: do SLI ao relatório</h2><div class="section-rule"></div>
+<aside class="complemento"><strong>📘 Complemento — exemplo autoral para adaptar</strong><p>Os valores abaixo são um ponto de partida didático, não números exigidos pela FIAP nem medidos no ambiente. Ajuste-os com dados reais do tráfego de teste, como a Aula 2 recomenda (p. 8).</p></aside>
+<h4>1. Ficha formal para a seção SRE do relatório</h4>
+<div class="tablewrap"><table><thead><tr><th scope="col">Campo</th><th scope="col">SLI-1 · Disponibilidade</th><th scope="col">SLI-2 · Latência</th></tr></thead><tbody>
+<tr><td>Pergunta do usuário</td><td>Minha doação foi aceita?</td><td>Foi aceita rápido?</td></tr>
+<tr><td>Definição do SLI</td><td>% de requisições <code>POST /donations</code> que não terminam em 5xx</td><td>% de requisições <code>POST /donations</code> atendidas em até 250 ms</td></tr>
+<tr><td>Golden Signal</td><td>Erros (sobre tráfego)</td><td>Latência</td></tr>
+<tr><td>Fonte</td><td>Spans SERVER do OpenTelemetry (spanmetrics) ou métrica HTTP do APM</td><td>Histograma de duração dos mesmos spans</td></tr>
+<tr><td>Fora do cálculo</td><td><code>/health</code>, probes e 4xx (payload inválido é erro do cliente)</td><td>Idem</td></tr>
+<tr><td>SLO</td><td>99,9% em 30 dias corridos</td><td>99% em 30 dias corridos</td></tr>
+<tr><td>Error Budget</td><td>0,1% ≈ 43 min/mês ≈ 1 falha a cada 1.000 doações</td><td>1% das doações podem passar de 250 ms</td></tr>
+<tr><td>SLA com as ONGs</td><td>99,5% mensal; abaixo disso: comunicado em 24 h, post-mortem em 5 dias úteis e plano de ação</td><td>Não contratado (fica como meta interna)</td></tr>
+</tbody></table></div>
+<p><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-15">OBRIGATÓRIO · REQ-OBR-15</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-16">OBRIGATÓRIO · REQ-OBR-16</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-42">OBRIGATÓRIO · REQ-OBR-42</a><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-04">SUGESTÃO · SUG-04</a></p>
+<h4>2. A matemática do Error Budget</h4>
+<div class="math">Janela: 30 dias = 43.200 min · SLO 99,9% → budget = 0,1% = 43,2 min<br>Budget restante = 1 − (1 − SLI<sub>30d</sub>) ÷ (1 − 0,999)<br>Burn rate = (1 − SLI<sub>janela</sub>) ÷ (1 − 0,999) → 1,0 gasta o budget exatamente em 30 dias<br>Burn rate 14,4 sustentado por 1 h consome 2% do budget mensal (14,4 ÷ 720 h)</div>
+<p>Os limiares 14,4 (janela de 1 h) e 6 (janela de 6 h) são os valores clássicos do <em>Site Reliability Workbook</em>, obra listada nas referências da Aula 2 — alertas assim são diferencial <a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-13">BÔNUS · REQ-BON-13</a>.</p>
+<h4>3. Consultas de exemplo (spanmetrics, como na Fase 4)</h4>
+<figure class="example"><figcaption>📘 Exemplo autoral — PromQL; nomes seguem o Collector da Fase 4 e precisam ser conferidos</figcaption><pre><code># SLI-1: fração de spans SERVER sem erro (o otelhttp marca erro em 5xx, não em 4xx)
+1 - (
+  sum(rate(traces_span_metrics_calls_total{service_name="donation-service",
+      span_kind="SPAN_KIND_SERVER", status_code="STATUS_CODE_ERROR"}[30d]))
+  /
+  sum(rate(traces_span_metrics_calls_total{service_name="donation-service",
+      span_kind="SPAN_KIND_SERVER"}[30d]))
+)
+
+# SLI-2: fração atendida em até 250 ms (bucket existente na configuração da Fase 4)
+sum(rate(traces_span_metrics_duration_milliseconds_bucket{service_name="donation-service",
+    span_kind="SPAN_KIND_SERVER", le="250"}[30d]))
+/
+sum(rate(traces_span_metrics_duration_milliseconds_count{service_name="donation-service",
+    span_kind="SPAN_KIND_SERVER"}[30d]))</code></pre></figure>
+<p>Três cuidados: filtre o nome do span para tirar <code>/health</code> (o valor depende de como o handler for instrumentado); pré-calcule com <em>recording rules</em>; e confira a retenção do Prometheus — o padrão da ferramenta é 15 dias, menor que a janela de 30 dias. Se a janela usada na demo for menor, declare isso no relatório.</p>
+<h4>4. Desenho do Dashboard SRE</h4>
+<ol class="flow">
+<li><div><strong>Linha 1 — Metas</strong><span>SLI-1 e SLI-2 atuais versus SLO; budget restante (%) de cada um; burn rate de 1 h e 6 h.</span></div></li>
+<li><div><strong>Linha 2 — Consumo no tempo</strong><span>Queima do budget ao longo do mês, com anotações de deploys e incidentes.</span></div></li>
+<li><div><strong>Linha 3 — Golden Metrics do Hot Path</strong><span>p95/p99, doações por segundo, % de erro e saturação (CPU versus limit, conexões do banco, fila SQS) como contexto dos SLIs.</span></div></li>
+</ol>
+<p><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-17">OBRIGATÓRIO · REQ-OBR-17</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-37">OBRIGATÓRIO · REQ-OBR-37</a> O enunciado pede um painel “exclusivamente” de SLOs e budget (p. 4), mas a demo pede Golden Metrics e SLOs calculados (p. 6). A linha 3 resolve as duas leituras; a dúvida está registrada em <a class="rid" href="../../requisitos/REQUISITOS.html#q-18">Q-18</a>.</p>
+<h4>5. Evidência de MTTR (modelo de tabela para o relatório)</h4>
+<div class="tablewrap"><table><thead><tr><th scope="col">Marco</th><th scope="col">Onde capturar</th><th scope="col">Exemplo hipotético</th></tr></thead><tbody>
+<tr><td>Falha injetada</td><td>Comando ou commit usado na demo</td><td>14:00:00</td></tr>
+<tr><td>Detecção (alerta em Firing ou anomalia do APM)</td><td>Grafana / APM</td><td>14:01:10 → MTTD 1 min 10 s</td></tr>
+<tr><td>Reconhecimento</td><td>PagerDuty (humano ou automação)</td><td>14:01:40 → MTTA 30 s</td></tr>
+<tr><td>Mitigação automática</td><td>GitHub Actions / ArgoCD / runbook</td><td>14:02:30</td></tr>
+<tr><td>Serviço recuperado</td><td>Dashboard SRE e <code>POST</code> de teste com <code>201</code></td><td>14:03:20 → MTTR 3 min 20 s</td></tr>
+</tbody></table></div>
+<p><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-18">OBRIGATÓRIO · REQ-OBR-18</a><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-07">SUGESTÃO · SUG-07</a> Para mostrar que o MTTR cai <em>ativamente</em>, compare o mesmo incidente com e sem a automação (ou com a linha de base da Fase 4) e explique qual peça encurtou cada trecho: alerta por SLO encurta a detecção; roteamento automático, o reconhecimento; runbook automatizado, a mitigação.</p>
+</section>
+
+<section id="aplicacao"><h2>Da aula à entrega: o que verificar</h2><div class="section-rule"></div>
+<ol class="flow">
+<li><div><strong>Tráfego e instrumentação</strong><span>Três serviços instrumentados e carga sintética contínua; sem dados, não há SLI.</span></div></li>
+<li><div><strong>SLIs calculados</strong><span>Consultas validadas com dados reais, sem <code>/health</code>, com recording rules.</span></div></li>
+<li><div><strong>SLOs e SLA escritos</strong><span>A ficha formal do relatório, com janela, exclusões e consequências.</span></div></li>
+<li><div><strong>Dashboard SRE</strong><span>Metas, budget restante, burn rate e Golden Metrics — de preferência versionado como código.</span></div></li>
+<li><div><strong>Alertas e automação</strong><span>Alerta ligado ao SLO, incidente aberto e ação automática executada.</span></div></li>
+<li><div><strong>Incidente ensaiado</strong><span>Falha proposital, carimbos de tempo, MTTR calculado e post-mortem.</span></div></li>
+<li><div><strong>Evidências</strong><span>Prints e trechos de vídeo de cada passo; seção SRE e seção de MTTR no relatório.</span></div></li>
+</ol>
+<p><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-28">OBRIGATÓRIO · REQ-OBR-28</a><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-17">SUGESTÃO · SUG-17</a></p>
+<div class="tablewrap"><table><thead><tr><th scope="col">Erro comum</th><th scope="col">Como evitar</th><th scope="col">Base</th></tr></thead><tbody>
+<tr><td>Usar CPU ou memória como SLI.</td><td>SLI é experiência do usuário; CPU vai para rightsizing.</td><td>Aula 2, p. 7</td></tr>
+<tr><td>Contar <code>/health</code> e probes no SLI.</td><td>Filtrar por rota ou nome do span.</td><td>Sugestão autoral</td></tr>
+<tr><td>Prometer 100%.</td><td>Meta realista, baseada em histórico e impacto.</td><td>Aula 2, p. 8</td></tr>
+<tr><td>Olhar média de latência.</td><td>Usar p95/p99 e fração abaixo de um limite.</td><td>Aula 3, p. 5 e 8</td></tr>
+<tr><td>Janela de 30 dias com retenção menor.</td><td>Aumentar a retenção ou declarar a janela usada.</td><td>Complemento</td></tr>
+<tr><td>Achar que <code>201</code> é doação completa.</td><td>Medir também a publicação no SQS.</td><td>Código do <code>donation-service</code></td></tr>
+<tr><td>Painel bonito sem dados.</td><td>Tráfego real durante a gravação.</td><td>Enunciado, p. 6</td></tr>
+<tr><td>Chamar de “preditivo” um plano nunca testado.</td><td>Separar maturidade (Aula 4) de AIOps (enunciado).</td><td>Aula 4, p. 9; enunciado, p. 5</td></tr>
+</tbody></table></div>
+</section>
+
+<section id="outros-modulos"><h2>Como este módulo se conecta aos outros</h2><div class="section-rule"></div>
+<div class="tablewrap"><table><thead><tr><th scope="col">Guia</th><th scope="col">Conexão</th></tr></thead><tbody>
+<tr><td><a href="../00.Welcome%20to%20Multicloud%2C%20custos%20e%20IA/GUIA-ESTUDO-Welcome-to-Multicloud-custos-e-IA.html">00 — Welcome to Multicloud, custos e IA</a></td><td>Apresenta SRE como primeira disciplina e a fase como “por que manter e como evoluir”.</td></tr>
+<tr><td><a href="../01.Multicloud%20e%20Seguran%C3%A7a/GUIA-ESTUDO-Multicloud-e-Seguranca.html">01 — Multicloud e Segurança</a></td><td>RTO e RPO da Aula 4 viram os números do PCN e o critério para escolher Velero ou Warm Standby.</td></tr>
+<tr><td><a href="../03.FinOps/GUIA-ESTUDO-FinOps.html">03 — FinOps</a></td><td>Rightsizing não pode quebrar o SLO; cada minuto a menos de RTO custa infraestrutura no Forecast.</td></tr>
+<tr><td><a href="../04.IT%20Service%20Management%20e%20AIOPs/GUIA-ESTUDO-IT-Service-Management-e-AIOps.html">04 — IT Service Management e AIOps</a></td><td>O ciclo de incidente e o post-mortem são o desenho exigido na frente 3; o AIOps antecipa o consumo do budget.</td></tr>
+</tbody></table></div>
+</section>
+
+<section id="revisao"><h2>Revisão rápida e autoavaliação</h2><div class="section-rule"></div>
+<p>Responda com suas palavras antes de abrir. As perguntas são autorais, baseadas nas páginas indicadas; não são previsão de prova.</p>
+<details><summary>1. Qual a diferença entre SLI, SLO e SLA?</summary><p>SLI é a medida; SLO, a meta interna para essa medida; SLA, o contrato externo derivado do SLO, com cláusulas e consequências. Aula 2, p. 5.</p></details>
+<details><summary>2. Um SLO de 99,9% em 30 dias permite quanto tempo de falha?</summary><p>0,1% de 43.200 minutos = 43,2 minutos (ou 0,1% das requisições, se o SLI for por contagem). Aula 2, p. 6.</p></details>
+<details><summary>3. Por que CPU raramente é um bom SLI?</summary><p>Porque não reflete diretamente a experiência do usuário; bons SLIs são relevantes para o cliente, automáticos e estáveis. Aula 2, p. 7.</p></details>
+<details><summary>4. O que significa burn rate igual a 1?</summary><p>Que o budget está sendo gasto no ritmo exato para acabar no fim da janela. Acima de 1, acaba antes. Aula 2, p. 6 e 9; complemento.</p></details>
+<details><summary>5. Latência alta com tráfego constante sugere o quê?</summary><p>Gargalo interno — código ineficiente ou recurso bloqueado —, e não falta de capacidade. Aula 3, p. 7.</p></details>
+<details><summary>6. MTTD e MTTR medem a mesma coisa?</summary><p>Não. MTTD mede quanto se demora a perceber; MTTR, quanto se demora a recuperar. Aula 4, p. 5–6; complemento.</p></details>
+<details><summary>7. RTO e RPO: qual fala de tempo fora do ar e qual de dados?</summary><p>RTO é o tempo máximo para restabelecer o serviço; RPO é a perda máxima de dados aceitável, medida em tempo. Aula 4, p. 7; complemento.</p></details>
+<details><summary>8. O que não pode faltar num post-mortem blameless?</summary><p>Resumo com impacto e duração, detecção, hipóteses, causa raiz e ações com dono e prazo — sem procurar culpados. Aula 5, p. 6–8.</p></details>
+<details><summary>9. Quando um runbook deve virar automação?</summary><p>Quando a tarefa se repete: documente na primeira vez e automatize quando ela voltar. Aula 5, p. 6 e 9.</p></details>
+<details><summary>10. O donation-service respondeu 201, mas o evento não chegou ao SQS. O SLI HTTP capta isso?</summary><p>Não: a publicação ocorre numa goroutine depois da resposta. É preciso uma métrica própria para falhas de publicação. Código-fonte do serviço; <a class="rid" href="../../requisitos/REQUISITOS.html#sug-05">SUG-05</a>.</p></details>
+</section>
+
+<section id="limites"><h2>Fidelidade, fontes e pontos a confirmar</h2><div class="section-rule"></div>
+<p>Leitura integral do texto dos cinco PDFs em 2026-11-11, incluindo Hands On, mercado, referências e palavras-chave. Os links externos citados pelas aulas não foram acessados e os vídeos não estão na pasta.</p>
+<div class="tablewrap"><table><thead><tr><th scope="col">ID</th><th scope="col">O que o original apresenta</th><th scope="col">Tratamento adotado</th></tr></thead><tbody>
+<tr><td>SRE-L01 · Limitação</td><td>Definições e resumos em figura: Aula 2, p. 6 e 10; Aula 4, p. 6; Aula 5, p. 10.</td><td>Explicação com definição usual, marcada como 📘 Complemento.</td></tr>
+<tr><td>SRE-L02 · Limitação</td><td>Hands On remete a vídeos, scripts e painéis não fornecidos.</td><td>Exemplos autorais rotulados; nenhum comando atribuído à aula.</td></tr>
+<tr><td>SRE-L03 · Limitação</td><td>Números de mercado narrados (ex.: disponibilidade acima de 99,95% em bancos; percentuais de adoção de AIOps).</td><td>Citados como afirmação da aula, sem verificação externa.</td></tr>
+<tr><td>SRE-Q01 · [INCERTO]</td><td>Aula 2, p. 6: legenda “Brun Rate”.</td><td>Lida como <em>burn rate</em>.</td></tr>
+<tr><td>SRE-Q02 · [INCERTO]</td><td>Aula 4, p. 9: “preditivo” como estágio de maturidade; enunciado, p. 3 e 5: gestão preditiva com AIOps.</td><td>Sentidos separados no guia e no mapa.</td></tr>
+<tr><td>SRE-Q03 · [INCERTO]</td><td>Aula 4, p. 13 cita ITIL entre os frameworks explorados, mas o corpo detalha Google SRE e NIST.</td><td>ITIL é estudado no <a href="../04.IT%20Service%20Management%20e%20AIOPs/GUIA-ESTUDO-IT-Service-Management-e-AIOps.html">04 — IT Service Management e AIOps</a>.</td></tr>
+</tbody></table></div>
+</section>
+
+<section id="conexao"><h2>Conexão com o Hackathon Fase 5</h2><div class="section-rule"></div>
+<p>As exigências vêm do enunciado; o vínculo com as aulas é mapeamento didático. Estudar o tema não comprova atendimento. Status da implementação: <strong>Pendente</strong>.</p>
+<div class="tablewrap"><table><thead><tr><th scope="col">ID</th><th scope="col">Selo</th><th scope="col">Como este módulo ajuda a cumprir</th></tr></thead><tbody>
+<tr><td>REQ-OBR-01</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-01">OBRIGATÓRIO · REQ-OBR-01</a></td><td>Aula 1 mostra a Regra de Ouro como CAMS: automação e medição como padrão.</td></tr>
+<tr><td>REQ-OBR-04</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-04">OBRIGATÓRIO · REQ-OBR-04</a></td><td>Aulas 1 e 3: observabilidade orientada a SLO e Golden Signals para os três serviços.</td></tr>
+<tr><td>REQ-OBR-12</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-12">OBRIGATÓRIO · REQ-OBR-12</a></td><td>Aula 3 usa Prometheus, Grafana e OpenTelemetry como base dos SLIs.</td></tr>
+<tr><td>REQ-OBR-13</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-13">OBRIGATÓRIO · REQ-OBR-13</a></td><td>Aula 3: traces explicam o porquê; o APM fornece SLIs e contexto.</td></tr>
+<tr><td>REQ-OBR-14</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-14">OBRIGATÓRIO · REQ-OBR-14</a></td><td>Aula 5: cadeia alerta → PagerDuty → runbook → GitOps, como na Fase 4.</td></tr>
+<tr><td>REQ-OBR-15</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-15">OBRIGATÓRIO · REQ-OBR-15</a></td><td>Aulas 2 e 3: critérios de bom SLI e Golden Signals do <code>donation-service</code>.</td></tr>
+<tr><td>REQ-OBR-16</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-16">OBRIGATÓRIO · REQ-OBR-16</a></td><td>Aula 2: metas realistas e janela de medição.</td></tr>
+<tr><td>REQ-OBR-17</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-17">OBRIGATÓRIO · REQ-OBR-17</a></td><td>Aula 2: visualização do consumo do budget; Kit SRE propõe o layout.</td></tr>
+<tr><td>REQ-OBR-18</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-18">OBRIGATÓRIO · REQ-OBR-18</a></td><td>Aulas 4 e 5: decomposição do MTTR e papel dos runbooks e da automação.</td></tr>
+<tr><td>REQ-OBR-26</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-26">OBRIGATÓRIO · REQ-OBR-26</a></td><td>Aula 4: RTO/RPO como decisão de custo e impacto.</td></tr>
+<tr><td>REQ-OBR-25</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-25">OBRIGATÓRIO · REQ-OBR-25</a></td><td>Aula 4: BCP mantém o negócio; DR restaura a técnica.</td></tr>
+<tr><td>REQ-OBR-24</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-24">OBRIGATÓRIO · REQ-OBR-24</a></td><td>Aulas 4 e 5: ciclo de resposta, papéis e post-mortem.</td></tr>
+<tr><td>REQ-OBR-42</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-42">OBRIGATÓRIO · REQ-OBR-42</a></td><td>Aula 2: ciclo SLI → SLO → SLA para a definição formal.</td></tr>
+<tr><td>REQ-OBR-37</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-37">OBRIGATÓRIO · REQ-OBR-37</a></td><td>Aula 3: Golden Metrics e SLOs no mesmo painel.</td></tr>
+<tr><td>REQ-OBR-36</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-36">OBRIGATÓRIO · REQ-OBR-36</a></td><td>Aulas 3 e 5: traces e alertas por SLO.</td></tr>
+<tr><td>REQ-OBR-33</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-33">OBRIGATÓRIO · REQ-OBR-33</a></td><td>Aula 2: tradução do budget em reais para a diretoria.</td></tr>
+<tr><td>REQ-OBR-28</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-28">OBRIGATÓRIO · REQ-OBR-28</a></td><td>Roteiro de verificação separa “configurado” de “demonstrado”.</td></tr>
+<tr><td>REQ-BON-11</td><td><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-11">BÔNUS · REQ-BON-11</a></td><td>Aula 3: saturação e o ponto cego do SQS como SLIs extras.</td></tr>
+<tr><td>REQ-BON-12</td><td><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-12">BÔNUS · REQ-BON-12</a></td><td>Aula 2: SLO composto da jornada.</td></tr>
+<tr><td>REQ-BON-13</td><td><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-13">BÔNUS · REQ-BON-13</a></td><td>Aula 2: limites de burn rate na política de SLO.</td></tr>
+<tr><td>REQ-BON-14</td><td><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-14">BÔNUS · REQ-BON-14</a></td><td>Aula 2: bloqueio de deploy no CI/CD (Hands On).</td></tr>
+<tr><td>REQ-BON-15</td><td><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-15">BÔNUS · REQ-BON-15</a></td><td>Aula 5: runbooks em Markdown versionados.</td></tr>
+<tr><td>REQ-BON-16</td><td><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-16">BÔNUS · REQ-BON-16</a></td><td>Aula 5: modelo de post-mortem blameless.</td></tr>
+<tr><td>REQ-BON-17</td><td><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-17">BÔNUS · REQ-BON-17</a></td><td>Aula 4: Chaos Engineering e Game Days.</td></tr>
+<tr><td>REQ-BON-36</td><td><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-36">BÔNUS · REQ-BON-36</a></td><td>Aula 4: validar RTO/RPO na prática.</td></tr>
+<tr><td>REQ-BON-01</td><td><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-01">BÔNUS · REQ-BON-01</a></td><td>Aula 1: health-checks automatizados no pipeline.</td></tr>
+<tr><td>REQ-BON-02</td><td><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-02">BÔNUS · REQ-BON-02</a></td><td>Aula 3: sobrecarga em picos de tráfego.</td></tr>
+<tr><td>REQ-BON-03</td><td><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-03">BÔNUS · REQ-BON-03</a></td><td>Aula 3: latência e saturação de leitura no <code>volunteer-service</code>.</td></tr>
+<tr><td>SUG-04</td><td><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-04">SUGESTÃO · SUG-04</a></td><td>Kit SRE: exclusões, recording rules e retenção.</td></tr>
+<tr><td>SUG-05</td><td><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-05">SUGESTÃO · SUG-05</a></td><td>Aula 3: erros de dependência que o HTTP não mostra.</td></tr>
+<tr><td>SUG-06</td><td><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-06">SUGESTÃO · SUG-06</a></td><td>Sem tráfego não há SLI nem padrão para o AIOps.</td></tr>
+<tr><td>SUG-07</td><td><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-07">SUGESTÃO · SUG-07</a></td><td>Aula 4: MTTD, MTTA e MTTR medidos.</td></tr>
+<tr><td>SUG-19</td><td><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-19">SUGESTÃO · SUG-19</a></td><td>Aula 2: confiabilidade em linguagem de negócio.</td></tr>
+<tr><td>SUG-01</td><td><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-01">SUGESTÃO · SUG-01</a></td><td>Aula 5: a automação da Fase 4 já segue “do manual à automação”.</td></tr>
+<tr><td>SUG-17</td><td><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-17">SUGESTÃO · SUG-17</a></td><td>Evidência por requisito antes de gravar.</td></tr>
+</tbody></table></div>
+</section>
+
+<footer><a href="#conteudo">Voltar ao início</a><p>Fontes locais lidas em 2026-11-11. Síntese didática com referências por página; exemplos de código e números da SolidaryTech são ilustrativos, autorais e não foram executados. Requisitos: enunciado do Hackathon Fase 5, p. 2–7. Material autocontido, sem dependências externas.</p></footer></main></body></html>

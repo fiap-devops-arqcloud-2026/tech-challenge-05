@@ -1,0 +1,859 @@
+# =================================================================
+# CI REUTILIZÁVEL — serviços em Go (hoje, o donation-service)
+# =================================================================
+# Não roda sozinho: é chamado (workflow_call) pelo workflow de cada serviço
+# em Go, que decide QUANDO rodar (eventos e filtro de caminho). Aqui fica O
+# QUE roda, igual para todo serviço Go: uma correção feita aqui vale para
+# todos.
+#
+# Barreiras, em jobs paralelos (uma rodada mostra todos os problemas de uma
+# vez, e não só o primeiro):
+#   test    módulos conferidos com o go.sum, go vet e go test -race -cover;
+#   lint    golangci-lint v2 com o .golangci.yml do serviço;
+#   sast    gosec no código do serviço (os testes ficam de fora);
+#   sca     govulncheck e Trivy nas dependências (go.mod);
+#   image   build da imagem com buildx, usuário não root e Trivy na imagem.
+# Depois de TODAS elas, e só num push na main:
+#   publish envia ao ECR, autenticado por OIDC, exatamente a imagem
+#           escaneada no job image, com a tag imutável = SHA do commit;
+#   gitops  grava essa imagem no overlay gitops/overlays/prod, num commit do
+#           robô na main, que o ArgoCD aplica no cluster.
+#
+# Pull request, push na dev e o botão "Run workflow" rodam só as barreiras:
+# nada é publicado. Nenhum job roda kubectl: quem implanta é o ArgoCD,
+# lendo o Git.
+#
+# Os jobs image, publish e gitops são iguais aos de _ci-python.yml: uma
+# mudança num deles vale para o outro arquivo também.
+#
+# Versões: ferramentas fixas no env abaixo; imagens de contêiner por digest;
+# actions de terceiros pelo SHA completo do commit, com a versão comentada.
+# Reproduzir localmente: docs/CI-CD.md, seção "Como reproduzir localmente".
+# =================================================================
+
+name: CI Go (reutilizável)
+
+on:
+  workflow_call:
+    inputs:
+      service:
+        description: "Nome do serviço: repositório no ECR (solidarytech/<serviço>) e nome da imagem. Ex.: donation-service"
+        required: true
+        type: string
+      working-directory:
+        description: "Pasta do serviço, com go.mod, Dockerfile e .golangci.yml. Ex.: services/donation-service"
+        required: true
+        type: string
+
+# Padrão de todos os jobs: só leitura do código. Cada job declara de novo o
+# que precisa; só o publish pede o token OIDC (id-token: write) e só o
+# gitops pede escrita no repositório (contents: write). O chamador concede
+# os dois ao job que chama este workflow.
+permissions:
+  contents: read
+
+# bash com -e e -o pipefail em todos os passos run.
+defaults:
+  run:
+    shell: bash
+
+env:
+  # Valores das entradas como variáveis de ambiente: os blocos run usam
+  # "$SERVICE" e "$SERVICE_DIR", e nunca ${{ }} direto no script.
+  SERVICE: ${{ inputs.service }}
+  SERVICE_DIR: ${{ inputs.working-directory }}
+  # Nome local da imagem durante o pipeline. A tag é o SHA completo do
+  # commit, a mesma que vai para o ECR.
+  IMAGE_REF: solidarytech/${{ inputs.service }}:${{ github.sha }}
+  # O Go nunca troca de versão sozinho para atender ao go.mod. É o mesmo
+  # comportamento da imagem oficial golang usada no Dockerfile: se o go.mod
+  # pedir um Go mais novo que o do Dockerfile, o CI falha em vez de baixar
+  # outro toolchain em silêncio.
+  GOTOOLCHAIN: local
+  # Versões fixas das ferramentas (conferidas em 2026-11-23 nas releases
+  # oficiais). Release nova não muda o resultado do pipeline sem um PR.
+  GOSEC_VERSION: v2.30.0
+  GOVULNCHECK_VERSION: v1.10.0
+  # Imagens das ferramentas por digest do índice multiplataforma: o Docker
+  # baixa exatamente este conteúdo, mesmo que a tag seja republicada; a tag
+  # fica só como referência legível. O digest do Trivy é o mesmo em ghcr.io
+  # e em docker.io/aquasec/trivy e tem a assinatura do release oficial
+  # (cosign verify, 2026-11-23).
+  GOLANGCI_LINT_IMAGE: golangci/golangci-lint:v2.15.0@sha256:fbfcfd12a6f8d7f1b97b3362ca80fc2a244d46863148c73cb88e7793af96c481
+  TRIVY_IMAGE: ghcr.io/aquasecurity/trivy:0.76.2@sha256:8f6bb947dbc528902e11f2f5be52f7b519f6a39d5d148f41166f2040499768fb
+
+jobs:
+  # ===============================================================
+  # BARREIRA 1 — testes
+  # ===============================================================
+  # Derruba quando:
+  #   - um módulo baixado não confere com o hash do go.sum (go mod verify);
+  #   - o go vet acusa construção suspeita (Printf com argumento errado,
+  #     cópia de mutex, comparação sempre falsa...);
+  #   - um teste falha, inclusive por acesso concorrente sem proteção
+  #     detectado pelo -race.
+  # Por quê: regressão de comportamento não pode chegar à main. O -race
+  # precisa de cgo, que o runner Linux tem e a imagem (estática) não; por
+  # isso ele roda aqui.
+  test:
+    name: Teste (go vet e go test -race)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Nenhum job daqui faz push no Git: o token não fica gravado no
+          # .git do runner, fora do alcance dos passos seguintes.
+          persist-credentials: false
+
+      # A versão vem do ARG GO_VERSION do Dockerfile: testes e scans usam o
+      # mesmo Go que compila a imagem. O go.mod só declara o mínimo (go
+      # 1.26.0); com ele, o CI testaria e escanearia uma biblioteca padrão
+      # diferente da que vai para produção.
+      - name: Ler a versão do Go no Dockerfile
+        id: versao
+        run: |
+          # Primeira linha "ARG GO_VERSION=". Só dígitos e pontos passam: o
+          # valor segue para outro passo e não pode carregar nada além disso.
+          version="$(sed -nE '/^ARG GO_VERSION=/{s/^ARG GO_VERSION=([0-9]+\.[0-9]+(\.[0-9]+)?)[[:space:]]*$/\1/p;q}' Dockerfile)"
+          if [[ -z "$version" ]]; then
+            echo "::error file=${SERVICE_DIR}/Dockerfile::Linha 'ARG GO_VERSION=<versão>' ausente ou fora do formato 1.27 ou 1.27.4."
+            exit 1
+          fi
+          echo "Go ${version}, do ARG GO_VERSION de ${SERVICE_DIR}/Dockerfile"
+          echo "go=${version}" >> "$GITHUB_OUTPUT"
+
+      - name: Instalar o Go
+        uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
+        with:
+          go-version: ${{ steps.versao.outputs.go }}
+          # A correção mais recente da linha (1.27.x), e não a que estiver
+          # em cache no runner: correção de segurança da biblioteca padrão
+          # chega pelas versões de correção, como na imagem golang:1.27.
+          check-latest: true
+          # Cache de módulos e de build só neste job, o mais lento (o -race
+          # recompila as dependências): os jobs paralelos disputariam a mesma
+          # chave ao salvar. A chave é o go.sum do serviço (o padrão
+          # procuraria um go.sum na raiz do repositório).
+          cache-dependency-path: ${{ inputs.working-directory }}/go.sum
+
+      # Com o cache restaurado, os módulos podem vir de uma execução
+      # anterior: o verify confere que nada mudou desde o download.
+      - name: Baixar e conferir os módulos (go.sum)
+        id: modulos
+        run: |
+          go mod download
+          go mod verify
+
+      - name: go vet
+        run: go vet ./...
+
+      # !cancelled(): roda mesmo se o vet falhar, para a rodada mostrar os
+      # dois resultados. -count=1 desliga o cache de resultados de teste:
+      # com o cache de build restaurado, o Go poderia responder "(cached)"
+      # sem executar nada.
+      - name: go test -race -cover
+        if: ${{ !cancelled() && steps.modulos.outcome == 'success' }}
+        run: go test -race -cover -count=1 ./...
+
+  # ===============================================================
+  # BARREIRA 2 — lint
+  # ===============================================================
+  # Derruba com qualquer achado do golangci-lint com o .golangci.yml do
+  # serviço (conjunto padrão: errcheck, govet, ineffassign, staticcheck e
+  # unused, mais a formatação do gofmt), ou com um .golangci.yml inválido.
+  # Por quê: erro ignorado, atribuição sem efeito e código morto escondem
+  # defeitos; código fora do gofmt polui o diff do PR.
+  lint:
+    name: Lint (golangci-lint)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # A ferramenta roda na imagem oficial fixada por digest, e não por
+      # uma action que baixa o binário sem conferir checksum: é também o
+      # mesmo comando da máquina local. A pasta do serviço entra só leitura;
+      # -e GOTOOLCHAIN repassa o "local" do env deste workflow ao contêiner.
+      # "config verify" confere o .golangci.yml contra o schema da versão:
+      # uma opção com nome errado viraria regra desligada em silêncio.
+      - name: Conferir o .golangci.yml
+        run: |
+          docker run --rm -e GOTOOLCHAIN -v "$GITHUB_WORKSPACE/$SERVICE_DIR:/src:ro" -w /src \
+            "$GOLANGCI_LINT_IMAGE" golangci-lint config verify
+
+      - name: golangci-lint run
+        run: |
+          docker run --rm -e GOTOOLCHAIN -v "$GITHUB_WORKSPACE/$SERVICE_DIR:/src:ro" -w /src \
+            "$GOLANGCI_LINT_IMAGE" golangci-lint run
+
+  # ===============================================================
+  # BARREIRA 3 — SAST (análise estática de segurança)
+  # ===============================================================
+  # SAST olha o código que NÓS escrevemos; SCA (barreira 4) olha as
+  # bibliotecas de terceiros.
+  # Derruba com achado do gosec de severidade média ou alta, qualquer que
+  # seja a confiança: SQL montado por concatenação, credencial no código,
+  # TLS sem verificação, permissão de arquivo aberta, conversão de inteiro
+  # com estouro... Achado de severidade baixa aparece no relatório sem
+  # derrubar. Os *_test.go ficam de fora (padrão do gosec): dados falsos e
+  # atalhos de teste não são código de produção.
+  # Por quê: a falha é achada antes de o código rodar em qualquer ambiente.
+  # Exceção pontual vai na linha, com "#nosec G<regra> -- <motivo>".
+  sast:
+    name: SAST (gosec)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Mesmo passo do job test: o Go do Dockerfile.
+      - name: Ler a versão do Go no Dockerfile
+        id: versao
+        run: |
+          version="$(sed -nE '/^ARG GO_VERSION=/{s/^ARG GO_VERSION=([0-9]+\.[0-9]+(\.[0-9]+)?)[[:space:]]*$/\1/p;q}' Dockerfile)"
+          if [[ -z "$version" ]]; then
+            echo "::error file=${SERVICE_DIR}/Dockerfile::Linha 'ARG GO_VERSION=<versão>' ausente ou fora do formato 1.27 ou 1.27.4."
+            exit 1
+          fi
+          echo "Go ${version}, do ARG GO_VERSION de ${SERVICE_DIR}/Dockerfile"
+          echo "go=${version}" >> "$GITHUB_OUTPUT"
+
+      # Sem cache: só o job test salva e restaura o cache de módulos.
+      - name: Instalar o Go
+        uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
+        with:
+          go-version: ${{ steps.versao.outputs.go }}
+          check-latest: true
+          cache: false
+
+      # go install compila a versão fixada a partir do código-fonte, e o Go
+      # confere o módulo no banco público de checksums (sum.golang.org).
+      - name: Instalar o gosec
+        run: go install "github.com/securego/gosec/v2/cmd/gosec@${GOSEC_VERSION}"
+
+      # Tudo o que o gosec acha, inclusive severidade baixa, sem derrubar.
+      - name: gosec — relatório completo (não derruba)
+        run: gosec -no-fail ./...
+
+      - name: gosec — barreira (severidade média ou alta)
+        run: gosec -severity medium -quiet ./...
+
+  # ===============================================================
+  # BARREIRA 4 — SCA (vulnerabilidades nas dependências)
+  # ===============================================================
+  # Duas ferramentas que se completam:
+  #   - govulncheck (base oficial do Go): derruba quando o código CHAMA uma
+  #     função com vulnerabilidade conhecida, inclusive da biblioteca padrão
+  #     do Go instalado (o mesmo do Dockerfile). Vulnerabilidade em módulo
+  #     cujo trecho afetado o código não usa aparece no resumo sem derrubar;
+  #   - Trivy em modo fs (go.mod): derruba com CVE CRITICAL em qualquer
+  #     dependência, alcançável ou não, inclusive sem correção publicada.
+  #     HIGH aparece no relatório sem derrubar.
+  # Por quê: a maior parte do código que roda em produção é de terceiros.
+  # Exceção a um CVE: uma linha datada e justificada no .trivyignore da raiz.
+  sca:
+    name: SCA (govulncheck e Trivy)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - name: Baixar o código
+        id: checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Ler a versão do Go no Dockerfile
+        id: versao
+        run: |
+          version="$(sed -nE '/^ARG GO_VERSION=/{s/^ARG GO_VERSION=([0-9]+\.[0-9]+(\.[0-9]+)?)[[:space:]]*$/\1/p;q}' Dockerfile)"
+          if [[ -z "$version" ]]; then
+            echo "::error file=${SERVICE_DIR}/Dockerfile::Linha 'ARG GO_VERSION=<versão>' ausente ou fora do formato 1.27 ou 1.27.4."
+            exit 1
+          fi
+          echo "Go ${version}, do ARG GO_VERSION de ${SERVICE_DIR}/Dockerfile"
+          echo "go=${version}" >> "$GITHUB_OUTPUT"
+
+      # Sem cache: só o job test salva e restaura o cache de módulos.
+      - name: Instalar o Go
+        uses: actions/setup-go@d8cbb8045d7f43706b9177cceb36c1f91a6644d5 # v7.1.0
+        with:
+          go-version: ${{ steps.versao.outputs.go }}
+          check-latest: true
+          cache: false
+
+      - name: Instalar o govulncheck
+        run: go install "golang.org/x/vuln/cmd/govulncheck@${GOVULNCHECK_VERSION}"
+
+      - name: govulncheck
+        run: govulncheck ./...
+
+      # O Trivy roda na imagem fixada por digest, com o repositório só
+      # leitura. O volume trivy-cache guarda a base de CVEs baixada aqui
+      # para a barreira seguinte. !cancelled(): roda mesmo se o govulncheck
+      # falhar, para a rodada mostrar os dois resultados. O relatório não
+      # aplica o .trivyignore: um CVE aceito continua visível a cada rodada.
+      # --ignorefile '' é o que garante isso: sem ele, o Trivy leria o
+      # .trivyignore do diretório atual (a raiz do repositório) por padrão.
+      - name: Trivy fs — relatório HIGH e CRITICAL (não derruba)
+        if: ${{ !cancelled() && steps.checkout.outcome == 'success' }}
+        run: |
+          docker run --rm -v "$GITHUB_WORKSPACE:/repo:ro" -v trivy-cache:/cache -w /repo \
+            "$TRIVY_IMAGE" fs --cache-dir /cache --no-progress --scanners vuln \
+            --severity HIGH,CRITICAL --ignorefile '' --exit-code 0 "$SERVICE_DIR"
+
+      # --ignore-unfixed=false: CRITICAL sem versão corrigida também derruba.
+      # Esconder essa classe inteira de achados seria decidir em silêncio;
+      # a exceção, quando houver, fica escrita no .trivyignore.
+      - name: Trivy fs — barreira CRITICAL
+        if: ${{ !cancelled() && steps.checkout.outcome == 'success' }}
+        run: |
+          docker run --rm -v "$GITHUB_WORKSPACE:/repo:ro" -v trivy-cache:/cache -w /repo \
+            "$TRIVY_IMAGE" fs --cache-dir /cache --skip-db-update --no-progress --scanners vuln \
+            --severity CRITICAL --ignore-unfixed=false --ignorefile .trivyignore \
+            --exit-code 1 "$SERVICE_DIR"
+
+  # ===============================================================
+  # BARREIRA 5 — imagem (build, usuário e Trivy)
+  # ===============================================================
+  # Derruba quando:
+  #   - o build falha;
+  #   - a imagem roda como root: o USER precisa ser um UID numérico
+  #     diferente de 0 (o Kubernetes só consegue conferir runAsNonRoot com
+  #     UID numérico; o projeto usa 10001:10001);
+  #   - o Trivy acha CVE CRITICAL na imagem, inclusive sem correção
+  #     publicada. HIGH aparece no relatório sem derrubar.
+  # Por quê: a imagem é o que roda no cluster. Ela inclui o sistema base,
+  # que o scan das dependências não vê.
+  # Num push na main, a imagem aprovada segue como artifact para o job
+  # publish: o ECR recebe os mesmos bits escaneados aqui, sem novo build.
+  image:
+    name: Imagem (build, usuário e Trivy)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    permissions:
+      contents: read
+    outputs:
+      # ID da imagem escaneada; o publish confere que carregou a mesma.
+      image_id: ${{ steps.salvar.outputs.image_id }}
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Driver "docker": o BuildKit embutido no Docker do runner. O driver
+      # padrão (docker-container) baixaria a imagem moby/buildkit por uma
+      # tag que muda sozinha.
+      - name: Preparar o buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+        with:
+          driver: docker
+
+      # load: a imagem fica no Docker do runner, para os passos seguintes;
+      # nada é enviado a registro neste job. Sem cache de camadas, de
+      # propósito: o apt-get upgrade e o apk upgrade dos Dockerfiles rodam de
+      # novo a cada build e trazem as correções de segurança do dia. pull:
+      # sempre a versão mais recente da imagem base da tag do Dockerfile.
+      # provenance e sbom desligados: a imagem segue como um único manifesto
+      # para o tar, o scan e o push, e o que se publica é o que se escaneou.
+      # O resumo do build continua na página da execução; só o registro do
+      # build não vira artifact (sairia um por execução, sem uso aqui).
+      - name: Build da imagem
+        id: build
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        env:
+          DOCKER_BUILD_RECORD_UPLOAD: "false"
+        with:
+          context: ${{ inputs.working-directory }}
+          load: true
+          push: false
+          pull: true
+          provenance: false
+          sbom: false
+          tags: ${{ env.IMAGE_REF }}
+          # De onde a imagem veio: repositório e commit exatos.
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.title=${{ inputs.service }}
+
+      # O tar é a entrada do Trivy (sem dar a ele acesso ao Docker do
+      # runner) e o artifact que o publish envia ao ECR.
+      - name: Salvar a imagem em tar
+        id: salvar
+        run: |
+          mkdir -p "$RUNNER_TEMP/imagem"
+          docker save -o "$RUNNER_TEMP/imagem/imagem.tar" "$IMAGE_REF"
+          image_id="$(docker image inspect --format '{{.Id}}' "$IMAGE_REF")"
+          echo "image_id=${image_id}" >> "$GITHUB_OUTPUT"
+          echo "${IMAGE_REF}: ${image_id}, $(du -h "$RUNNER_TEMP/imagem/imagem.tar" | cut -f1) em tar"
+
+      - name: Conferir o usuário da imagem (não root)
+        run: |
+          user="$(docker image inspect --format '{{.Config.User}}' "$IMAGE_REF")"
+          uid="${user%%:*}"
+          if [[ -z "$user" ]]; then
+            echo "::error file=${SERVICE_DIR}/Dockerfile::A imagem não declara USER e roda como root."
+            exit 1
+          fi
+          if [[ ! "$uid" =~ ^[0-9]+$ ]]; then
+            echo "::error file=${SERVICE_DIR}/Dockerfile::USER '${user}' não é numérico: o Kubernetes não consegue conferir runAsNonRoot."
+            exit 1
+          fi
+          if (( 10#$uid == 0 )); then
+            echo "::error file=${SERVICE_DIR}/Dockerfile::USER '${user}' é o root (UID 0)."
+            exit 1
+          fi
+          echo "USER ${user}: UID ${uid}, não root"
+
+      # !cancelled(): os dois passos do Trivy rodam mesmo se a conferência
+      # do usuário falhar, para a rodada mostrar todos os problemas da
+      # imagem. O relatório não aplica o .trivyignore (o CVE aceito continua
+      # visível); a barreira aplica.
+      - name: Trivy na imagem — relatório HIGH e CRITICAL (não derruba)
+        if: ${{ !cancelled() && steps.salvar.outcome == 'success' }}
+        run: |
+          docker run --rm -v "$RUNNER_TEMP/imagem:/imagem:ro" -v trivy-cache:/cache \
+            "$TRIVY_IMAGE" image --cache-dir /cache --no-progress --scanners vuln \
+            --input /imagem/imagem.tar --severity HIGH,CRITICAL --ignorefile '' --exit-code 0
+
+      - name: Trivy na imagem — barreira CRITICAL
+        if: ${{ !cancelled() && steps.salvar.outcome == 'success' }}
+        run: |
+          docker run --rm -v "$GITHUB_WORKSPACE:/repo:ro" -v "$RUNNER_TEMP/imagem:/imagem:ro" \
+            -v trivy-cache:/cache "$TRIVY_IMAGE" image --cache-dir /cache --skip-db-update \
+            --no-progress --scanners vuln --input /imagem/imagem.tar --severity CRITICAL \
+            --ignore-unfixed=false --ignorefile /repo/.trivyignore --exit-code 1
+
+      # Só quando o publish vai rodar. O artifact expira em 1 dia e não
+      # contém segredo: só o código público do serviço e a imagem base.
+      # overwrite: num "Re-run all jobs" o artifact da tentativa anterior é
+      # substituído pelo desta, em vez de derrubar o passo por nome repetido.
+      - name: Guardar a imagem aprovada para o publish
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.AWS_ROLE_ARN != ''
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: imagem-${{ inputs.service }}
+          path: ${{ runner.temp }}/imagem/imagem.tar
+          retention-days: 1
+          if-no-files-found: error
+          overwrite: true
+
+      # Enquanto a infraestrutura não existe (Variables vazias), a main fica
+      # verde sem publicar, mas avisa na página da execução.
+      - name: Avisar que a publicação foi pulada
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.AWS_ROLE_ARN == ''
+        run: |
+          echo "::warning title=Publicação no ECR pulada::A Variable AWS_ROLE_ARN está vazia: as barreiras passaram, mas a imagem não foi publicada. Ela é gravada por scripts/github/set-repo-variables.sh depois do apply da raiz terraform/base (docs/CI-CD.md)."
+
+  # ===============================================================
+  # PUBLICAÇÃO NO ECR — só num push na main, depois das 5 barreiras
+  # ===============================================================
+  # Não roda em pull request, na dev nem pelo botão "Run workflow". Para
+  # refazer uma publicação que falhou, use "Re-run jobs" na execução do
+  # push na main (em até 1 dia, enquanto o artifact da imagem existir; depois
+  # disso, "Re-run all jobs" constrói e escaneia de novo). Pulado (sem
+  # falhar) enquanto a Variable AWS_ROLE_ARN estiver vazia; o job image
+  # deixa o aviso.
+  #
+  # Sem chave da AWS no GitHub: o job pede ao GitHub um token OIDC, e a AWS
+  # só devolve credencial temporária (15 min) se o token for da branch main
+  # deste repositório (política de confiança da role, módulo iam-ci). Por
+  # isso este job NÃO declara environment: do GitHub; um environment muda
+  # o subject do token, e a role o recusaria.
+  #
+  # Derruba quando: as Variables estão incoerentes (formato, região ou
+  # conta), a imagem baixada não é a escaneada, a AWS recusa a role ou o
+  # push falha. Tag que já existe no ECR (reexecução do mesmo commit) não
+  # derruba: os repositórios têm tag imutável, então o push é pulado e
+  # continua valendo a imagem da primeira execução, que passou pelas mesmas
+  # barreiras.
+  publish:
+    name: Publicar no ECR
+    needs: [test, lint, sast, sca, image]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.AWS_ROLE_ARN != ''
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      # O único job com token OIDC. Ele não lê o código (usa o artifact).
+      id-token: write
+    outputs:
+      # Para o job gitops, logo abaixo. Nenhum dos dois contém o ID da
+      # conta: o GitHub não repassa output de job com valor mascarado.
+      image_tag: ${{ github.sha }}
+      image_digest: ${{ steps.resumo.outputs.digest }}
+    env:
+      ECR_REPOSITORY: solidarytech/${{ inputs.service }}
+      IMAGE_TAG: ${{ github.sha }}
+      # Sem pager na saída da AWS CLI (não há terminal no runner).
+      AWS_PAGER: ""
+    steps:
+      # Formato e coerência das três Variables antes de pedir credencial:
+      # região do registro = AWS_REGION; conta do registro = conta da role.
+      - name: Conferir as Variables do destino
+        id: destino
+        env:
+          VAR_ECR_REGISTRY: ${{ vars.ECR_REGISTRY }}
+          VAR_AWS_REGION: ${{ vars.AWS_REGION }}
+          VAR_AWS_ROLE_ARN: ${{ vars.AWS_ROLE_ARN }}
+        run: |
+          re_registry='^([0-9]{12})\.dkr\.ecr\.([a-z0-9-]+)\.amazonaws\.com$'
+          if [[ ! "$VAR_ECR_REGISTRY" =~ $re_registry ]]; then
+            echo "::error::ECR_REGISTRY precisa ter o formato <conta>.dkr.ecr.<região>.amazonaws.com."
+            exit 1
+          fi
+          account="${BASH_REMATCH[1]}"
+          region="${BASH_REMATCH[2]}"
+          # O ID da conta não é segredo para a AWS, mas o log deste
+          # repositório é público: daqui em diante ele aparece como ***.
+          echo "::add-mask::${account}"
+          if [[ "$region" != "$VAR_AWS_REGION" ]]; then
+            echo "::error::A região de ECR_REGISTRY (${region}) difere de AWS_REGION (${VAR_AWS_REGION})."
+            exit 1
+          fi
+          re_role="^arn:aws:iam::${account}:role/[A-Za-z0-9+=,.@_/-]+$"
+          if [[ ! "$VAR_AWS_ROLE_ARN" =~ $re_role ]]; then
+            echo "::error::AWS_ROLE_ARN precisa ser o ARN de uma role da mesma conta de ECR_REGISTRY."
+            exit 1
+          fi
+          echo "account_id=${account}" >> "$GITHUB_OUTPUT"
+          echo "Destino coerente: registro, região ${region} e role da mesma conta."
+
+      # O download confere o digest do artifact (digest-mismatch: error é o
+      # padrão desta versão).
+      - name: Baixar a imagem aprovada
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: imagem-${{ inputs.service }}
+          path: ${{ runner.temp }}/imagem
+
+      - name: Carregar a imagem e conferir que é a escaneada
+        env:
+          SCANNED_ID: ${{ needs.image.outputs.image_id }}
+        run: |
+          docker load -i "$RUNNER_TEMP/imagem/imagem.tar"
+          loaded_id="$(docker image inspect --format '{{.Id}}' "$IMAGE_REF")"
+          if [[ "$loaded_id" != "$SCANNED_ID" ]]; then
+            echo "::error::A imagem carregada (${loaded_id}) não é a escaneada no job image (${SCANNED_ID})."
+            exit 1
+          fi
+          echo "Imagem ${IMAGE_REF} = ${loaded_id}, a mesma escaneada."
+
+      - name: Autenticar na AWS por OIDC
+        uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd # v6.3.0
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+          # Aparece no CloudTrail: qual serviço e qual execução assumiu a role.
+          role-session-name: gh-${{ inputs.service }}-${{ github.run_id }}
+          # O mínimo que a AWS aceita (15 min): sobra para um push.
+          role-duration-seconds: 900
+          # Falha se a credencial vier de outra conta que não a do registro.
+          allowed-account-ids: ${{ steps.destino.outputs.account_id }}
+          mask-aws-account-id: true
+
+      # docker login no registro privado da conta, com a credencial acima.
+      # A senha fica mascarada e o logout é automático no fim do job.
+      - name: Login no ECR
+        uses: aws-actions/amazon-ecr-login@7290e214a610b32bc0eef81748948b6d466a8783 # v2.2.0
+
+      # Três respostas possíveis do ECR:
+      #   a tag existe             -> exists=true: reexecução, push pulado;
+      #   ImageNotFoundException   -> exists=false: primeira publicação;
+      #   outro erro (permissão, repositório inexistente, rede) -> derruba,
+      #   para não esconder uma configuração errada.
+      - name: Conferir se a tag já existe no ECR
+        id: existe
+        run: |
+          if out="$(aws ecr describe-images --repository-name "$ECR_REPOSITORY" \
+              --image-ids imageTag="$IMAGE_TAG" --query 'imageDetails[0].imageDigest' \
+              --output text 2>&1)"; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "::notice title=Push pulado::A tag ${IMAGE_TAG} já existe em ${ECR_REPOSITORY} (${out}). Com tag imutável, vale a imagem da primeira execução deste commit."
+          elif [[ "$out" == *ImageNotFoundException* ]]; then
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+            echo "A tag ${IMAGE_TAG} ainda não existe em ${ECR_REPOSITORY}."
+          else
+            echo "::error::Falha ao consultar o ECR: ${out}"
+            exit 1
+          fi
+
+      # Só a tag com o SHA completo do commit: é a que o GitOps referencia e
+      # a que liga a imagem ao código. Nada de "latest": com tag imutável,
+      # ela não poderia ser atualizada, e não diria de qual commit veio.
+      - name: Enviar a imagem ao ECR
+        if: steps.existe.outputs.exists == 'false'
+        env:
+          VAR_ECR_REGISTRY: ${{ vars.ECR_REGISTRY }}
+        run: |
+          target="${VAR_ECR_REGISTRY}/${ECR_REPOSITORY}:${IMAGE_TAG}"
+          docker tag "$IMAGE_REF" "$target"
+          docker push "$target"
+
+      - name: Resumo da publicação
+        id: resumo
+        env:
+          TAG_EXISTIA: ${{ steps.existe.outputs.exists }}
+        run: |
+          digest="$(aws ecr describe-images --repository-name "$ECR_REPOSITORY" \
+            --image-ids imageTag="$IMAGE_TAG" --query 'imageDetails[0].imageDigest' --output text)"
+          echo "digest=${digest}" >> "$GITHUB_OUTPUT"
+          if [[ "$TAG_EXISTIA" == "true" ]]; then
+            situacao="já existia (push pulado)"
+          else
+            situacao="publicada agora"
+          fi
+          {
+            echo "### Imagem no ECR: ${ECR_REPOSITORY}"
+            echo ""
+            echo "| Tag (SHA do commit) | Digest | Situação |"
+            echo "|---|---|---|"
+            echo "| \`${IMAGE_TAG}\` | \`${digest}\` | ${situacao} |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # ===============================================================
+  # GITOPS — a imagem publicada vai para o overlay, num commit do robô
+  # ===============================================================
+  # Fecha o ciclo sem kubectl: o pipeline não fala com o cluster. Ele só
+  # grava no Git a referência da imagem que acabou de publicar,
+  #   <ECR_REGISTRY>/solidarytech/<serviço>:<SHA do commit>,
+  # em gitops/overlays/prod/kustomization.yaml (kustomize edit set image),
+  # e o ArgoCD, que observa esse overlay na main, aplica a versão nova.
+  # Voltar uma versão é reverter o commit do robô (git revert): o ArgoCD
+  # aplica a tag anterior do mesmo jeito.
+  #
+  # Roda só num push na main e só depois do publish com sucesso: a imagem
+  # precisa existir no ECR antes de o ArgoCD procurá-la. O commit, do
+  # github-actions[bot] direto na main, só acontece se o arquivo mudou:
+  # reexecutar o mesmo commit não gera um segundo commit. Uma reexecução de
+  # um pipeline antigo também não volta o overlay para uma versão mais
+  # velha que a que já está lá. Antes do commit, o job confere que o render
+  # do overlay mudou só nas linhas image do serviço.
+  #
+  # POR QUE O COMMIT DO ROBÔ NÃO DISPARA OUTROS WORKFLOWS
+  # O push usa o GITHUB_TOKEN deste job, e um evento criado com o
+  # GITHUB_TOKEN não cria execução de workflow. É uma regra do GitHub para
+  # evitar laço; as exceções (workflow_dispatch, repository_dispatch e pull
+  # request aberto ou atualizado por um workflow) não incluem o push. Então
+  # nem este pipeline, nem o repo-check, nem o gitops-check rodam por causa
+  # dele. A mensagem dispensa "[skip ci]", que ainda pularia as verificações
+  # de um push feito por uma pessoa com este commit no topo (ao atualizar a
+  # dev com a main, por exemplo). Como o gitops-check não vê este commit, o
+  # próprio job confere, antes do commit, que só a referência da imagem
+  # muda no render e, antes de cada push, que o overlay renderiza com a
+  # imagem nova; o resto do overlay já passou pelo gitops-check quando
+  # chegou à main.
+  #
+  # CONCORRÊNCIA
+  # Os três serviços podem publicar no mesmo push e gravam o mesmo arquivo,
+  # cada um na sua entrada. Não há concurrency: aqui: com um grupo
+  # compartilhado, o GitHub deixa um job rodando e só um esperando, e
+  # quando chega o terceiro o que esperava é cancelado. Em vez disso, o
+  # push tenta até 5 vezes, com git pull --rebase entre as tentativas.
+  #
+  # Os jobs gitops de _ci-go.yml e _ci-python.yml são iguais: uma mudança
+  # num deles vale para o outro arquivo também.
+  gitops:
+    name: GitOps (tag nova no overlay)
+    needs: [publish]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      # O único job com escrita no repositório: o commit do robô. O chamador
+      # concede contents: write ao job que chama este workflow.
+      contents: write
+    env:
+      IMAGE_TAG: ${{ needs.publish.outputs.image_tag }}
+      IMAGE_DIGEST: ${{ needs.publish.outputs.image_digest }}
+      # O Kustomize do ArgoCD 3.6.2 (5.8.3), na imagem oficial por digest:
+      # a mesma de scripts/gitops/validate.sh. A imagem só tem linux/amd64,
+      # a arquitetura do runner. Em contêiner, e não como binário no runner,
+      # para não ver a credencial do Git gravada pelo checkout; sem rede,
+      # porque o overlay só usa arquivos do repositório (uma base remota
+      # faria este job falhar). A base Alpine da imagem acusa CVEs em
+      # pacotes que o edit e o build de arquivos locais não usam (openssh e
+      # brotli, Trivy em 2026-11-23): trocar o digest aqui e no validate.sh
+      # quando sair uma imagem nova.
+      KUSTOMIZE_IMAGE: registry.k8s.io/kustomize/kustomize:v5.8.3@sha256:429eda4a1c76a7de458d0c4ca3ded9b5d764899ff6bdaeccc1d98b1b6ee873e4
+    steps:
+      # A main mais recente, e não o commit que disparou o pipeline: o robô
+      # de outro serviço pode ter gravado o overlay nesse meio tempo.
+      # Histórico completo: o git pull --rebase e a conferência de qual
+      # commit é mais novo precisam dele (o repositório é pequeno). As
+      # credenciais ficam gravadas (padrão do checkout), num arquivo fora da
+      # pasta do código: é com elas que o git push usa o GITHUB_TOKEN deste
+      # job, e os contêineres abaixo, que montam só gitops/, não as veem.
+      # O checkout apaga a credencial no fim do job.
+      - name: Baixar a main
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Preparar o Kustomize
+        run: docker run --rm --network none "$KUSTOMIZE_IMAGE" version
+
+      # Grava "solidarytech/<serviço>=<registro>/solidarytech/<serviço>:<SHA>"
+      # no overlay, confere o render e faz o commit e o push, com até 5
+      # tentativas. Derruba quando: ECR_REGISTRY fora do formato, overlay
+      # ausente na main, edição que muda o render além da imagem do serviço,
+      # render sem a imagem nova ou 5 pushes recusados.
+      - name: Gravar a imagem no overlay e enviar
+        env:
+          VAR_ECR_REGISTRY: ${{ vars.ECR_REGISTRY }}
+        run: |
+          overlay="gitops/overlays/prod/kustomization.yaml"
+          nome="solidarytech/${SERVICE}"
+
+          re_registry='^([0-9]{12})\.dkr\.ecr\.([a-z0-9-]+)\.amazonaws\.com$'
+          if [[ ! "$VAR_ECR_REGISTRY" =~ $re_registry ]]; then
+            echo "::error::ECR_REGISTRY precisa ter o formato <conta>.dkr.ecr.<região>.amazonaws.com."
+            exit 1
+          fi
+          # O ID da conta vai para o overlay, o único arquivo do repositório
+          # onde ele pode ficar (gitops/README.md). No log, como no publish,
+          # ele aparece como ***.
+          echo "::add-mask::${BASH_REMATCH[1]}"
+          if [[ ! "$IMAGE_TAG" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "::error::A tag recebida do publish não é um SHA de commit: '${IMAGE_TAG}'."
+            exit 1
+          fi
+          if [[ ! -f "$overlay" ]]; then
+            echo "::error::${overlay} não existe na main."
+            exit 1
+          fi
+          imagem="${VAR_ECR_REGISTRY}/${nome}:${IMAGE_TAG}"
+
+          # Render como o ArgoCD faz, com a pasta gitops/ só leitura.
+          renderizar() {
+            docker run --rm --network none -v "${GITHUB_WORKSPACE}/gitops:/gitops:ro" \
+              "$KUSTOMIZE_IMAGE" build /gitops/overlays/prod
+          }
+
+          resumo() {
+            {
+              echo "### GitOps: ${nome}"
+              echo ""
+              echo "$1"
+            } >> "$GITHUB_STEP_SUMMARY"
+          }
+
+          # O commit aparece no histórico como do GitHub Actions.
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          for tentativa in 1 2 3 4 5; do
+            echo "--- tentativa ${tentativa} de 5 ---"
+
+            # Sem commit nosso esperando envio: grava a tag sobre a main atual.
+            if [[ -z "$(git rev-list origin/main..HEAD)" ]]; then
+              # Tag que o overlay aplica hoje a este serviço. Se ela vem de
+              # um commit que já contém o nosso (Re-run de um pipeline
+              # antigo depois de um mais novo), nada muda: o cluster não
+              # volta para uma versão mais velha.
+              render="$(renderizar)"
+              atual="$(grep -m 1 -oE "/${nome}:[0-9a-f]{40}\$" <<< "$render" || true)"
+              atual="${atual##*:}"
+              if [[ -n "$atual" && "$atual" != "$IMAGE_TAG" ]] \
+                  && git merge-base --is-ancestor "$IMAGE_TAG" "$atual" 2>/dev/null; then
+                echo "::notice title=Overlay já mais novo::${nome} já usa ${atual}, que contém ${IMAGE_TAG}: nada a gravar."
+                resumo "Nada gravado: o overlay já usa \`${atual}\`, mais novo que \`${IMAGE_TAG}\`."
+                exit 0
+              fi
+
+              # O contêiner roda com o UID e o GID do runner: o arquivo
+              # regravado continua do mesmo dono, e só a pasta do overlay
+              # fica montada com escrita.
+              docker run --rm --network none --user "$(id -u):$(id -g)" \
+                -v "${GITHUB_WORKSPACE}/gitops/overlays/prod:/work" -w /work \
+                "$KUSTOMIZE_IMAGE" edit set image "${nome}=${imagem}"
+              if git diff --quiet -- "$overlay"; then
+                echo "O overlay já aponta para ${nome}:${IMAGE_TAG}: nada a gravar."
+                resumo "Nada gravado: o overlay já usava \`${IMAGE_TAG}\`."
+                exit 0
+              fi
+              git --no-pager diff -- "$overlay"
+
+              # O commit só pode trocar a imagem deste serviço: o render
+              # depois da edição difere do anterior apenas nas linhas image
+              # dele. Qualquer outra diferença derruba, sem commit.
+              depois="$(renderizar)"
+              outras="$(diff <(printf '%s\n' "$render") <(printf '%s\n' "$depois") \
+                | grep -E '^[<>]' \
+                | grep -vE "^[<>][[:space:]]+image: ([^[:space:]]+/)?${nome}:[^[:space:]]+\$" || true)"
+              if [[ -n "$outras" ]]; then
+                echo "::error file=${overlay}::A edição mudou o render além da imagem de ${nome}:"
+                printf '%s\n' "$outras"
+                exit 1
+              fi
+              git add -- "$overlay"
+              git commit --quiet \
+                -m "chore(gitops): ${SERVICE} na imagem ${IMAGE_TAG:0:12}" \
+                -m "Imagem ${nome}:${IMAGE_TAG} (digest ${IMAGE_DIGEST:-não informado}), publicada no ECR pela execução ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}."
+            fi
+
+            # O que vai para a main precisa renderizar e aplicar a imagem nova.
+            render="$(renderizar)"
+            if ! grep -qF -- "image: ${imagem}" <<< "$render"; then
+              echo "::error file=${overlay}::O overlay renderizado não usa ${nome}:${IMAGE_TAG}."
+              exit 1
+            fi
+
+            if git push origin HEAD:main; then
+              sha_robo="$(git rev-parse HEAD)"
+              echo "Commit ${sha_robo} enviado à main."
+              resumo "Tag \`${IMAGE_TAG}\` gravada no commit [\`${sha_robo:0:12}\`](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/commit/${sha_robo}); o ArgoCD aplica a partir dele."
+              exit 0
+            fi
+            if [[ "$tentativa" -eq 5 ]]; then
+              break
+            fi
+
+            # Push recusado: outro commit chegou à main antes (o robô de
+            # outro serviço, por exemplo). O git pull --rebase reaplica o
+            # nosso commit por cima do que chegou. Se o rebase conflitar
+            # (outra mudança nas mesmas linhas; na primeira publicação, o
+            # kustomize reordena o bloco images inteiro), o nosso commit é
+            # descartado e a tentativa seguinte refaz a edição sobre a main
+            # nova. A espera cresce a cada volta, para os robôs não
+            # tentarem no mesmo instante.
+            espera=$((tentativa * 3))
+            echo "Push recusado. Nova tentativa em ${espera} s, depois do git pull --rebase."
+            sleep "$espera"
+            if ! git pull --rebase origin main; then
+              git rebase --abort 2>/dev/null || true
+              git reset --hard origin/main
+            fi
+          done
+
+          echo "::error::A main recusou o commit do robô 5 vezes. A imagem ${nome}:${IMAGE_TAG} já está no ECR: use Re-run failed jobs nesta execução para gravar a tag."
+          exit 1

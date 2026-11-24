@@ -1,0 +1,14 @@
+# =================================================================
+# EXEMPLO de backend.hcl — raiz k8s
+# =================================================================
+# Copie para backend.hcl (ignorado pelo Git) com o bucket real, o output
+# state_bucket_name da raiz bootstrap (<projeto>-tfstate-<conta>-<região>-an).
+# É o mesmo bucket de todas as raízes; o que muda entre elas é a chave
+# (key), fixa em versions.tf.
+#
+# O bucket abaixo é uma SENTINELA: o S3 não aceita maiúsculas em nomes de
+# bucket, então o init falha de propósito se o exemplo for usado sem
+# troca.
+# =================================================================
+bucket = "SUBSTITUIR-PELO-OUTPUT-state_bucket_name"
+region = "us-east-2"

@@ -1,0 +1,25 @@
+# Configuração do OpenTelemetry Collector LOCAL (só para o Docker Compose).
+# Recebe spans por OTLP/HTTP e os imprime no log, com atributos, para
+# conferir a instrumentação sem depender de conta de APM.
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  # Agrupa spans antes de exportar (mesmo padrão do Collector do cluster).
+  batch:
+    timeout: 2s
+
+exporters:
+  # "detailed" mostra resource (service.name), nome, tipo e atributos de cada span.
+  debug:
+    verbosity: detailed
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [debug]

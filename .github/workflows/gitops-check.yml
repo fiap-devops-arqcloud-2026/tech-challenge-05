@@ -1,0 +1,104 @@
+# =================================================================
+# VERIFICAÇÃO DO GITOPS — os manifestos que o ArgoCD aplica
+# =================================================================
+# Roda o mesmo comando da máquina de quem desenvolve:
+#   bash scripts/gitops/validate.sh
+# O script, sem cluster e sem credencial:
+#   1. confere que as cópias dos SQL do Job de schema (gitops/base/db-schema/
+#      sql/) são idênticas aos services/*/db/init.sql;
+#   2. renderiza o overlay gitops/overlays/prod com o mesmo Kustomize do
+#      ArgoCD (5.8.3);
+#   3. reprova objeto que pertence ao Terraform (Namespace, Secret,
+#      ServiceAccount, StorageClass e o ConfigMap aws-endpoints): dois donos
+#      para o mesmo objeto fariam ArgoCD e Terraform se desfazerem;
+#   4. valida o YAML renderizado contra o schema do Kubernetes (kubeconform,
+#      estrito);
+#   5. confere as boas práticas com o kube-linter (não root, disco somente
+#      leitura, requests e limits, seletores, PDB...), com as exceções
+#      justificadas em gitops/.kube-linter.yaml;
+#   6. roda o shellcheck nos scripts shell do GitOps.
+# As ferramentas rodam em imagens de contêiner fixadas por digest.
+#
+# Barreira: derruba na primeira dessas conferências que falhar. Por quê: o
+# ArgoCD aplica na main o que estiver em gitops/; sem esta verificação, um
+# manifesto quebrado só apareceria como Application com erro no cluster,
+# depois do merge.
+#
+# E O COMMIT DO ROBÔ? O job gitops dos pipelines dos serviços grava a tag
+# nova no overlay com o GITHUB_TOKEN, e um push feito com esse token não
+# cria execução de workflow (regra do GitHub contra laço): este workflow não
+# roda nesse commit. Por isso o próprio job do robô confere, antes do
+# commit, que só a referência da imagem muda no render e, antes de cada
+# push, que o overlay renderiza com a imagem nova. O resto do overlay
+# passou por aqui quando chegou à main.
+#
+# Sem AWS, sem cluster e sem segredo: só lê o repositório (o kubeconform
+# baixa os schemas públicos do Kubernetes).
+# =================================================================
+
+name: GitOps (validação dos manifestos)
+
+on:
+  # PR com destino na dev ou na main: barra o erro antes do merge.
+  pull_request:
+    branches: [dev, main]
+    # Só acorda quando muda o que o script lê: os manifestos, os scripts do
+    # GitOps, os SQL originais dos serviços (copiados para o Job de schema)
+    # ou este arquivo. Mudança só nos .md de gitops/ não altera nenhum
+    # resultado e não roda nada.
+    paths:
+      - "gitops/**"
+      - "!gitops/**/*.md"
+      - "scripts/gitops/**"
+      - "services/*/db/init.sql"
+      - ".github/workflows/gitops-check.yml"
+  # Push na dev e na main: confere o que acabou de ser integrado.
+  push:
+    branches: [dev, main]
+    # Mesma lista do pull_request.
+    paths:
+      - "gitops/**"
+      - "!gitops/**/*.md"
+      - "scripts/gitops/**"
+      - "services/*/db/init.sql"
+      - ".github/workflows/gitops-check.yml"
+  # Botão "Run workflow" na aba Actions, para reexecutar sem commit.
+  workflow_dispatch:
+
+# Teto de permissões do GITHUB_TOKEN: só leitura do código.
+permissions:
+  contents: read
+
+# Um grupo por workflow e ref. Num PR ou na dev, um push novo cancela a
+# rodada anterior da mesma branch ou do mesmo PR. Na main, a rodada em
+# andamento nunca é cancelada: o push seguinte espera a vez (com vários
+# pushes seguidos, o GitHub mantém na fila só o mais recente).
+concurrency:
+  group: gitops-check-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+# bash com -e e -o pipefail em todos os passos run.
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  validate:
+    name: Render, dono único, schema e boas práticas
+    # Versão fixa da imagem do runner (com Docker): o ubuntu-latest muda de
+    # versão sem aviso.
+    runs-on: ubuntu-24.04
+    # O script leva cerca de um minuto, quase todo baixando as imagens das
+    # ferramentas; o limite evita um job preso consumindo a fila.
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Nada aqui faz push: o token não fica gravado no runner.
+          persist-credentials: false
+
+      - name: bash scripts/gitops/validate.sh
+        run: bash scripts/gitops/validate.sh

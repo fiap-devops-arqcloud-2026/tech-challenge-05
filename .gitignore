@@ -1,0 +1,132 @@
+# =================================================================
+# .gitignore — SolidaryTech (Hackathon Fase 5)
+# =================================================================
+# O repositório é PÚBLICO: o que for commitado fica público para sempre,
+# inclusive no histórico. Remover um arquivo depois NÃO apaga o histórico.
+# Por isso, tudo o que pode carregar segredo ou identificador sensível é
+# bloqueado aqui antes de existir.
+
+# -----------------------------------------------------------------
+# Terraform — estado e planos guardam senhas e IDs em texto puro
+# -----------------------------------------------------------------
+*.tfstate
+*.tfstate.*
+*.tfstate.backup
+.terraform/
+# O .terraform.lock.hcl NÃO entra aqui: ele deve ser versionado para que
+# todos usem as mesmas versões de provider (recomendação da HashiCorp).
+crash.log
+crash.*.log
+# Valores reais de variáveis (e-mail do Budget, tokens) ficam só na máquina.
+*.tfvars
+*.tfvars.json
+!*.tfvars.example
+# Configuração local do backend S3 (nome do bucket e região reais).
+backend.hcl
+*.backend.hcl
+!*.backend.hcl.example
+!backend.hcl.example
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+.terraformrc
+terraform.rc
+# Planos salvos (plan -out) e suas exportações em JSON podem conter segredos.
+*.tfplan
+*.tfplan.json
+tfplan
+tfplan.json
+plan.json
+*-plan.json
+
+# -----------------------------------------------------------------
+# Credenciais e segredos
+# -----------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+credentials
+.aws/
+kubeconfig
+kubeconfig.*
+*.kubeconfig
+
+# -----------------------------------------------------------------
+# Python
+# -----------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+*.egg-info/
+.mypy_cache/
+.ruff_cache/
+
+# -----------------------------------------------------------------
+# Go
+# -----------------------------------------------------------------
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+vendor/
+# Binários compilados localmente com o nome do serviço.
+services/donation-service/donation-service
+
+# -----------------------------------------------------------------
+# Kubernetes / Helm
+# -----------------------------------------------------------------
+charts/*.tgz
+*.orig
+
+# -----------------------------------------------------------------
+# Sistema operacional e editores
+# -----------------------------------------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/
+*.swp
+*~
+# Travas temporárias do Microsoft Office (ex.: ~$Relatorio.docx): levam o
+# nome do usuário e não servem fora da máquina de quem abriu.
+~$*
+
+# -----------------------------------------------------------------
+# Saídas locais e rascunhos
+# -----------------------------------------------------------------
+tmp/
+output/
+# Gravações: publicar por link depois de revisar, não como binário no Git.
+*.mp4
+*.mkv
+*.mov
+*.webm
+*.avi
+*.m4v
+*.wmv
+
+# Trabalho local de verificação. Ignorado NÃO significa descartável: estas
+# pastas podem guardar evidências únicas (logs, saídas de comandos, prints
+# antes da revisão). Limpar só o que estiver inventariado no LOG.
+00_COLAB_IA/**/__pycache__/
+00_COLAB_IA/02_TRABALHO/validacao-local-*/
+00_COLAB_IA/02_TRABALHO/*.log
+
+# Prints recebidos, antes da revisão para publicação.
+docs/evidencias/entrada-local/*
+!docs/evidencias/entrada-local/LEIA-ME.md

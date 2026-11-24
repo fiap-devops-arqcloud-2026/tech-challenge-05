@@ -1,0 +1,563 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Multicloud e Segurança — Guia de estudo · Hackathon Fase 5</title><style>
+    :root{
+      --bg:#eef2f8; --surface:#ffffff; --surface-2:#e7eef7; --panel:#f5f8fc;
+      --ink:#132339; --ink-soft:#4c5f79; --ink-faint:#7787a0;
+      --line:#d3ddea; --line-soft:#e2e9f2;
+      --accent:#2f6ae0; --accent-ink:#1c4aa8; --accent-wash:#e7eefb;
+      --brass:#b26a10; --brass-wash:#f6ecdd;
+      --ok:#2c8159; --warn:#a9741a; --no:#7a869a;
+      --serif:Georgia,"Iowan Old Style","Palatino Linotype","Times New Roman",serif;
+      --sans:"Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+      --mono:"Cascadia Code",Consolas,"SFMono-Regular",ui-monospace,monospace;
+    }
+    @media (prefers-color-scheme:dark){:root{
+      --bg:#0c1725; --surface:#152539; --surface-2:#101f31; --panel:#132234;
+      --ink:#e6edf6; --ink-soft:#a4b6cc; --ink-faint:#7488a2;
+      --line:#26394f; --line-soft:#1d2d40;
+      --accent:#6c9cf1; --accent-ink:#9cbdf8; --accent-wash:#16273f;
+      --brass:#e0a552; --brass-wash:#241c11; --ok:#59bf8c; --warn:#e0a552; --no:#7f8aa0;
+    }}
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.6;-webkit-font-smoothing:antialiased}
+    .wrap{max-width:900px;margin:0 auto;padding:clamp(20px,4vw,52px) clamp(16px,4vw,32px)}
+    .masthead{border-bottom:2px solid var(--ink);padding-bottom:22px;margin-bottom:34px}
+    .eyebrow{font-family:var(--mono);font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:var(--accent-ink);margin:0 0 12px}
+    .masthead h1{font-family:var(--serif);font-weight:700;font-size:clamp(1.9rem,5.6vw,3rem);line-height:1.05;margin:0;text-wrap:balance}
+    .masthead .sub{font-size:clamp(1rem,2.4vw,1.18rem);color:var(--ink-soft);margin:.5em 0 0;max-width:62ch}
+    .meta{font-family:var(--mono);font-size:.74rem;color:var(--ink-faint);margin-top:16px;display:flex;flex-wrap:wrap;gap:6px 18px}
+    h2{font-family:var(--serif);font-weight:700;font-size:clamp(1.4rem,3.4vw,1.9rem);margin:52px 0 6px;text-wrap:balance}
+    .section-rule{height:3px;width:56px;background:var(--accent);border-radius:2px;margin:14px 0 24px}
+    p{max-width:68ch}
+    .lead{color:var(--ink-soft);margin:0 0 22px;max-width:66ch}
+    strong{color:var(--ink)}
+    a{color:var(--accent-ink);text-underline-offset:3px}
+    .intro{display:grid;gap:16px;grid-template-columns:1fr 1fr}
+    @media(max-width:620px){.intro{grid-template-columns:1fr}}
+    .intro .box{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px 22px}
+    .intro .box h3{margin:0 0 8px;font-size:1.05rem;font-family:var(--sans);font-weight:700}
+    .intro .box p{margin:0;font-size:.96rem;color:var(--ink-soft);max-width:none}
+    .intro .box.hi{border-color:var(--brass);background:var(--brass-wash)}
+    .glossary{background:var(--panel);border:1px solid var(--line-soft);border-radius:14px;padding:clamp(16px,3vw,26px);display:grid;grid-template-columns:1fr 1fr;gap:2px 26px}
+    @media(max-width:640px){.glossary{grid-template-columns:1fr}}
+    .term{padding:11px 0;border-bottom:1px solid var(--line-soft)}
+    .term .k{font-family:var(--mono);font-weight:700;color:var(--accent-ink);font-size:.92rem}
+    .term .full{font-style:italic;color:var(--ink-faint);font-size:.86rem;margin-left:6px}
+    .term .d{display:block;color:var(--ink-soft);font-size:.94rem;margin-top:2px}
+    .lessons{display:flex;flex-direction:column;gap:18px}
+    .lesson{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:clamp(18px,3vw,26px);transition:border-color .18s ease}
+    .lesson:hover{border-color:var(--accent)}
+    .lesson-head{display:flex;gap:16px;align-items:flex-start;margin-bottom:16px}
+    .num{font-family:var(--serif);font-size:2.1rem;font-weight:700;line-height:1;color:var(--accent);min-width:1.6em;font-variant-numeric:tabular-nums}
+    .lesson-head h3{margin:2px 0 8px;font-size:clamp(1.12rem,2.6vw,1.3rem);font-family:var(--sans);font-weight:700;line-height:1.25}
+    .badge{display:inline-block;font-family:var(--mono);font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:3px 9px;border-radius:20px;border:1px solid currentColor}
+    .badge.ok{color:var(--ok)}
+    .badge.warn{color:var(--warn)}
+    .badge.no{color:var(--no)}
+    .facets{margin:0;display:grid;gap:14px}
+    .facets > div{display:grid;grid-template-columns:150px 1fr;gap:4px 18px;align-items:baseline}
+    @media(max-width:600px){.facets > div{grid-template-columns:1fr}}
+    .facets dt{font-family:var(--mono);font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--accent-ink);margin:0}
+    .facets dd{margin:0;color:var(--ink-soft);font-size:.97rem}
+    .facets dd.proj{color:var(--ink)}
+    .facets .use{color:var(--brass)}
+    code{font-family:var(--mono);font-size:.86em;background:var(--accent-wash);color:var(--accent-ink);padding:1px 6px;border-radius:5px}
+    .flow{margin:0;padding:0;list-style:none;counter-reset:flow;display:grid;gap:12px}
+    .flow li{counter-increment:flow;display:grid;grid-template-columns:38px 1fr;gap:13px;align-items:start;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:15px 17px}
+    .flow li::before{content:counter(flow);display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:var(--accent-wash);color:var(--accent-ink);font-family:var(--mono);font-size:.78rem;font-weight:700}
+    .flow strong{display:block;margin-bottom:2px}
+    .flow span{color:var(--ink-soft);font-size:.95rem}
+    .tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+    table{border-collapse:collapse;width:100%;min-width:680px;font-size:.92rem}
+    th,td{text-align:left;padding:11px 15px;border-bottom:1px solid var(--line-soft)}
+    thead th{background:var(--surface-2);font-family:var(--mono);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-soft)}
+    tbody tr:last-child td{border-bottom:none}
+    td .s{font-family:var(--mono);font-size:.78rem;font-weight:700}
+    td .s.ok{color:var(--ok)}
+    td .s.warn{color:var(--warn)}
+    td .s.no{color:var(--no)}
+    td .num2{font-family:var(--serif);font-weight:700;color:var(--accent)}
+    .note{margin-top:20px;padding:16px 18px;border-left:4px solid var(--brass);background:var(--brass-wash);color:var(--ink-soft)}
+    .note strong{display:block;margin-bottom:3px}
+    .sources{display:grid;grid-template-columns:1fr 1fr;gap:8px 22px;margin:0;padding:0;list-style:none}
+    .sources li{border-bottom:1px solid var(--line-soft);padding:8px 0;font-size:.92rem}
+    @media(max-width:640px){.sources{grid-template-columns:1fr}}
+    footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--line);color:var(--ink-faint);font-size:.86rem}
+    :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+    @media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
+  /* Extensões Fase 4 — mesmas em todos os guias */
+.wrap{overflow-wrap:anywhere}.badge{letter-spacing:.03em;margin:2px 3px 2px 0;text-decoration:none;max-width:100%}.badge.obrigatorio{color:#a3323d;background:#fff0f1}.badge.bonus{color:#21613d;background:#edf8ef}.badge.sugestao{color:#1c4aa8;background:#e7eefb}.badge.complemento-badge{color:#725000;background:#fff5dc}.legend,.toc{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:18px 22px;margin:20px 0}.legend p{font-size:.9rem;color:var(--ink-soft);margin-bottom:0}.toc ol{columns:2;column-gap:32px;padding-left:20px}.toc li{break-inside:avoid;margin-bottom:7px}.complemento{border-left:4px solid var(--accent);background:var(--accent-wash);padding:16px 20px;margin:20px 0}.complemento>strong{display:block}.source,figcaption{font-size:.86rem;color:var(--ink-soft)}pre{white-space:pre;overflow:auto;max-width:100%;padding:18px;border:1px solid var(--line);border-radius:10px;background:var(--surface-2);line-height:1.55}pre code{padding:0;background:none;color:var(--ink)}figure{margin:22px 0}.source-list{margin-top:18px}summary{cursor:pointer;color:var(--accent-ink);font-weight:600}details{margin:12px 0;padding:12px 16px;border:1px solid var(--line);border-radius:8px}.skip{position:absolute;top:-100px;left:12px}.skip:focus{top:12px;background:var(--surface);padding:10px;z-index:100}.diagram{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:20px 0}.diagram .node{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;flex:1;min-width:130px}.lesson p:last-child{margin-bottom:0}section{scroll-margin-top:20px}h3{line-height:1.35}.warning{border-left:4px solid var(--brass);padding:14px 18px;background:var(--brass-wash)}@media(max-width:640px){.toc ol{columns:1}.meta{font-size:.7rem}.lesson-head{gap:10px}.sources{grid-template-columns:1fr}}@media(prefers-color-scheme:dark){.badge.obrigatorio{color:#ffb3bc;background:#381f29}.badge.bonus{color:#a7e4bb;background:#173123}.badge.sugestao{color:#b5cdff;background:#16273f}.badge.complemento-badge{color:#f1d592;background:#302817}}@media print{body{background:white;color:black}.wrap{max-width:none;padding:0}.toc,.skip{display:none}.lesson,.complemento{break-inside:avoid}.tablewrap{overflow:visible}table{min-width:0}pre{white-space:pre-wrap}.badge{background:none!important;color:black!important}a{color:black}details>*{display:block}}
+
+/* Extensões Hackathon Fase 5 — mesmas em todos os guias */
+.badge.duvida{color:#5b3fa8;background:#f1ecfd}
+.maplinks{font-size:.93rem;margin:16px 0 0;max-width:none}
+.maplinks a{font-weight:600}
+.guide-nav{display:flex;flex-wrap:wrap;gap:6px;margin-top:16px}
+.guide-nav a{font-family:var(--mono);font-size:.72rem;text-decoration:none;padding:4px 11px;border:1px solid var(--line);border-radius:20px;color:var(--ink-soft);background:var(--surface)}
+.guide-nav a:hover{border-color:var(--accent);color:var(--accent-ink)}
+.guide-nav a[aria-current]{border-color:var(--accent);color:var(--accent-ink);background:var(--accent-wash);font-weight:700}
+.guide-nav a.maplink{border-color:var(--brass);color:var(--brass)}
+a.rid{font-family:var(--mono);font-size:.86em;font-weight:700;text-decoration:none;white-space:nowrap}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0}
+.split.three{grid-template-columns:1fr 1fr 1fr}
+@media(max-width:760px){.split,.split.three{grid-template-columns:1fr}}
+.split .col{background:var(--surface);border:1px solid var(--line);border-top:4px solid var(--line);border-radius:14px;padding:16px 18px}
+.split .col.obr{border-top-color:#c2414f}
+.split .col.bon{border-top-color:#2f8a55}
+.split .col.sug{border-top-color:var(--accent)}
+.split .col h3{margin:0 0 4px;font-size:1.02rem;font-family:var(--sans)}
+.split .col > p{font-size:.88rem;color:var(--ink-faint);margin:0 0 8px}
+.split ul{list-style:none;margin:0;padding:0;max-width:none}
+.split li{padding:9px 0;border-bottom:1px solid var(--line-soft);font-size:.93rem;color:var(--ink-soft);margin:0}
+.split li:last-child{border-bottom:none}
+.split li .badge{display:table;margin:0 0 5px}
+.split li strong{color:var(--ink)}
+.split li .li-note{display:block;color:var(--ink-soft);font-size:.88rem;margin-top:2px}
+.hk{border-left:4px solid var(--brass);background:var(--brass-wash);padding:16px 20px;margin:20px 0;border-radius:0 12px 12px 0}
+.hk > strong:first-child{display:block;margin-bottom:6px;color:var(--brass)}
+.hk p{margin:6px 0}
+.hk ul,.hk ol{margin:6px 0;padding-left:20px}
+.hk p:last-child,.hk ul:last-child{margin-bottom:0}
+figure.example{margin:18px 0}
+figure.example figcaption{font-family:var(--mono);font-size:.74rem;letter-spacing:.03em;margin-bottom:6px;color:var(--brass)}
+figure.example pre{margin:0}
+h4{font-size:1.04rem;margin:26px 0 8px;font-family:var(--sans)}
+.math{font-family:var(--mono);font-size:.9rem;background:var(--panel);border:1px solid var(--line-soft);border-radius:10px;padding:12px 16px;margin:12px 0;overflow-x:auto}
+.memo{margin-top:18px;padding:12px 16px;border:1px dashed var(--line);border-radius:10px;background:var(--panel)}
+.memo strong:first-child{color:var(--accent-ink)}
+.tablewrap + .source{margin-top:8px}
+td code,li code{white-space:nowrap}
+@media(max-width:640px){td code,li code{white-space:normal}}
+@media(prefers-color-scheme:dark){.badge.duvida{color:#cdbdff;background:#272042}.split .col.obr{border-top-color:#e06a78}.split .col.bon{border-top-color:#59bf8c}}
+@media print{.guide-nav,.maplinks{display:none}.hk{break-inside:avoid}}
+</style></head>
+<body><a class="skip" href="#conteudo">Ir ao conteúdo</a><main class="wrap" id="conteudo"><header class="masthead"><p class="eyebrow">FIAP · Hackathon Fase 5 · Guia de estudo 01</p><h1>Multicloud e Segurança</h1><p class="sub">Oito aulas sobre continuidade, Disaster Recovery, multicloud e segurança centralizada.</p><div class="meta"><span>Gerado em 2026-11-11 · Claude</span><span>8 arquivo(s) · 148 páginas</span><span>Intermediário</span><span>Desafio: SolidaryTech</span></div><p class="maplinks"><a href="../../requisitos/REQUISITOS.html">🗺️ Mapa de requisitos — obrigatórios × bônus</a> · <a href="../../requisitos/README.md">versão Markdown</a> · <a href="../POSTECH%20-%20DCLT%20-%20Hackathon%20-%20Fase%205.pdf">enunciado do Hackathon (PDF)</a></p><details class="source-list"><summary>Arquivos-fonte usados integralmente</summary><ul class="sources"><li><a href="POSTECH%20-%20Multicloud%20e%20Seguranc%CC%A7a%20-%20Aula%201.pdf">POSTECH - Multicloud e Segurança - Aula 1.pdf</a><br><span class="source">17 páginas · leitura integral do texto</span></li><li><a href="POSTECH%20-%20Multicloud%20e%20Seguranc%CC%A7a%20-%20Aula%202.pdf">POSTECH - Multicloud e Segurança - Aula 2.pdf</a><br><span class="source">17 páginas · leitura integral do texto</span></li><li><a href="POSTECH%20-%20Multicloud%20e%20Seguranc%CC%A7a%20-%20Aula%203.pdf">POSTECH - Multicloud e Segurança - Aula 3.pdf</a><br><span class="source">21 páginas · leitura integral do texto</span></li><li><a href="POSTECH%20-%20Multicloud%20e%20Seguranc%CC%A7a%20-%20Aula%204.pdf">POSTECH - Multicloud e Segurança - Aula 4.pdf</a><br><span class="source">22 páginas · leitura integral do texto</span></li><li><a href="POSTECH%20-%20Multicloud%20e%20Seguranc%CC%A7a%20-%20Aula%205.pdf">POSTECH - Multicloud e Segurança - Aula 5.pdf</a><br><span class="source">24 páginas · leitura integral do texto</span></li><li><a href="POSTECH%20-%20Multicloud%20e%20Seguranc%CC%A7a%20-%20Aula%206.pdf">POSTECH - Multicloud e Segurança - Aula 6.pdf</a><br><span class="source">19 páginas · leitura integral do texto</span></li><li><a href="POSTECH%20-%20Multicloud%20e%20Seguranc%CC%A7a%20-%20Aula%207.pdf">POSTECH - Multicloud e Segurança - Aula 7.pdf</a><br><span class="source">14 páginas · leitura integral do texto</span></li><li><a href="POSTECH%20-%20Multicloud%20e%20Seguranc%CC%A7a%20-%20Aula%208.pdf">POSTECH - Multicloud e Segurança - Aula 8.pdf</a><br><span class="source">14 páginas · leitura integral do texto</span></li></ul></details><nav class="guide-nav" aria-label="Guias da Fase 5"><a href="../00.Welcome%20to%20Multicloud%2C%20custos%20e%20IA/GUIA-ESTUDO-Welcome-to-Multicloud-custos-e-IA.html">00 · Welcome</a><a href="../01.Multicloud%20e%20Seguran%C3%A7a/GUIA-ESTUDO-Multicloud-e-Seguranca.html" aria-current="page">01 · Multicloud e Segurança</a><a href="../02.SRE%20%28Site%20Reliability%20Engineering%29/GUIA-ESTUDO-SRE-Site-Reliability-Engineering.html">02 · SRE</a><a href="../03.FinOps/GUIA-ESTUDO-FinOps.html">03 · FinOps</a><a href="../04.IT%20Service%20Management%20e%20AIOPs/GUIA-ESTUDO-IT-Service-Management-e-AIOps.html">04 · ITSM e AIOps</a><a href="../../requisitos/REQUISITOS.html" class="maplink">🗺️ Mapa de requisitos</a></nav></header>
+<aside class="legend" aria-label="Legenda dos selos"><span class="badge obrigatorio">🔴 Obrigatório</span> <span class="badge bonus">🟢 Bônus / diferencial</span> <span class="badge sugestao">🔵 Sugestão</span> <span class="badge complemento-badge">📘 Complemento</span><p><strong>Obrigatório</strong> é o que o enunciado do Hackathon exige. <strong>Bônus</strong> é diferencial: vai além do mínimo pedido, usa a alternativa não escolhida ou aplica algo do material oficial que o enunciado não exige — <em>o PDF não promete pontos extras</em>. <strong>Sugestão</strong> é recomendação autoral para facilitar a entrega. <strong>Complemento</strong> é explicação ou exemplo autoral, não é texto nem exigência da FIAP. Páginas seguem a contagem física do PDF, a partir de 1.</p></aside>
+<nav class="toc" aria-label="Sumário"><strong>Neste guia</strong><ol><li><a href="#visao-geral">Sobreviver à queda sem parar as doações</a></li><li><a href="#obrigatorio-bonus">Obrigatório × Bônus neste módulo</a></li><li><a href="#mapa">Mapa de conceitos e vocabulário</a></li><li><a href="#aula-1">Aula 1 — Multicloud: conceitos, estratégias e desafios</a></li><li><a href="#aula-2">Aula 2 — Automação e orquestração multicloud</a></li><li><a href="#aula-3">Aula 3 — Segurança multicloud (nível avançado)</a></li><li><a href="#aula-4">Aula 4 — Privacidade e gestão de dados multicloud</a></li><li><a href="#aula-5">Aula 5 — Engenharia de resiliência e recuperação de desastres</a></li><li><a href="#aula-6">Aula 6 — Conectividade avançada: do backbone ao BGP</a></li><li><a href="#aula-7">Aula 7 — Observabilidade moderna: eBPF e OTel</a></li><li><a href="#aula-8">Aula 8 — FinOps 2.0: Unit Economics, FOCUS e GreenOps</a></li><li><a href="#kit">Kit PCN + DR da SolidaryTech</a></li><li><a href="#aplicacao">Da aula à entrega: o que verificar</a></li><li><a href="#outros-modulos">Como este módulo se conecta aos outros</a></li><li><a href="#revisao">Revisão rápida e autoavaliação</a></li><li><a href="#limites">Fidelidade, fontes e pontos a confirmar</a></li><li><a href="#conexao">Conexão com o Hackathon Fase 5</a></li></ol></nav>
+<section id="visao-geral"><h2>Sobreviver à queda sem parar as doações</h2><div class="section-rule"></div>
+<div class="intro"><div class="box"><h3>Em miúdos</h3><p>Usar várias nuvens dá acesso ao melhor de cada uma e reduz a dependência de um fornecedor, mas cobra caro em complexidade: rede, identidade, custos e segurança se multiplicam. Este módulo ensina a automatizar tudo, proteger dados e identidades sem perímetro e, principalmente, a planejar o pior dia — quanto tempo o sistema pode ficar fora e quanto dado se pode perder.</p></div><div class="box hi"><h3>No Hackathon</h3><p>A frente 4 pede um <strong>PCN executivo</strong> com <strong>RTO e RPO</strong> para os dados das doações e uma <strong>estratégia de DR implementada</strong>: Velero com backup em bucket externo (Opção A) ou Terraform modular capaz de subir um ambiente espelho em outra região com 1 comando (Opção B). A Aula 5 é o coração dessa frente; as demais sustentam a fundação (IaC, GitOps, OTel), a segurança e o FinOps.</p></div></div>
+<p>Ordem de estudo recomendada: <strong>Aula 5</strong> primeiro (padrões de DR e a matemática de RTO/RPO); depois <strong>Aula 1</strong> (por que e quando multicloud), <strong>Aula 2</strong> (IaC, drift e GitOps — a Regra de Ouro), <strong>Aulas 3 e 4</strong> (Zero Trust, CNAPP, LGPD e criptografia), <strong>Aula 7</strong> (OpenTelemetry, base da observabilidade exigida), <strong>Aula 8</strong> (Unit Economics, ponte para FinOps) e, por fim, <strong>Aula 6</strong> (redes globais, mais aprofundamento do que exigência). O <a href="#kit">Kit PCN + DR</a> no fim junta tudo num modelo para adaptar.</p>
+<p><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-25">OBRIGATÓRIO · REQ-OBR-25</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-26">OBRIGATÓRIO · REQ-OBR-26</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-27">OBRIGATÓRIO · REQ-OBR-27</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-38">OBRIGATÓRIO · REQ-OBR-38</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-44">OBRIGATÓRIO · REQ-OBR-44</a></p>
+<aside class="warning"><strong>Limite do material disponível.</strong> Foram lidos os oito PDFs completos (148 páginas). Tabelas comparativas e matrizes de decisão aparecem como figuras (imagens) e não foram transcritas. Há inconsistências editoriais — referências e palavras-chave copiadas de outras aulas —, registradas no fim do guia. Custos, percentuais de mercado e recursos de produtos são afirmações das aulas, não verificadas aqui. Exemplos de Terraform, YAML e Dockerfile são autorais.</aside>
+</section>
+
+<section id="obrigatorio-bonus"><h2>Obrigatório × Bônus neste módulo</h2><div class="section-rule"></div>
+<p class="lead">O 🔴 é o piso da frente 4 e de parte da fundação. O 🟢 reúne o que as aulas ensinam além do que o enunciado cobra — boa parte é segurança, que dá nome à frente mas não tem itens próprios no PDF.</p>
+<div class="split three">
+<div class="col obr"><h3>🔴 Obrigatório</h3><p>O enunciado cobra; este módulo ensina.</p><ul>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-25">OBRIGATÓRIO · REQ-OBR-25</a> <strong>Documento executivo de PCN</strong></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-26">OBRIGATÓRIO · REQ-OBR-26</a> <strong>RTO e RPO dos dados de doação</strong></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-27">OBRIGATÓRIO · REQ-OBR-27</a> <strong>Estratégia de DR implementada</strong></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-38">OBRIGATÓRIO · REQ-OBR-38</a> <strong>Demo: Backup/DR em ação</strong></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-44">OBRIGATÓRIO · REQ-OBR-44</a> <strong>Seção Segurança e DR: PCN + estratégia</strong></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-33">OBRIGATÓRIO · REQ-OBR-33</a> <strong>Pitch executivo para a diretoria</strong> <span class="li-note">O PCN entra no pitch executivo.</span></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-07">OBRIGATÓRIO · REQ-OBR-07</a> <strong>Terraform provisiona todo o ambiente</strong> <span class="li-note">Aulas 2 e 6: IaC declarativa e rede como código.</span></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-03">OBRIGATÓRIO · REQ-OBR-03</a> <strong>Zero infraestrutura “clicada” no console</strong></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-11">OBRIGATÓRIO · REQ-OBR-11</a> <strong>GitOps com ArgoCD ou FluxCD</strong></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-02">OBRIGATÓRIO · REQ-OBR-02</a> <strong>Zero deploy manual via kubectl</strong></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-12">OBRIGATÓRIO · REQ-OBR-12</a> <strong>Stack de observabilidade rodando</strong> <span class="li-note">Aula 7: pipeline OpenTelemetry.</span></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-13">OBRIGATÓRIO · REQ-OBR-13</a> <strong>APM com Distributed Tracing</strong></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-09">OBRIGATÓRIO · REQ-OBR-09</a> <strong>Scans SAST/SCA no pipeline</strong> <span class="li-note">Aula 3: segurança de pipeline (shift-left).</span></li>
+<li><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-06">OBRIGATÓRIO · REQ-OBR-06</a> <strong>Kubernetes gerenciado (EKS, AKS ou GKE)</strong> <span class="li-note">Aula 1 ajuda a decidir o provedor.</span></li>
+</ul></div>
+<div class="col bon"><h3>🟢 Bônus / diferencial</h3><p>Vai além do mínimo; sem pontos extras prometidos.</p><ul>
+<li><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-34">BÔNUS · REQ-BON-34</a> <strong>As duas estratégias de DR (A + B)</strong></li>
+<li><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-35">BÔNUS · REQ-BON-35</a> <strong>Backup multicloud de verdade</strong></li>
+<li><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-36">BÔNUS · REQ-BON-36</a> <strong>Restore/failover real com RTO e RPO medidos</strong></li>
+<li><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-37">BÔNUS · REQ-BON-37</a> <strong>Backups imutáveis e isolados</strong></li>
+<li><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-38">BÔNUS · REQ-BON-38</a> <strong>DynamoDB Global Tables no volunteer-service</strong></li>
+<li><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-39">BÔNUS · REQ-BON-39</a> <strong>Failover de tráfego por DNS ou anycast</strong></li>
+<li><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-40">BÔNUS · REQ-BON-40</a> <strong>Identidade de workload com menor privilégio</strong></li>
+<li><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-41">BÔNUS · REQ-BON-41</a> <strong>CI autenticando por OIDC, sem chaves</strong></li>
+<li><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-42">BÔNUS · REQ-BON-42</a> <strong>Segredos fora do Git</strong></li>
+<li><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-43">BÔNUS · REQ-BON-43</a> <strong>Criptografia com chaves gerenciadas pelo cliente</strong></li>
+<li><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-44">BÔNUS · REQ-BON-44</a> <strong>PII fora da telemetria e dos ambientes de teste</strong></li>
+<li><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-45">BÔNUS · REQ-BON-45</a> <strong>Zero Trust dentro do cluster</strong></li>
+<li><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-46">BÔNUS · REQ-BON-46</a> <strong>Postura do Kubernetes endurecida</strong></li>
+<li><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-06">BÔNUS · REQ-BON-06</a> <strong>Scan de IaC e misconfiguração no pipeline</strong></li>
+<li><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-05">BÔNUS · REQ-BON-05</a> <strong>Detecção de drift da infraestrutura</strong></li>
+<li><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-07">BÔNUS · REQ-BON-07</a> <strong>Tail-based sampling no Collector</strong></li>
+<li><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-26">BÔNUS · REQ-BON-26</a> <strong>Unit economics: custo por doação</strong></li>
+<li><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-28">BÔNUS · REQ-BON-28</a> <strong>Policy-as-code para tags e guardrails</strong></li>
+</ul></div>
+<div class="col sug"><h3>🔵 Sugestões</h3><p>Recomendações autorais, não exigências.</p><ul>
+<li><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-14">SUGESTÃO · SUG-14</a> <strong>RPO coerente com onde o dado mora</strong></li>
+<li><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-15">SUGESTÃO · SUG-15</a> <strong>Checklist da região secundária</strong></li>
+<li><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-16">SUGESTÃO · SUG-16</a> <strong>Justificar regiões à luz da LGPD</strong></li>
+<li><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-01">SUGESTÃO · SUG-01</a> <strong>Reaproveitar a base da Fase 4</strong></li>
+<li><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-19">SUGESTÃO · SUG-19</a> <strong>Falar a língua da diretoria</strong></li>
+</ul></div>
+</div>
+</section>
+
+<section id="mapa"><h2>Mapa de conceitos e vocabulário</h2><div class="section-rule"></div>
+<div class="tablewrap"><table><thead><tr><th scope="col">Conceito</th><th scope="col">Em uma frase</th><th scope="col">Onde cai no Hackathon</th><th scope="col">Fonte</th></tr></thead><tbody>
+<tr><td>Multicloud × híbrida × distribuída</td><td>Vários provedores públicos × pública + privada × uma nuvem estendida a outros locais.</td><td>Justificar o provedor e o “multicloud” da Opção A.</td><td><a href="POSTECH%20-%20Multicloud%20e%20Seguranc%CC%A7a%20-%20Aula%201.pdf#page=5">Aula 1, p. 5–6</a></td></tr>
+<tr><td>Vendor lock-in · egress</td><td>Dependência de um fornecedor · taxa para tirar dados da nuvem.</td><td>Código acoplado a SQS/DynamoDB; custo de cópias de DR.</td><td><a href="POSTECH%20-%20Multicloud%20e%20Seguranc%CC%A7a%20-%20Aula%201.pdf#page=8">Aula 1, p. 8–9</a></td></tr>
+<tr><td>IaC declarativa · drift</td><td>Descrever o estado final · divergência entre código e realidade.</td><td>“Sem infraestrutura clicada”.</td><td><a href="POSTECH%20-%20Multicloud%20e%20Seguranc%CC%A7a%20-%20Aula%202.pdf#page=5">Aula 2, p. 5–6</a></td></tr>
+<tr><td>GitOps pull</td><td>Agente no cluster puxa do Git; o CI não precisa de credencial de admin.</td><td>“Sem deploy manual via kubectl”.</td><td><a href="POSTECH%20-%20Multicloud%20e%20Seguranc%CC%A7a%20-%20Aula%202.pdf#page=9">Aula 2, p. 9–10</a></td></tr>
+<tr><td>Zero Trust (PE · PA · PEP)</td><td>Nunca confiar, sempre verificar, com o ponto de controle perto do recurso.</td><td>Menor privilégio dos serviços (bônus).</td><td><a href="POSTECH%20-%20Multicloud%20e%20Seguranc%CC%A7a%20-%20Aula%203.pdf#page=7">Aula 3, p. 7–9</a></td></tr>
+<tr><td>CNAPP</td><td>Postura (CSPM), runtime (CWP), Kubernetes (KSPM), permissões (CIEM) e pipeline.</td><td>DevSecOps obrigatório + endurecimento (bônus).</td><td><a href="POSTECH%20-%20Multicloud%20e%20Seguranc%CC%A7a%20-%20Aula%203.pdf#page=11">Aula 3, p. 11–13</a></td></tr>
+<tr><td>Residência × soberania</td><td>Onde o dado está × que leis se aplicam a ele.</td><td>Escolha das regiões primária e de DR (LGPD).</td><td><a href="POSTECH%20-%20Multicloud%20e%20Seguranc%CC%A7a%20-%20Aula%204.pdf#page=5">Aula 4, p. 5–6</a></td></tr>
+<tr><td>RTO · RPO · BIA</td><td>Tempo para restaurar · perda tolerada · análise de impacto que vem antes.</td><td>Núcleo do PCN.</td><td><a href="POSTECH%20-%20Multicloud%20e%20Seguranc%CC%A7a%20-%20Aula%205.pdf#page=5">Aula 5, p. 5–7</a></td></tr>
+<tr><td>Backup &amp; Restore · Pilot Light · Warm Standby · Active-Active</td><td>Do mais barato e lento ao mais caro e instantâneo.</td><td>Opções A e B do enunciado.</td><td><a href="POSTECH%20-%20Multicloud%20e%20Seguranc%CC%A7a%20-%20Aula%205.pdf#page=9">Aula 5, p. 9–12</a></td></tr>
+<tr><td>WORM · air-gap lógico</td><td>Backup que não pode ser apagado · backup em conta isolada.</td><td>Proteger o bucket do Velero (bônus).</td><td><a href="POSTECH%20-%20Multicloud%20e%20Seguranc%CC%A7a%20-%20Aula%205.pdf#page=17">Aula 5, p. 17</a></td></tr>
+<tr><td>OTLP · Collector · tail sampling</td><td>Protocolo padrão · “cérebro” que recebe, processa e exporta · amostragem decidida no fim.</td><td>Observabilidade dos três serviços.</td><td><a href="POSTECH%20-%20Multicloud%20e%20Seguranc%CC%A7a%20-%20Aula%207.pdf#page=5">Aula 7, p. 5–7</a></td></tr>
+<tr><td>Unit Economics · FOCUS</td><td>Custo por unidade de negócio · padrão aberto de dados de fatura.</td><td>Custo por doação no Forecast (bônus).</td><td><a href="POSTECH%20-%20Multicloud%20e%20Seguranc%CC%A7a%20-%20Aula%208.pdf#page=5">Aula 8, p. 5–8</a></td></tr>
+</tbody></table></div>
+<div class="glossary">
+<div class="term"><span class="k">Best-of-breed</span><span class="d">Escolher o melhor serviço de cada provedor para cada problema (Aula 1, p. 7–8).</span></div>
+<div class="term"><span class="k">ClickOps</span><span class="d">Operar pelo console, à mão — o que a Regra de Ouro proíbe (Aula 2, p. 3).</span></div>
+<div class="term"><span class="k">State locking</span><span class="d">Trava que impede dois <code>apply</code> simultâneos no mesmo estado (Aula 2, p. 7).</span></div>
+<div class="term"><span class="k">BYOK · HYOK</span><span class="d">Trazer a própria chave para o KMS · manter a chave fora do provedor (Aula 4, p. 7–8).</span></div>
+<div class="term"><span class="k">Data gravity</span><span class="d">Dados grandes demoram a mover; o restore define o piso do RTO (Aula 5, p. 9).</span></div>
+<div class="term"><span class="k">Split-brain</span><span class="d">Duas partes do sistema acreditando em “primários” diferentes (Aula 5, p. 15).</span></div>
+<div class="term"><span class="k">PrivateLink</span><span class="d">Expor um serviço de forma privada e unidirecional, sem peering amplo (Aula 6, p. 9–10).</span></div>
+<div class="term"><span class="k">eBPF</span><span class="d">Programas seguros no kernel que observam sem alterar a aplicação (Aula 7, p. 8).</span></div>
+</div>
+</section>
+
+<section id="aula-1"><h2>Aula 1 — Multicloud: conceitos, estratégias e desafios</h2><div class="section-rule"></div><article class="lesson"><div class="lesson-head"><span class="num">01</span><div><h3>Mais de uma nuvem é uma troca, não um troféu</h3><span class="badge ok">Ficha de aula · 17 p.</span></div></div>
+<p><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-06">OBRIGATÓRIO · REQ-OBR-06</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-27">OBRIGATÓRIO · REQ-OBR-27</a><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-35">BÔNUS · REQ-BON-35</a></p>
+<dl class="facets"><div><dt>Em miúdos</dt><dd>Multicloud é usar mais de um provedor público de propósito. Traz inovação e poder de barganha, mas troca a simplicidade de um fornecedor por mais rede, mais identidades, mais faturas e mais conhecimento exigido do time.</dd></div><div><dt>Tecnicamente</dt><dd>A aula separa três modelos: multicloud (foco no número de provedores), nuvem híbrida (foco no tipo de infraestrutura, pública + privada) e nuvem distribuída (um provedor estendendo seu plano de controle a outros locais, como AWS Outposts). Muitas empresas viram multicloud “por acidente”, via fusões ou Shadow IT.</dd></div></dl>
+<p class="source">Fonte: <a href="POSTECH%20-%20Multicloud%20e%20Seguranc%CC%A7a%20-%20Aula%201.pdf#page=3">Aula 1, p. 3–6 e 11–12</a>.</p>
+<div class="tablewrap"><table><thead><tr><th scope="col">Driver ou desafio</th><th scope="col">O que a aula ensina</th></tr></thead><tbody>
+<tr><td>Ofensivo: best-of-breed</td><td>Cada provedor tem sua força — AWS em amplitude de IaaS, Azure em aplicações corporativas e OpenAI, GCP em Kubernetes, dados e IA, OCI em banco Oracle.</td></tr>
+<tr><td>Defensivo: lock-in, resiliência, compliance</td><td>Barganha contra o fornecedor, sobreviver à falha de um provedor inteiro (ex.: AWS primária e Azure como site de DR) e atender regras de residência como LGPD e GDPR.</td></tr>
+<tr><td>Desafio 1 · Rede</td><td>Cada nuvem tem seu modelo de rede, firewall e conexão privada; interligá-las é engenharia avançada.</td></tr>
+<tr><td>Desafio 2 · Identidade</td><td>IAMs separados geram contas e permissões duplicadas — e esquecidas no desligamento de alguém.</td></tr>
+<tr><td>Desafio 3 · Custo</td><td>Desperdício multiplicado e taxas de egress a cada dado que sai de uma nuvem para outra.</td></tr>
+<tr><td>Desafio 4 · Habilidades</td><td>Ninguém domina três nuvens; sem governança e automação desde o “Dia 0”, sobram erros de configuração.</td></tr>
+</tbody></table></div>
+<p class="source">Fonte: <a href="POSTECH%20-%20Multicloud%20e%20Seguranc%CC%A7a%20-%20Aula%201.pdf#page=7">Aula 1, p. 7–10</a>.</p>
+<p>A aula ainda mostra as duas “guerras” dos provedores — interconexão (Oracle com Azure) e plano de controle único (Google Anthos, Azure Arc) — e lembra que multicloud é OpEx + OpEx, com conexões privadas que podem reintroduzir CapEx; gerir esse orçamento é trabalho do FinOps (p. 10–11).</p>
+<aside class="hk"><strong>🎯 No Hackathon</strong>
+<ul><li><strong>O código já escolheu um lado:</strong> o <code>donation-service</code> usa o SDK da AWS para o SQS e o <code>volunteer-service</code> usa boto3 para o DynamoDB. O enunciado aceita EKS, AKS ou GKE, mas rodar em outra nuvem significaria chamar serviços AWS a cada doação, pagando egress e latência — o desafio 3 da aula em escala. EKS é o caminho natural; a dúvida está em <a class="rid" href="../../requisitos/REQUISITOS.html#q-17">Q-17</a>.</li>
+<li><strong>Multicloud como seguro:</strong> a Opção A se chama “Multicloud/Cross-Region Backup”. Outra região já cumpre o mínimo; guardar o backup em outro provedor é o driver defensivo da aula e vale como diferencial <a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-35">BÔNUS · REQ-BON-35</a>.</li>
+<li><strong>Lock-in assumido:</strong> um failover completo para outro provedor exigiria substituir SQS e DynamoDB. Registre isso no PCN como risco conhecido — é maturidade, não fraqueza.</li></ul></aside>
+<p class="memo"><strong>Para memorizar:</strong> híbrida = tipo de infraestrutura; multicloud = número de provedores; distribuída = localização. Multicloud deliberada compra resiliência e inovação pagando complexidade.</p>
+</article></section>
+
+<section id="aula-2"><h2>Aula 2 — Automação e orquestração multicloud</h2><div class="section-rule"></div><article class="lesson"><div class="lesson-head"><span class="num">02</span><div><h3>Do ClickOps à plataforma que se reconcilia sozinha</h3><span class="badge ok">Ficha de aula · 17 p.</span></div></div>
+<p><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-07">OBRIGATÓRIO · REQ-OBR-07</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-03">OBRIGATÓRIO · REQ-OBR-03</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-11">OBRIGATÓRIO · REQ-OBR-11</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-02">OBRIGATÓRIO · REQ-OBR-02</a><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-05">BÔNUS · REQ-BON-05</a><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-28">BÔNUS · REQ-BON-28</a></p>
+<dl class="facets"><div><dt>Em miúdos</dt><dd>Fazer à mão não escala e gera erro humano. Código declarativo diz <em>o que</em> deve existir; a ferramenta calcula <em>como</em> chegar lá e pode ser repetida sem efeito colateral.</dd></div><div><dt>Tecnicamente</dt><dd>O imperativo (scripts) exige tratar falhas passo a passo; o declarativo (Terraform, Kubernetes) é idempotente e reconcilia estado. Drift é a diferença entre o código e a realidade — porta aberta à mão, custo fantasma — e precisa ser detectado.</dd></div></dl>
+<p class="source">Fonte: <a href="POSTECH%20-%20Multicloud%20e%20Seguranc%CC%A7a%20-%20Aula%202.pdf#page=5">Aula 2, p. 5–6</a>.</p>
+<h4>Terraform em equipe</h4>
+<p>O Terraform separa o Core (configuração, grafo de dependências, ciclo de vida) dos Providers (tradução para APIs). O arquivo de estado é o componente mais crítico: em equipe, ele fica num backend remoto criptografado (ex.: S3) com trava (ex.: tabela DynamoDB) para evitar corrida entre dois <code>apply</code>. A aula compara Terraform e OpenTofu (fork aberto após a mudança de licença de 2023) e posiciona o Ansible para configuração de sistema, inclusive com inventário dinâmico baseado em tags.</p>
+<p class="source">Fonte: <a href="POSTECH%20-%20Multicloud%20e%20Seguranc%CC%A7a%20-%20Aula%202.pdf#page=6">Aula 2, p. 6–9</a>.</p>
+<h4>GitOps como padrão de segurança</h4>
+<p>No modelo push, o servidor de CI guarda credenciais do cluster e vira alvo valioso. No modelo pull, o ArgoCD ou o Flux roda dentro do cluster, só lê o Git e aplica as mudanças; o histórico de commits vira trilha de auditoria e qualquer alteração manual aparece como <em>Out of Sync</em>, podendo ser revertida. ApplicationSets geram aplicações para vários clusters — inclusive instalando os add-ons em um cluster recém-registrado. Crossplane leva a reconciliação contínua para recursos de nuvem, e o OPA bloqueia o que viola políticas escritas como código.</p>
+<p class="source">Fonte: <a href="POSTECH%20-%20Multicloud%20e%20Seguranc%CC%A7a%20-%20Aula%202.pdf#page=9">Aula 2, p. 9–11</a>.</p>
+<p>Tendências (p. 13): custo estimado no Pull Request (Infracost), tags automáticas para medir custo por transação de negócio e GreenOps.</p>
+<aside class="hk"><strong>🎯 No Hackathon</strong>
+<ul><li><strong>Regra de Ouro, em termos técnicos:</strong> declarativo + GitOps pull + detecção de drift. Um <code>terraform plan</code> agendado que acusa mudança fora do código prova o “sem infraestrutura clicada” <a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-05">BÔNUS · REQ-BON-05</a>.</li>
+<li><strong>Opção B depende de módulos:</strong> o mesmo módulo instanciado com outra região e outro CIDR. Guarde o estado de forma que ele continue acessível se a região primária cair.</li>
+<li><strong>Cluster de DR no ArgoCD:</strong> registrar o cluster secundário e deixar um ApplicationSet implantar os serviços é o jeito GitOps de “subir o espelho”.</li>
+<li><strong>Tags não são só custo:</strong> a aula usa tags para automação (inventário dinâmico). Uma política OPA pode barrar recurso sem <code>Project</code>, <code>Environment</code> e <code>CostCenter</code> <a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-28">BÔNUS · REQ-BON-28</a>.</li></ul>
+<figure class="example"><figcaption>📘 Exemplo autoral — módulo único, duas regiões (Opção B)</figcaption><pre><code># envs/primaria/main.tf e envs/dr/main.tf chamam o MESMO módulo
+module "solidarytech" {
+  source      = "../../modules/solidarytech"
+  region      = var.region       # ex.: sa-east-1 na primária, us-east-1 no DR
+  vpc_cidr    = var.vpc_cidr     # 10.10.0.0/16 e 10.20.0.0/16 — sem sobreposição
+  node_count  = var.node_count   # capacidade mínima no standby
+  environment = "Production"     # valor da tag no DR: ver dúvida no mapa
+}
+
+# o “1 comando”, de preferência disparado por um workflow manual auditável:
+#   terraform -chdir=envs/dr apply</code></pre></figure></aside>
+<p class="memo"><strong>Para memorizar:</strong> declarativo é idempotente; estado remoto com trava; GitOps puxa em vez de empurrar; drift precisa ser visto para ser corrigido.</p>
+</article></section>
+
+<section id="aula-3"><h2>Aula 3 — Segurança multicloud (nível avançado)</h2><div class="section-rule"></div><article class="lesson"><div class="lesson-head"><span class="num">03</span><div><h3>Sem perímetro: Zero Trust, SASE e CNAPP</h3><span class="badge ok">Ficha de aula · 21 p.</span></div></div>
+<p><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-09">OBRIGATÓRIO · REQ-OBR-09</a><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-06">BÔNUS · REQ-BON-06</a><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-46">BÔNUS · REQ-BON-46</a><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-40">BÔNUS · REQ-BON-40</a><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-45">BÔNUS · REQ-BON-45</a></p>
+<dl class="facets"><div><dt>Em miúdos</dt><dd>Se os dados estão numa nuvem, a aplicação em outra e o usuário em casa, não existe “lado de dentro” confiável. Cada acesso precisa ser verificado, com o mínimo de permissão, o mais perto possível do recurso.</dd></div><div><dt>Tecnicamente</dt><dd>A aula propõe uma tríade: Zero Trust (a filosofia, pelo NIST SP 800-207), SASE (rede e acesso de usuários e filiais) e CNAPP (proteção das cargas na nuvem).</dd></div></dl>
+<p class="source">Fonte: <a href="POSTECH%20-%20Multicloud%20e%20Seguranc%CC%A7a%20-%20Aula%203.pdf#page=3">Aula 3, p. 3–6</a>.</p>
+<div class="tablewrap"><table><thead><tr><th scope="col">Peça</th><th scope="col">O que faz (aula)</th><th scope="col">Tradução SolidaryTech</th></tr></thead><tbody>
+<tr><td>Policy Engine · Administrator · Enforcement Point</td><td>Decide, executa e aplica o acesso; no Zero Trust o PEP fica junto do recurso, com acesso por sessão.</td><td>Cada serviço acessa só o que precisa; o banco só aceita conexões dos Pods.</td></tr>
+<tr><td>CSPM</td><td>Compara a configuração da nuvem com regras (bucket público, SSH aberto).</td><td>Bucket do Velero privado e criptografado; nada de RDS público.</td></tr>
+<tr><td>CWP</td><td>Olha dentro da carga: vulnerabilidades, malware, comportamento.</td><td>Scan das imagens dos três serviços no pipeline e no registro.</td></tr>
+<tr><td>KSPM</td><td>Postura do Kubernetes (ex.: contêiner privilegiado).</td><td>Contêineres não root; Pod Security aplicada.</td></tr>
+<tr><td>CIEM</td><td>Quem — pessoa ou máquina — pode fazer o quê.</td><td><code>donation-service</code> só publica na fila; <code>volunteer-service</code> só acessa sua tabela.</td></tr>
+<tr><td>Segurança de pipeline</td><td>SAST e scan de imagem antes do deploy (shift-left).</td><td>O SAST/SCA obrigatório da frente 0.</td></tr>
+</tbody></table></div>
+<p class="source">Fonte: <a href="POSTECH%20-%20Multicloud%20e%20Seguranc%CC%A7a%20-%20Aula%203.pdf#page=7">Aula 3, p. 7–13</a>.</p>
+<p>O valor do CNAPP está em correlacionar: quatro alertas fracos viram um crítico quando um contêiner vulnerável roda privilegiado e tem permissão de admin sobre um bucket com dados pessoais (p. 12–13). A migração para Zero Trust é incremental — identificar ativos e fluxos, começar por um fluxo de baixo risco, expandir e automatizar (p. 13–14). A aula compara Wiz, Prisma Cloud e Orca e aponta a convergência entre AppSec e CloudSec: um <code>deployment.yaml</code> é código e infraestrutura ao mesmo tempo (p. 14–16).</p>
+<aside class="hk"><strong>🎯 No Hackathon</strong>
+<ul><li><strong>O primeiro scan vai achar coisa:</strong> os <code>requirements.txt</code> fixam versões de 2022 (ex.: Flask 2.2.2, gunicorn 20.1.0) e o <code>donation-service</code> usa o AWS SDK for Go v1, cujo fim de suporte a AWS anunciou. Achado de SCA é evidência boa: corrija ou justifique e mostre o antes e depois <a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-09">OBRIGATÓRIO · REQ-OBR-09</a>.</li>
+<li><strong>Menor privilégio sem mudar código:</strong> os dois serviços que usam AWS leem credenciais pela cadeia padrão do SDK, então IRSA ou EKS Pod Identity funcionam sem alterar uma linha <a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-40">BÔNUS · REQ-BON-40</a>.</li>
+<li><strong>Dockerfile otimizado também é seguro:</strong> multi-stage, imagem base enxuta e usuário não root atendem a “Dockerfiles otimizados” e ao KSPM <a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-05">OBRIGATÓRIO · REQ-OBR-05</a><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-46">BÔNUS · REQ-BON-46</a>.</li></ul></aside>
+<p class="memo"><strong>Para memorizar:</strong> Zero Trust é a filosofia; SASE protege o acesso; CNAPP protege a carga — do código ao runtime.</p>
+</article></section>
+
+<section id="aula-4"><h2>Aula 4 — Privacidade e gestão de dados multicloud</h2><div class="section-rule"></div><article class="lesson"><div class="lesson-head"><span class="num">04</span><div><h3>Onde o dado mora, quem manda nele e quem tem a chave</h3><span class="badge ok">Ficha de aula · 22 p.</span></div></div>
+<p><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-25">OBRIGATÓRIO · REQ-OBR-25</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-44">OBRIGATÓRIO · REQ-OBR-44</a><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-43">BÔNUS · REQ-BON-43</a><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-44">BÔNUS · REQ-BON-44</a><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-41">BÔNUS · REQ-BON-41</a><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-16">SUGESTÃO · SUG-16</a></p>
+<dl class="facets"><div><dt>Em miúdos</dt><dd>Dados se espalham por bancos, backups, caches e ferramentas SaaS. A lei olha para onde eles estão e de quem são; a engenharia responde com criptografia, identidade central e prevenção de vazamento.</dd></div><div><dt>Tecnicamente</dt><dd>Residência é o fato geográfico; soberania, as leis que se aplicam; localização, a obrigação de manter o dado dentro de uma fronteira. A aula usa o exemplo de dados de brasileiros em <code>sa-east-1</code> (residência no Brasil) versus <code>us-east-1</code> (residência nos EUA) e explica que, pela LGPD (art. 33), a transferência internacional exige mecanismo previsto pela ANPD.</dd></div></dl>
+<p class="source">Fonte: <a href="POSTECH%20-%20Multicloud%20e%20Seguranc%CC%A7a%20-%20Aula%204.pdf#page=5">Aula 4, p. 5–6</a>.</p>
+<div class="tablewrap"><table><thead><tr><th scope="col">Modelo de chave</th><th scope="col">Quem controla</th><th scope="col">Trade-off (aula)</th></tr></thead><tbody>
+<tr><td>PMEK — chave do provedor</td><td>O provedor</td><td>Conveniente, mas o provedor pode ser obrigado a entregar os dados.</td></tr>
+<tr><td>BYOK — traga sua chave</td><td>Compartilhado</td><td>Cliente cria e rotaciona; o KMS guarda e usa. Bom equilíbrio e integração com serviços nativos.</td></tr>
+<tr><td>HYOK — mantenha sua chave</td><td>O cliente</td><td>A chave nunca sai do HSM do cliente; máxima proteção, alta complexidade e serviços PaaS que podem quebrar.</td></tr>
+</tbody></table></div>
+<p class="source">Fonte: <a href="POSTECH%20-%20Multicloud%20e%20Seguranc%CC%A7a%20-%20Aula%204.pdf#page=6">Aula 4, p. 6–12</a>.</p>
+<p>A aula detalha, em passos conceituais, a importação de chave no AWS KMS e no Azure Managed HSM (p. 9–12). Depois, mostra a identidade federada: um IdP central (Okta, Entra ID, IAM Identity Center) e SAML/OIDC eliminam contas duplicadas — desligar a pessoa no IdP revoga tudo (p. 12–13). Fecha com DLP (descobrir, classificar e proteger dados sensíveis) e mascaramento estático (cópias para teste) ou dinâmico (por perfil, em produção), além do caso Mayo Clinic com BYOK (p. 13–17).</p>
+<aside class="hk"><strong>🎯 No Hackathon</strong>
+<ul><li><strong>Há dado pessoal no ecossistema:</strong> nome do doador (<code>donor_name</code>), nome e e-mail de voluntários e e-mail das ONGs. O README do repositório-fonte usa <code>us-east-1</code> nos exemplos; pela lógica da aula, isso é transferência internacional. Justificar a escolha das regiões — primária e de DR — no PCN é um ponto forte <a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-16">SUGESTÃO · SUG-16</a>. (O guia não é parecer jurídico.)</li>
+<li><strong>Telemetria também é dado:</strong> logs e traces vão para o APM em SaaS. Remova PII no Collector antes de exportar <a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-44">BÔNUS · REQ-BON-44</a>.</li>
+<li><strong>Federação para máquinas:</strong> o mesmo OIDC da aula permite que o GitHub Actions assuma um papel na AWS sem chave estática <a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-41">BÔNUS · REQ-BON-41</a>.</li>
+<li><strong>Chave sob controle:</strong> criptografia com chave KMS gerenciada pelo cliente no banco, na tabela e no bucket de backup <a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-43">BÔNUS · REQ-BON-43</a>.</li></ul></aside>
+<p class="memo"><strong>Para memorizar:</strong> residência é onde; soberania é qual lei; BYOK compartilha o controle; HYOK o mantém com o cliente; IdP central é a única forma sã de gerir acesso em várias nuvens.</p>
+</article></section>
+
+<section id="aula-5"><h2>Aula 5 — Engenharia de resiliência e recuperação de desastres</h2><div class="section-rule"></div><article class="lesson"><div class="lesson-head"><span class="num">05</span><div><h3>RTO e RPO decidem a arquitetura — e o orçamento</h3><span class="badge ok">Ficha de aula · 24 p.</span></div></div>
+<p><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-25">OBRIGATÓRIO · REQ-OBR-25</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-26">OBRIGATÓRIO · REQ-OBR-26</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-27">OBRIGATÓRIO · REQ-OBR-27</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-38">OBRIGATÓRIO · REQ-OBR-38</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-44">OBRIGATÓRIO · REQ-OBR-44</a><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-36">BÔNUS · REQ-BON-36</a><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-37">BÔNUS · REQ-BON-37</a></p>
+<dl class="facets"><div><dt>Em miúdos</dt><dd>Antes de escrever código de DR, responda duas perguntas de negócio: por quanto tempo a SolidaryTech aguenta ficar fora do ar e quantos minutos de doações ela aceita perder. As respostas escolhem a arquitetura — e cada minuto a menos custa bem mais.</dd></div><div><dt>Tecnicamente</dt><dd>RTO é o tempo máximo até o serviço voltar a um nível aceitável — não o tempo de consertar a causa — e inclui detecção, decisão, runbooks, subida da infraestrutura, propagação de DNS e aquecimento de caches. RPO é a perda máxima tolerada, medida em tempo até o último backup bom. A análise de impacto no negócio (BIA) vem antes de qualquer decisão de engenharia.</dd></div></dl>
+<p class="source">Fonte: <a href="POSTECH%20-%20Multicloud%20e%20Seguranc%CC%A7a%20-%20Aula%205.pdf#page=5">Aula 5, p. 5–6</a>.</p>
+<div class="tablewrap"><table><thead><tr><th scope="col">Meta</th><th scope="col">O que a aula associa</th></tr></thead><tbody>
+<tr><td>RTO de 24–48 h</td><td>Backup em camada fria e infraestrutura criada sob demanda via IaC: barato e lento.</td></tr>
+<tr><td>RTO de 1–4 h</td><td>Pilot Light: dados prontos no destino, aplicação a escalar.</td></tr>
+<tr><td>RTO ≤ 15 min</td><td>Warm Standby: destino ligado, atualizado e pronto para crescer.</td></tr>
+<tr><td>RTO ≈ 0</td><td>Active-Active com balanceamento global — custo e complexidade máximos.</td></tr>
+<tr><td>RPO de 24 h · 1–4 h</td><td>Snapshots diários · snapshots frequentes ou envio de logs de transação.</td></tr>
+<tr><td>RPO de minutos/segundos</td><td>Replicação contínua assíncrona (ex.: AWS DRS, Azure ASR).</td></tr>
+<tr><td>RPO = 0</td><td>Replicação síncrona, viável só a curta distância (cerca de 100 km).</td></tr>
+</tbody></table></div>
+<p class="source">Fonte: <a href="POSTECH%20-%20Multicloud%20e%20Seguranc%CC%A7a%20-%20Aula%205.pdf#page=5">Aula 5, p. 5–7</a>.</p>
+<p>A curva de custo é exponencial: sair de 24 h para 4 h de RTO pode custar 20–30% a mais; de 4 h para 15 min, o dobro; de 15 min para zero, dez vezes ou mais. O papel do arquiteto é achar o RTO “ótimo”, onde o custo da proteção cruza o custo do desastre (p. 7).</p>
+<h4>Os quatro padrões, do mais barato ao mais caro</h4>
+<ol class="flow">
+<li><div><strong>Backup &amp; Restore</strong><span>Dados e configurações copiados para armazenamento durável; no desastre, a IaC cria tudo do zero e os dados são reidratados. O tempo de restore (data gravity) define o piso do RTO. Cópias cross-region e cross-account isolam os backups.</span></div></li>
+<li><div><strong>Pilot Light</strong><span>A camada de dados fica “acesa” (replicada, em instância pequena); a aplicação fica apagada, pronta em imagens e manifestos. No failover: aumentar o banco, escalar a aplicação, trocar o DNS. RTO de dezenas de minutos.</span></div></li>
+<li><div><strong>Warm Standby</strong><span>Uma cópia reduzida, mas funcional, roda o tempo todo e recebe tráfego sintético. No failover, só escala. RTO de minutos e menos incerteza sobre “será que sobe?”.</span></div></li>
+<li><div><strong>Active-Active</strong><span>Várias regiões servindo ao mesmo tempo; o problema vira escrita distribuída (sharding geográfico ou bancos multi-master, como DynamoDB Global Tables).</span></div></li>
+</ol>
+<p class="source">Fonte: <a href="POSTECH%20-%20Multicloud%20e%20Seguranc%CC%A7a%20-%20Aula%205.pdf#page=9">Aula 5, p. 9–12</a>.</p>
+<h4>O que derruba planos de DR na prática</h4>
+<p>DNS em cache com TTL alto mantém usuários na região morta — use TTL baixo ou IP anycast; redes híbridas podem sofrer split-brain; links dedicados exigem cuidado com BGP; replicação síncrona entre continentes é inviável, então o padrão de mercado é assíncrona, aceitando RPO de segundos ou minutos (p. 15–16). A principal causa de acionar DR hoje é ransomware, que caça os backups: a defesa é armazenamento imutável (WORM), isolamento lógico em outra conta e restauração “limpa” (p. 17). Por fim, “um plano de DR não testado é só esperança”: Chaos Engineering (AWS FIS, Azure Chaos Studio, Chaos Mesh) e Game Days (p. 17–19).</p>
+<p>No mercado (p. 20), DORA (Europa) e a Resolução 4.893 do BACEN exigem estratégia de saída do provedor; até 66% das organizações superestimam seu DR por dependências ocultas; e a aula estima o custo do DR em relação à produção: Pilot Light 5–10%, Warm Standby 30–50% e Active-Active acima de 200%.</p>
+<aside class="hk"><strong>🎯 No Hackathon — as duas opções à luz da aula</strong>
+<div class="tablewrap"><table><thead><tr><th scope="col">Opção do enunciado</th><th scope="col">Padrão da aula</th><th scope="col">RTO típico</th><th scope="col">Atenção</th></tr></thead><tbody>
+<tr><td>A — Velero salvando manifestos e volumes em bucket externo</td><td>Backup &amp; Restore do estado do cluster</td><td>Horas, se o cluster de destino precisar ser criado</td><td>Não cobre banco gerenciado fora do cluster <a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-14">SUGESTÃO · SUG-14</a>.</td></tr>
+<tr><td>B — Terraform modular sobe ambiente espelho em outra região com 1 comando</td><td>Warm Standby (se já estiver ligado) ou Pilot Light (se só os dados estiverem)</td><td>Minutos a dezenas de minutos</td><td>O nome “Warm Standby” e o “subir com 1 comando” não batem com a definição da aula: <a class="rid" href="../../requisitos/REQUISITOS.html#q-21">Q-21</a>.</td></tr>
+</tbody></table></div>
+<ul><li><strong>Onde estão as doações?</strong> Se o banco for gerenciado (ex.: RDS, como sugere o README), o RPO depende do backup contínuo do próprio banco com cópia na região secundária — não do Velero.</li>
+<li><strong>Dependências ocultas:</strong> imagens, segredos, fila, tabela, estado do Terraform e registro no ArgoCD precisam existir na região secundária <a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-15">SUGESTÃO · SUG-15</a>.</li>
+<li><strong>Custo entra no Forecast:</strong> use as faixas da aula para estimar e justificar o custo do DR para a diretoria.</li>
+<li><strong>“Em ação” na demo:</strong> o mínimo é mostrar o backup acontecendo ou os módulos prontos; um restore real com tempo medido é diferencial <a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-36">BÔNUS · REQ-BON-36</a><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-34">BÔNUS · REQ-BON-34</a>.</li></ul>
+<figure class="example"><figcaption>📘 Exemplo autoral — agendamento do Velero versionado no repositório GitOps</figcaption><pre><code>apiVersion: velero.io/v1
+kind: Schedule
+metadata:
+  name: solidarytech-6h
+  namespace: velero
+spec:
+  schedule: "0 */6 * * *"           # a cada 6 h: RPO do estado do cluster ≤ 6 h
+  template:
+    includedNamespaces: ["solidarytech"]
+    snapshotVolumes: true
+    ttl: 168h0m0s                   # retenção de 7 dias
+    storageLocation: default        # bucket em outra região (ou provedor)
+
+# na demo: velero backup create demo-dr --include-namespaces solidarytech
+#          velero restore create --from-backup demo-dr</code></pre></figure></aside>
+<p class="memo"><strong>Para memorizar:</strong> RTO = tempo para restaurar; RPO = dados que se aceita perder; BIA primeiro; quanto menores as metas, mais caro — e plano não testado é esperança.</p>
+</article></section>
+
+<section id="aula-6"><h2>Aula 6 — Conectividade avançada: do backbone ao BGP</h2><div class="section-rule"></div><article class="lesson"><div class="lesson-head"><span class="num">06</span><div><h3>A rede como sistema circulatório da multicloud</h3><span class="badge ok">Ficha de aula · 19 p.</span></div></div>
+<p><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-07">OBRIGATÓRIO · REQ-OBR-07</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-22">OBRIGATÓRIO · REQ-OBR-22</a><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-45">BÔNUS · REQ-BON-45</a></p>
+<dl class="facets"><div><dt>Em miúdos</dt><dd>Sem rede previsível e segura, a estratégia de usar o melhor de cada nuvem desmorona em latência e complexidade. A aula troca túneis improvisados por hubs, roteamento dinâmico e exposição privada de serviços.</dd></div><div><dt>Tecnicamente</dt><dd>AWS Transit Gateway (roteador regional, tabelas de rota para segmentar produção e desenvolvimento) versus Azure Virtual WAN (hub gerenciado, roteamento transitivo automático); overlay por VPN (barato, variável, ideal para backups e ambientes não críticos) versus underlay dedicado (Direct Connect, ExpressRoute); BGP com ASNs privados, prevenção de loop por AS_PATH e ECMP para somar banda.</dd></div></dl>
+<p class="source">Fonte: <a href="POSTECH%20-%20Multicloud%20e%20Seguranc%CC%A7a%20-%20Aula%206.pdf#page=5">Aula 6, p. 5–9</a>.</p>
+<p>A aula condena o peering amplo por facilitar movimento lateral e recomenda PrivateLink e Private Endpoint para consumir serviços de forma unidirecional e sem endpoint público — inclusive bancos gerenciados (p. 9–13). Mostra a solução para CIDRs sobrepostos em fusões (NAT privado), o problema da malha completa e uma implementação passo a passo de AWS ↔ Azure com BGP sobre IPsec. No mercado, destaca o AWS Interconnect – Multicloud com o Google Cloud e o modelo de rede como serviço (p. 13–15).</p>
+<aside class="hk"><strong>🎯 No Hackathon</strong>
+<p>Esta é a aula mais “aprofundamento” do módulo: o enunciado não pede Transit Gateway nem BGP. O que se aproveita diretamente:</p>
+<ul><li><strong>Rede é parte do “todo o ambiente” via Terraform:</strong> VPC, sub-redes privadas em mais de uma zona e security groups.</li>
+<li><strong>Banco sem endpoint público</strong>, aceitando apenas o tráfego do cluster <a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-45">BÔNUS · REQ-BON-45</a>.</li>
+<li><strong>CIDRs que não se sobrepõem</strong> entre a região primária e a de DR, para não herdar o problema descrito na aula.</li>
+<li><strong>Endpoints privados também economizam:</strong> endpoints de gateway para S3 e DynamoDB evitam que esse tráfego passe pelo NAT Gateway — uma recomendação de otimização nativa candidata para o Forecast <a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-22">OBRIGATÓRIO · REQ-OBR-22</a>.</li></ul></aside>
+<p class="memo"><strong>Para memorizar:</strong> overlay é barato e variável; underlay é dedicado e previsível; serviço se expõe por PrivateLink, não por peering amplo.</p>
+</article></section>
+
+<section id="aula-7"><h2>Aula 7 — Observabilidade moderna: eBPF e OTel</h2><div class="section-rule"></div><article class="lesson"><div class="lesson-head"><span class="num">07</span><div><h3>Um pipeline de telemetria que não prende você a um fornecedor</h3><span class="badge ok">Ficha de aula · 14 p.</span></div></div>
+<p><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-12">OBRIGATÓRIO · REQ-OBR-12</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-13">OBRIGATÓRIO · REQ-OBR-13</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-04">OBRIGATÓRIO · REQ-OBR-04</a><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-07">BÔNUS · REQ-BON-07</a><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-44">BÔNUS · REQ-BON-44</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-23">OBRIGATÓRIO · REQ-OBR-23</a></p>
+<dl class="facets"><div><dt>Em miúdos</dt><dd>Gerar, transportar e analisar telemetria são etapas diferentes. O OpenTelemetry padroniza a geração e o transporte; o backend escolhido só analisa — e pode ser trocado sem reinstrumentar tudo.</dd></div><div><dt>Tecnicamente</dt><dd>Além dos três pilares, a aula pensa em três estágios: geração (instrumentação), transporte e processamento (filtrar, amostrar, enriquecer) e armazenamento e análise. Head-based sampling decide no início e pode perder o único erro; tail-based decide no fim e guarda o que importa.</dd></div></dl>
+<p class="source">Fonte: <a href="POSTECH%20-%20Multicloud%20e%20Seguranc%CC%A7a%20-%20Aula%207.pdf#page=5">Aula 7, p. 5–6</a>.</p>
+<div class="tablewrap"><table><thead><tr><th scope="col">Estágio do Collector</th><th scope="col">Exemplos da aula</th><th scope="col">Uso na SolidaryTech</th></tr></thead><tbody>
+<tr><td>Receivers</td><td>OTLP, Jaeger, Prometheus, Zipkin.</td><td>OTLP dos três serviços.</td></tr>
+<tr><td>Processors</td><td>Batch, memory limiter, resource detection, redaction de PII.</td><td>Região da nuvem nos sinais (útil no DR); remover <code>donor_name</code> e e-mails.</td></tr>
+<tr><td>Exporters</td><td>Métricas para Prometheus, logs para armazenamento barato, traces para o APM.</td><td>Prometheus, Loki e Datadog/New Relic — cada sinal no destino certo.</td></tr>
+</tbody></table></div>
+<p class="source">Fonte: <a href="POSTECH%20-%20Multicloud%20e%20Seguranc%CC%A7a%20-%20Aula%207.pdf#page=6">Aula 7, p. 6–7</a>.</p>
+<p>A propagação de contexto pelo cabeçalho W3C <code>traceparent</code> une spans de serviços diferentes num único waterfall (p. 7). A auto-instrumentação cobre a maior parte do tráfego sem código; a manual acrescenta atributos de negócio (p. 6). No Flask, a aula mostra <code>opentelemetry-instrument python app.py</code> engatando em <code>flask</code>, <code>requests</code> e <code>psycopg2</code> (p. 9). O eBPF observa pelo kernel, sem tocar na aplicação, e viabiliza o profiling contínuo (p. 8). O fecho é AIOps causal: em vez de 50 alertas, “a causa raiz é X” (p. 9–10).</p>
+<aside class="hk"><strong>🎯 No Hackathon — plano de instrumentação por serviço</strong>
+<div class="tablewrap"><table><thead><tr><th scope="col">Serviço</th><th scope="col">Stack</th><th scope="col">Caminho</th></tr></thead><tbody>
+<tr><td><code>ngo-service</code></td><td>Python/Flask + psycopg2</td><td>Auto-instrumentação, como no exemplo da aula.</td></tr>
+<tr><td><code>volunteer-service</code></td><td>Python/Flask + boto3</td><td>Auto-instrumentação; o botocore gera spans das chamadas ao DynamoDB.</td></tr>
+<tr><td><code>donation-service</code></td><td>Go + PostgreSQL + SQS</td><td>SDK do OTel com middleware HTTP, instrumentação do <code>database/sql</code> e span próprio para a publicação no SQS.</td></tr>
+</tbody></table></div>
+<p>Atributos de negócio como <code>ngo_id</code> e valor da doação ajudam a ligar desempenho a impacto financeiro; nome do doador não entra <a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-44">BÔNUS · REQ-BON-44</a>.</p>
+<figure class="example"><figcaption>📘 Exemplo autoral — trecho final do Dockerfile do ngo-service</figcaption><pre><code>RUN pip install --no-cache-dir -r requirements.txt \
+ &amp;&amp; pip install --no-cache-dir opentelemetry-distro opentelemetry-exporter-otlp \
+ &amp;&amp; opentelemetry-bootstrap -a install
+ENV OTEL_SERVICE_NAME=ngo-service \
+    OTEL_EXPORTER_OTLP_PROTOCOL=grpc \
+    OTEL_EXPORTER_OTLP_ENDPOINT=http://otel-collector:4317
+USER 10001
+CMD ["opentelemetry-instrument", "gunicorn", "--bind", "0.0.0.0:8081", "app:app"]</code></pre></figure>
+<p>Com vários workers do gunicorn, consulte a orientação do OpenTelemetry para servidores <em>pre-fork</em>. O endereço do Collector depende da instalação.</p></aside>
+<p class="memo"><strong>Para memorizar:</strong> o Collector recebe, processa e exporta; tail sampling guarda os erros; contexto propagado é o que transforma spans soltos em um trace.</p>
+</article></section>
+
+<section id="aula-8"><h2>Aula 8 — FinOps 2.0: Unit Economics, FOCUS e GreenOps</h2><div class="section-rule"></div><article class="lesson"><div class="lesson-head"><span class="num">08</span><div><h3>Custo bom é custo que gera valor</h3><span class="badge ok">Ficha de aula · 14 p.</span></div></div>
+<p><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-21">OBRIGATÓRIO · REQ-OBR-21</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-22">OBRIGATÓRIO · REQ-OBR-22</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-43">OBRIGATÓRIO · REQ-OBR-43</a><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-26">BÔNUS · REQ-BON-26</a><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-27">BÔNUS · REQ-BON-27</a></p>
+<dl class="facets"><div><dt>Em miúdos</dt><dd>“Gastamos R$ 10 mil” não diz nada. “Gastamos R$ 0,02 por doação, e caiu” diz tudo. FinOps 2.0 mede o custo por unidade de negócio e padroniza os dados de fatura.</dd></div><div><dt>Tecnicamente</dt><dd>O ciclo FinOps tem três fases: informar (tags, showback), otimizar (pagar menos pelo que usa — reservas, Savings Plans, Spot — e usar menos — desligar ociosos, rightsizing) e operar (automação e governança por políticas). O FOCUS 1.0 padroniza colunas como <code>BilledCost</code>, <code>EffectiveCost</code>, <code>ChargeCategory</code> e <code>Region</code> entre provedores.</dd></div></dl>
+<p class="source">Fonte: <a href="POSTECH%20-%20Multicloud%20e%20Seguranc%CC%A7a%20-%20Aula%208.pdf#page=5">Aula 8, p. 5–8</a>.</p>
+<p>Os exemplos de unit economics da aula mostram que o gasto total pode subir enquanto o custo unitário cai: R$ 50 mil para 10 milhões de transações PIX é R$ 0,005 por transação; com R$ 80 mil para 20 milhões, cai para R$ 0,004 (p. 8). O relatório State of FinOps 2025 amplia o escopo para SaaS e licenças (Cloud+) e para custos de IA (p. 8–9). Egress caro pede processar o dado onde ele está (p. 9). GreenOps lembra que o recurso mais verde é o que não foi provisionado (p. 7 e 10).</p>
+<aside class="hk"><strong>🎯 No Hackathon</strong>
+<ul><li><strong>Métrica unitária para o pitch:</strong> custo mensal ÷ doações processadas (tirado do Prometheus). Exemplo hipotético: R$ 3.000 para 200 mil doações = R$ 0,015 por doação. Melhor ainda para uma ONG: quantos centavos de infraestrutura cada R$ 100 doados consomem <a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-26">BÔNUS · REQ-BON-26</a>.</li>
+<li><strong>Cloud+:</strong> o Forecast deve listar também APM e ferramenta de incidentes, mesmo que no plano gratuito, e o custo de transferência das cópias de DR.</li>
+<li><strong>Estruture a seção FinOps do relatório pelas três fases</strong>: informar (tags), otimizar (rightsizing e recomendação) e operar (alertas e políticas). Detalhes no <a href="../03.FinOps/GUIA-ESTUDO-FinOps.html">03 — FinOps</a>.</li></ul></aside>
+<p class="memo"><strong>Para memorizar:</strong> informar → otimizar → operar; custo unitário vale mais que custo total; egress pede trazer o processamento até o dado.</p>
+</article></section>
+
+<section id="kit"><h2>Kit PCN + DR da SolidaryTech</h2><div class="section-rule"></div>
+<aside class="complemento"><strong>📘 Complemento — modelo autoral para adaptar</strong><p>Estrutura e números de exemplo, não exigências da FIAP. O enunciado pede um documento <em>executivo</em>: frases curtas, números e decisões, com o detalhe técnico em anexo.</p></aside>
+<h4>1. Esqueleto do documento executivo de PCN</h4>
+<ol class="flow">
+<li><div><strong>Objetivo e escopo</strong><span>Serviços cobertos e os dados críticos (doações).</span></div></li>
+<li><div><strong>Análise de impacto (BIA)</strong><span>Quanto custa cada hora parada: doações perdidas, campanhas na TV, confiança das ONGs.</span></div></li>
+<li><div><strong>Cenários</strong><span>Queda de região, banco corrompido ou ransomware, erro humano, indisponibilidade de serviço gerenciado.</span></div></li>
+<li><div><strong>Metas de RTO e RPO</strong><span>Por serviço e por dado (tabela abaixo).</span></div></li>
+<li><div><strong>Estratégia escolhida e por quê</strong><span>Opção A ou B (ou ambas), custo versus RTO, com o padrão da Aula 5 nomeado corretamente.</span></div></li>
+<li><div><strong>Papéis e comunicação</strong><span>Quem declara o desastre, quem executa, quem fala com a diretoria e com as ONGs.</span></div></li>
+<li><div><strong>Ativação e retorno</strong><span>Runbook de failover e de failback (voltar para a primária).</span></div></li>
+<li><div><strong>Testes</strong><span>Frequência do exercício e a última medição de RTO/RPO.</span></div></li>
+<li><div><strong>Custo e riscos remanescentes</strong><span>Custo do DR no Forecast; lock-in nos serviços AWS; dependências; LGPD.</span></div></li>
+</ol>
+<p><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-25">OBRIGATÓRIO · REQ-OBR-25</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-44">OBRIGATÓRIO · REQ-OBR-44</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-33">OBRIGATÓRIO · REQ-OBR-33</a></p>
+<h4>2. Tabela de metas (exemplo)</h4>
+<div class="tablewrap"><table><thead><tr><th scope="col">Serviço / dado</th><th scope="col">Criticidade</th><th scope="col">RTO</th><th scope="col">RPO</th><th scope="col">Como atingir</th></tr></thead><tbody>
+<tr><td><strong>donation-service + banco de doações</strong> (exigido)</td><td>Tier 1 — Hot Path</td><td>30 min</td><td>5 min</td><td>Backup contínuo do banco com cópia na região secundária + ambiente secundário via Terraform (Opção B).</td></tr>
+<tr><td>volunteer-service + tabela de voluntários</td><td>Tier 2</td><td>4 h</td><td>1 h</td><td>Recuperação pontual da tabela (ou Global Tables, bônus).</td></tr>
+<tr><td>ngo-service + banco de ONGs</td><td>Tier 2</td><td>4 h</td><td>24 h</td><td>Snapshot diário — o cadastro muda pouco.</td></tr>
+<tr><td>Estado do cluster</td><td>—</td><td>Junto com o serviço</td><td>Último commit</td><td>Manifestos já vivem no Git (GitOps); o Velero cobre volumes e objetos que não estão no Git.</td></tr>
+</tbody></table></div>
+<p><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-26">OBRIGATÓRIO · REQ-OBR-26</a><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-14">SUGESTÃO · SUG-14</a> Só a linha das doações é exigida pelo enunciado; as demais mostram maturidade. Justifique cada número com o custo da hora parada e com a curva de custo da Aula 5 (p. 7).</p>
+<h4>3. Roteiro curto para a demo de DR</h4>
+<ol class="flow">
+<li><div><strong>Opção A</strong><span>Mostrar o agendamento, listar backups no bucket externo e restaurar um namespace de teste.</span></div></li>
+<li><div><strong>Opção B</strong><span>Mostrar os módulos e o plano para a região secundária; se possível, subir com o comando único e exibir os Pods na outra região.</span></div></li>
+<li><div><strong>Fechar com números</strong><span>Quanto tempo levou (RTO medido) e de quando era o último dado (RPO medido).</span></div></li>
+</ol>
+<p><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-38">OBRIGATÓRIO · REQ-OBR-38</a><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-27">OBRIGATÓRIO · REQ-OBR-27</a><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-36">BÔNUS · REQ-BON-36</a></p>
+</section>
+
+<section id="aplicacao"><h2>Da aula à entrega: o que verificar</h2><div class="section-rule"></div>
+<ol class="flow">
+<li><div><strong>Decisões de negócio primeiro</strong><span>BIA, RTO e RPO das doações aprovados antes de escolher a opção de DR.</span></div></li>
+<li><div><strong>Infraestrutura toda em código</strong><span>Rede, cluster, bancos, fila e tabela no Terraform, com estado remoto e trava; drift monitorado.</span></div></li>
+<li><div><strong>Segurança mínima embutida</strong><span>SAST/SCA no pipeline; imagens enxutas e não root; segredos fora do Git.</span></div></li>
+<li><div><strong>DR implementado</strong><span>Opção A ou B funcionando, cobrindo também os dados que vivem fora do cluster.</span></div></li>
+<li><div><strong>Teste medido</strong><span>Backup e restore (ou subida do espelho) cronometrados.</span></div></li>
+<li><div><strong>Documentos</strong><span>PCN executivo com RTO/RPO e explicação da estratégia na seção Segurança e DR do relatório.</span></div></li>
+<li><div><strong>Vídeo</strong><span>PCN no pitch; DR “em ação” na demo.</span></div></li>
+</ol>
+<p><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-28">OBRIGATÓRIO · REQ-OBR-28</a><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-17">SUGESTÃO · SUG-17</a></p>
+<div class="tablewrap"><table><thead><tr><th scope="col">Erro comum</th><th scope="col">Como evitar</th><th scope="col">Base</th></tr></thead><tbody>
+<tr><td>Achar que o Velero salva o banco gerenciado.</td><td>Backup próprio do banco com cópia na região secundária.</td><td>Enunciado, p. 5; Aula 5, p. 9</td></tr>
+<tr><td>Chamar de Warm Standby algo que só existe depois do <code>apply</code>.</td><td>Nomear o padrão real e o RTO correspondente.</td><td>Aula 5, p. 9–11</td></tr>
+<tr><td>RTO bonito sem teste.</td><td>Medir num exercício e registrar.</td><td>Aula 5, p. 17–19</td></tr>
+<tr><td>Estado do Terraform só na região que caiu.</td><td>Backend acessível de fora da região primária.</td><td>Aula 2, p. 7</td></tr>
+<tr><td>Bucket de backup apagável por quem tem acesso à produção.</td><td>Bloqueio de objetos e isolamento.</td><td>Aula 5, p. 17</td></tr>
+<tr><td>Ignorar onde ficam os dados pessoais.</td><td>Justificar regiões e mascarar PII na telemetria.</td><td>Aula 4, p. 5–6 e 13–14</td></tr>
+<tr><td>Rodar em AKS/GKE sem considerar SQS e DynamoDB.</td><td>Ponderar egress e latência ou confirmar com o tutor.</td><td>Aula 1, p. 9</td></tr>
+</tbody></table></div>
+</section>
+
+<section id="outros-modulos"><h2>Como este módulo se conecta aos outros</h2><div class="section-rule"></div>
+<div class="tablewrap"><table><thead><tr><th scope="col">Guia</th><th scope="col">Conexão</th></tr></thead><tbody>
+<tr><td><a href="../00.Welcome%20to%20Multicloud%2C%20custos%20e%20IA/GUIA-ESTUDO-Welcome-to-Multicloud-custos-e-IA.html">00 — Welcome to Multicloud, custos e IA</a></td><td>Apresenta Multicloud e Segurança como a disciplina de continuidade e DR da fase.</td></tr>
+<tr><td><a href="../02.SRE%20%28Site%20Reliability%20Engineering%29/GUIA-ESTUDO-SRE-Site-Reliability-Engineering.html">02 — SRE — Site Reliability Engineering</a></td><td>A Aula 4 de SRE define MTTR, RTO e RPO; aqui eles viram arquitetura e custo.</td></tr>
+<tr><td><a href="../03.FinOps/GUIA-ESTUDO-FinOps.html">03 — FinOps</a></td><td>O custo do DR, o egress e o unit economics alimentam o Forecast.</td></tr>
+<tr><td><a href="../04.IT%20Service%20Management%20e%20AIOPs/GUIA-ESTUDO-IT-Service-Management-e-AIOps.html">04 — IT Service Management e AIOps</a></td><td>O acionamento do DR é um incidente maior: precisa de papéis, comunicação e post-mortem.</td></tr>
+</tbody></table></div>
+</section>
+
+<section id="revisao"><h2>Revisão rápida e autoavaliação</h2><div class="section-rule"></div>
+<p>Responda antes de abrir. Perguntas autorais, baseadas nas páginas indicadas.</p>
+<details><summary>1. O que diferencia multicloud, nuvem híbrida e nuvem distribuída?</summary><p>Número de provedores públicos; mistura de pública e privada; extensão do plano de controle de um provedor a outros locais. Aula 1, p. 5–6.</p></details>
+<details><summary>2. Por que o drift ameaça a Regra de Ouro?</summary><p>Porque mostra que o ambiente real já não é o descrito no código — sinal de mudança manual. Aula 2, p. 6.</p></details>
+<details><summary>3. Qual a vantagem de segurança do GitOps pull?</summary><p>O agente no cluster só lê o Git; o CI não guarda credencial de admin do cluster. Aula 2, p. 9–10.</p></details>
+<details><summary>4. No Zero Trust, onde fica o ponto de aplicação de política?</summary><p>O mais perto possível do recurso protegido, com acesso por sessão e menor privilégio. Aula 3, p. 8.</p></details>
+<details><summary>5. Guardar dados de brasileiros em us-east-1 tem implicação legal?</summary><p>Segundo a aula, é transferência internacional e exige mecanismo previsto pela ANPD. Aula 4, p. 6.</p></details>
+<details><summary>6. RTO é o tempo para consertar a causa do problema?</summary><p>Não: é o tempo para restaurar o serviço a um nível aceitável, muitas vezes por failover. Aula 5, p. 5.</p></details>
+<details><summary>7. Pilot Light e Warm Standby: o que muda?</summary><p>No Pilot Light só os dados ficam ativos; no Warm Standby a aplicação também roda, em capacidade mínima. Aula 5, p. 10–11.</p></details>
+<details><summary>8. Por que replicação síncrona raramente serve para DR entre continentes?</summary><p>Cada escrita espera a ida e volta da rede; acima de ~100 km a latência fica inaceitável. Aula 5, p. 16.</p></details>
+<details><summary>9. Qual processor do Collector ajuda a cumprir a LGPD?</summary><p>O de redaction, que remove dados sensíveis antes de exportar. Aula 7, p. 6.</p></details>
+<details><summary>10. O gasto subiu 50% e o custo unitário caiu. É bom ou ruim?</summary><p>Bom: a eficiência melhorou — é o argumento de unit economics. Aula 8, p. 7.</p></details>
+</section>
+
+<section id="limites"><h2>Fidelidade, fontes e pontos a confirmar</h2><div class="section-rule"></div>
+<p>Leitura integral do texto dos oito PDFs em 2026-11-11. Links externos das aulas não foram acessados e os vídeos não estão na pasta.</p>
+<div class="tablewrap"><table><thead><tr><th scope="col">ID</th><th scope="col">O que o original apresenta</th><th scope="col">Tratamento adotado</th></tr></thead><tbody>
+<tr><td>MCS-L01 · Limitação</td><td>Tabelas comparativas e matrizes em figura (Aula 1, p. 7; Aula 2, p. 8; Aula 5, p. 8; Aula 6, p. 6).</td><td>Síntese apenas do texto corrido.</td></tr>
+<tr><td>MCS-L02 · Limitação</td><td>Percentuais de custo e mercado (ex.: 92% multicloud, 32% de desperdício, custos de DR por padrão).</td><td>Citados como afirmação da aula, sem verificação externa.</td></tr>
+<tr><td>MCS-Q01 · [INCERTO]</td><td>Aula 2, p. 4: o Hands On repete o texto da Aula 1 (taxonomia).</td><td>Conteúdo da Aula 2 lido pelo corpo do texto.</td></tr>
+<tr><td>MCS-Q02 · [INCERTO]</td><td>Referências das Aulas 3, 4, 6, 7 e 8 repetem listas de outras aulas; palavras-chave da Aula 4 são as da Aula 3.</td><td>Não usadas como fonte; trilhas a confirmar no AVA.</td></tr>
+<tr><td>MCS-Q03 · [INCERTO]</td><td>Enunciado chama de Warm Standby um ambiente levantado com 1 comando; a Aula 5 define Warm Standby como já ligado.</td><td>Registrado em <a class="rid" href="../../requisitos/REQUISITOS.html#q-21">Q-21</a>.</td></tr>
+<tr><td>MCS-Q04 · [INCERTO]</td><td>Aula 8, p. 1–3: título com caracteres duplicados na extração.</td><td>Artefato do PDF; sem impacto no conteúdo.</td></tr>
+</tbody></table></div>
+</section>
+
+<section id="conexao"><h2>Conexão com o Hackathon Fase 5</h2><div class="section-rule"></div>
+<p>As exigências vêm do enunciado; o vínculo com as aulas é mapeamento didático. Estudar o tema não comprova atendimento. Status da implementação: <strong>Pendente</strong>.</p>
+<div class="tablewrap"><table><thead><tr><th scope="col">ID</th><th scope="col">Selo</th><th scope="col">Como este módulo ajuda a cumprir</th></tr></thead><tbody>
+<tr><td>REQ-OBR-03</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-03">OBRIGATÓRIO · REQ-OBR-03</a></td><td>Aula 2: IaC declarativa e detecção de drift contra o ClickOps.</td></tr>
+<tr><td>REQ-OBR-02</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-02">OBRIGATÓRIO · REQ-OBR-02</a></td><td>Aula 2: GitOps pull como padrão de implantação.</td></tr>
+<tr><td>REQ-OBR-04</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-04">OBRIGATÓRIO · REQ-OBR-04</a></td><td>Aula 7: telemetria dos três serviços pelo mesmo pipeline.</td></tr>
+<tr><td>REQ-OBR-05</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-05">OBRIGATÓRIO · REQ-OBR-05</a></td><td>Aula 3: imagem enxuta e não root como parte da postura.</td></tr>
+<tr><td>REQ-OBR-06</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-06">OBRIGATÓRIO · REQ-OBR-06</a></td><td>Aula 1: critérios para escolher o provedor do cluster.</td></tr>
+<tr><td>REQ-OBR-07</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-07">OBRIGATÓRIO · REQ-OBR-07</a></td><td>Aulas 2 e 6: estado remoto, módulos e rede como código.</td></tr>
+<tr><td>REQ-OBR-09</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-09">OBRIGATÓRIO · REQ-OBR-09</a></td><td>Aula 3: segurança de pipeline dentro do CNAPP.</td></tr>
+<tr><td>REQ-OBR-11</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-11">OBRIGATÓRIO · REQ-OBR-11</a></td><td>Aula 2: ArgoCD/Flux, auditoria por commits e ApplicationSets.</td></tr>
+<tr><td>REQ-OBR-12</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-12">OBRIGATÓRIO · REQ-OBR-12</a></td><td>Aula 7: receivers, processors e exporters do Collector.</td></tr>
+<tr><td>REQ-OBR-13</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-13">OBRIGATÓRIO · REQ-OBR-13</a></td><td>Aula 7: propagação de contexto e auto-instrumentação.</td></tr>
+<tr><td>REQ-OBR-23</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-23">OBRIGATÓRIO · REQ-OBR-23</a></td><td>Aula 7: AIOps causal e previsão de esgotamento.</td></tr>
+<tr><td>REQ-OBR-19</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-19">OBRIGATÓRIO · REQ-OBR-19</a></td><td>Aulas 2 e 8: tags como base de automação e de alocação de custos.</td></tr>
+<tr><td>REQ-OBR-21</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-21">OBRIGATÓRIO · REQ-OBR-21</a></td><td>Aula 8: ciclo FinOps e custo unitário.</td></tr>
+<tr><td>REQ-OBR-22</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-22">OBRIGATÓRIO · REQ-OBR-22</a></td><td>Aulas 6 e 8: otimização de taxa, de uso e de rede.</td></tr>
+<tr><td>REQ-OBR-25</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-25">OBRIGATÓRIO · REQ-OBR-25</a></td><td>Aulas 4 e 5: BIA, cenários e conformidade.</td></tr>
+<tr><td>REQ-OBR-26</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-26">OBRIGATÓRIO · REQ-OBR-26</a></td><td>Aula 5: metas ligadas a padrões e custos.</td></tr>
+<tr><td>REQ-OBR-27</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-27">OBRIGATÓRIO · REQ-OBR-27</a></td><td>Aula 5: Backup &amp; Restore, Pilot Light e Warm Standby.</td></tr>
+<tr><td>REQ-OBR-38</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-38">OBRIGATÓRIO · REQ-OBR-38</a></td><td>Aula 5: o que mostrar para provar o DR.</td></tr>
+<tr><td>REQ-OBR-44</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-44">OBRIGATÓRIO · REQ-OBR-44</a></td><td>Aula 5 e Kit PCN: estrutura da seção.</td></tr>
+<tr><td>REQ-OBR-43</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-43">OBRIGATÓRIO · REQ-OBR-43</a></td><td>Aula 8: informar, otimizar e operar.</td></tr>
+<tr><td>REQ-OBR-33</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-33">OBRIGATÓRIO · REQ-OBR-33</a></td><td>Aulas 5 e 8: DR e custo em linguagem de diretoria.</td></tr>
+<tr><td>REQ-OBR-28</td><td><a class="badge obrigatorio" href="../../requisitos/REQUISITOS.html#req-obr-28">OBRIGATÓRIO · REQ-OBR-28</a></td><td>Roteiro de verificação do DR e do PCN.</td></tr>
+<tr><td>REQ-BON-34</td><td><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-34">BÔNUS · REQ-BON-34</a></td><td>Aula 5: combinar padrões.</td></tr>
+<tr><td>REQ-BON-35</td><td><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-35">BÔNUS · REQ-BON-35</a></td><td>Aulas 1 e 5: provedor secundário como bunker.</td></tr>
+<tr><td>REQ-BON-36</td><td><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-36">BÔNUS · REQ-BON-36</a></td><td>Aula 5: Chaos Engineering e Game Days.</td></tr>
+<tr><td>REQ-BON-37</td><td><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-37">BÔNUS · REQ-BON-37</a></td><td>Aula 5: WORM e air-gap lógico.</td></tr>
+<tr><td>REQ-BON-38</td><td><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-38">BÔNUS · REQ-BON-38</a></td><td>Aula 5: bancos globais multi-master.</td></tr>
+<tr><td>REQ-BON-39</td><td><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-39">BÔNUS · REQ-BON-39</a></td><td>Aula 5: TTL baixo e anycast.</td></tr>
+<tr><td>REQ-BON-40</td><td><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-40">BÔNUS · REQ-BON-40</a></td><td>Aula 3: CIEM e menor privilégio.</td></tr>
+<tr><td>REQ-BON-41</td><td><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-41">BÔNUS · REQ-BON-41</a></td><td>Aula 4: federação OIDC.</td></tr>
+<tr><td>REQ-BON-42</td><td><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-42">BÔNUS · REQ-BON-42</a></td><td>Aulas 2 e 3: GitOps sem credenciais expostas.</td></tr>
+<tr><td>REQ-BON-43</td><td><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-43">BÔNUS · REQ-BON-43</a></td><td>Aula 4: PMEK, BYOK e HYOK.</td></tr>
+<tr><td>REQ-BON-44</td><td><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-44">BÔNUS · REQ-BON-44</a></td><td>Aulas 4 e 7: DLP, mascaramento e redaction.</td></tr>
+<tr><td>REQ-BON-45</td><td><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-45">BÔNUS · REQ-BON-45</a></td><td>Aulas 3 e 6: PEP junto ao recurso e PrivateLink.</td></tr>
+<tr><td>REQ-BON-46</td><td><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-46">BÔNUS · REQ-BON-46</a></td><td>Aula 3: KSPM.</td></tr>
+<tr><td>REQ-BON-06</td><td><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-06">BÔNUS · REQ-BON-06</a></td><td>Aula 3: CSPM antes do deploy.</td></tr>
+<tr><td>REQ-BON-05</td><td><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-05">BÔNUS · REQ-BON-05</a></td><td>Aula 2: drift e reconciliação.</td></tr>
+<tr><td>REQ-BON-07</td><td><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-07">BÔNUS · REQ-BON-07</a></td><td>Aula 7: head × tail sampling.</td></tr>
+<tr><td>REQ-BON-26</td><td><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-26">BÔNUS · REQ-BON-26</a></td><td>Aula 8: custo por unidade de negócio.</td></tr>
+<tr><td>REQ-BON-27</td><td><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-27">BÔNUS · REQ-BON-27</a></td><td>Aulas 2 e 8: Shift-Left FinOps.</td></tr>
+<tr><td>REQ-BON-28</td><td><a class="badge bonus" href="../../requisitos/REQUISITOS.html#req-bon-28">BÔNUS · REQ-BON-28</a></td><td>Aulas 2 e 8: OPA e governança por políticas.</td></tr>
+<tr><td>SUG-14</td><td><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-14">SUGESTÃO · SUG-14</a></td><td>Aula 5: o RPO vem da tecnologia de replicação de cada dado.</td></tr>
+<tr><td>SUG-15</td><td><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-15">SUGESTÃO · SUG-15</a></td><td>Aula 5: dependências ocultas.</td></tr>
+<tr><td>SUG-16</td><td><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-16">SUGESTÃO · SUG-16</a></td><td>Aula 4: residência e transferência internacional.</td></tr>
+<tr><td>SUG-01</td><td><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-01">SUGESTÃO · SUG-01</a></td><td>Aula 2: módulos e GitOps já existentes.</td></tr>
+<tr><td>SUG-19</td><td><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-19">SUGESTÃO · SUG-19</a></td><td>Aula 5: custo do downtime e RTO ótimo.</td></tr>
+<tr><td>SUG-17</td><td><a class="badge sugestao" href="../../requisitos/REQUISITOS.html#sug-17">SUGESTÃO · SUG-17</a></td><td>Evidências de DR antes de gravar.</td></tr>
+</tbody></table></div>
+</section>
+
+<footer><a href="#conteudo">Voltar ao início</a><p>Fontes locais lidas em 2026-11-11. Síntese didática com referências por página; exemplos de código e números da SolidaryTech são ilustrativos, autorais e não foram executados. Requisitos: enunciado do Hackathon Fase 5, p. 2–7. Material autocontido, sem dependências externas.</p></footer></main></body></html>

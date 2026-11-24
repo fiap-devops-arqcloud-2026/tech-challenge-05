@@ -1,0 +1,64 @@
+# =================================================================
+# traffic-generator — tráfego sintético contínuo para os três serviços
+# =================================================================
+# Liga e desliga pelo Git: replicas 1 (ligado) ou 0 (desligado), sempre por
+# commit, nunca por kubectl scale. O script vem do ConfigMap gerado em
+# kustomization.yaml.
+# =================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: traffic-generator
+  labels:
+    app.kubernetes.io/name: traffic-generator
+    app.kubernetes.io/component: load
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: traffic-generator
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: traffic-generator
+        app.kubernetes.io/component: load
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        # UID e GID do usuário "curl_user" da imagem oficial do curl.
+        runAsUser: 100
+        runAsGroup: 101
+        seccompProfile:
+          type: RuntimeDefault
+      terminationGracePeriodSeconds: 5
+      containers:
+        - name: traffic-generator
+          image: curlimages/curl:8.23.0
+          command: ["sh", "/script/gerar-trafego.sh"]
+          env:
+            - name: INTERVALO_SEGUNDOS
+              value: "1"
+            - name: NGO_ID
+              value: "1"
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 100m
+              memory: 32Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: script
+              mountPath: /script
+              readOnly: true
+      volumes:
+        - name: script
+          configMap:
+            name: traffic-generator-script

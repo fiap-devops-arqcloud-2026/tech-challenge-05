@@ -1,0 +1,100 @@
+# =================================================================
+# volunteer-service — cadastro de voluntários (Python/Flask, DynamoDB)
+# =================================================================
+# O ConfigMap "aws-endpoints" (região e nome da tabela) e a ServiceAccount
+# "volunteer-service" (role IRSA com PutItem e Scan só na tabela) são
+# criados pela raiz terraform/k8s.
+# =================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: volunteer-service
+  labels:
+    app.kubernetes.io/name: volunteer-service
+    app.kubernetes.io/component: api
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: volunteer-service
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: volunteer-service
+        app.kubernetes.io/component: api
+    spec:
+      serviceAccountName: volunteer-service
+      # A credencial da AWS (IRSA) chega por volume próprio, sem o token da API.
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        runAsGroup: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      terminationGracePeriodSeconds: 30
+      containers:
+        - name: volunteer-service
+          image: solidarytech/volunteer-service
+          ports:
+            - name: http
+              containerPort: 8083
+          env:
+            - name: PORT
+              value: "8083"
+          envFrom:
+            # AWS_REGION e AWS_DYNAMODB_TABLE.
+            - configMapRef:
+                name: aws-endpoints
+          resources:
+            # O boto3 pesa mais em memória que o ngo-service.
+            requests:
+              cpu: 50m
+              memory: 192Mi
+            limits:
+              cpu: 500m
+              memory: 384Mi
+          startupProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 2
+            failureThreshold: 30
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+          lifecycle:
+            preStop:
+              exec:
+                command: ["sleep", "5"]
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir:
+            medium: Memory
+            sizeLimit: 16Mi

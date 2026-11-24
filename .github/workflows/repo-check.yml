@@ -1,0 +1,177 @@
+# =================================================================
+# VERIFICAÇÕES DO REPOSITÓRIO — segredos, workflows e scripts
+# =================================================================
+# Três barreiras baratas (menos de um minuto cada), em jobs paralelos:
+#   1. segredos: bash scripts/security-check.sh, a mesma varredura que se
+#      roda antes de cada commit (chaves AWS, tokens, chaves de APM e de
+#      chat, ID real de conta, .env, tfstate, tfplan, kubeconfig);
+#   2. workflows: toda action de terceiros fixada por SHA completo e o
+#      actionlint (sintaxe, expressões, contextos, permissões, injeção de
+#      script e os blocos run:, com o shellcheck embutido na imagem);
+#   3. shellcheck: os scripts .sh versionados.
+#
+# POR QUE SEM FILTRO DE CAMINHO
+# Um segredo pode entrar por qualquer arquivo, inclusive documentação e as
+# notas da colaboração. Por isso este workflow olha todo PR e todo push na
+# dev e na main, mude o que mudar.
+#
+# As ferramentas rodam em imagens de contêiner fixadas por digest: o mesmo
+# comando dá o mesmo resultado no CI e na máquina local (docs/CI-CD.md).
+# Não usa AWS nem segredo: só lê o repositório.
+# =================================================================
+
+name: Repositório (segredos, workflows e scripts)
+
+on:
+  pull_request:
+    branches: [dev, main]
+  push:
+    branches: [dev, main]
+  # Botão "Run workflow" na aba Actions, para reexecutar sem commit.
+  workflow_dispatch:
+
+# Teto de permissões do GITHUB_TOKEN: só leitura do código.
+permissions:
+  contents: read
+
+# Um grupo por workflow e ref. Num PR ou na dev, um push novo cancela a
+# rodada anterior da mesma branch ou do mesmo PR. Na main, a rodada em
+# andamento nunca é cancelada: o push seguinte espera a vez (com vários
+# pushes seguidos, o GitHub mantém na fila só o mais recente).
+concurrency:
+  group: repo-check-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+# bash com -e e -o pipefail em todos os passos run.
+defaults:
+  run:
+    shell: bash
+
+env:
+  # actionlint 1.7.12, com shellcheck 0.11.0 e pyflakes dentro da imagem.
+  # Com o digest (do índice multiplataforma), o Docker baixa exatamente
+  # este conteúdo, mesmo que a tag seja republicada; a tag fica só como
+  # referência legível.
+  ACTIONLINT_IMAGE: rhysd/actionlint:1.7.12@sha256:b1934ee5f1c509618f2508e6eb47ee0d3520686341fec936f3b79331f9315667
+  # shellcheck 0.11.0, a mesma versão embutida no actionlint acima.
+  SHELLCHECK_IMAGE: koalaman/shellcheck:v0.11.0@sha256:61862eba1fcf09a484ebcc6feea46f1782532571a34ed51fedf90dd25f925a8d
+
+jobs:
+  # ===============================================================
+  # BARREIRA 1 — segredos e arquivos proibidos
+  # ===============================================================
+  # Derruba quando algum arquivo versionado casa com um padrão de chave,
+  # token ou ID de conta, ou quando um arquivo proibido (.env, *.tfstate,
+  # *.tfplan, tfvars, backend.hcl, kubeconfig, *.pem, *.key) está no Git.
+  # Por quê: o repositório é público, e apagar um segredo do arquivo não o
+  # apaga do histórico. A varredura local antes do commit é a primeira
+  # defesa; esta é a segunda, antes do merge.
+  secrets:
+    name: Varredura de segredos
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Nenhum job daqui faz push: o token não fica gravado no .git do
+          # runner, fora do alcance dos passos seguintes.
+          persist-credentials: false
+
+      - name: bash scripts/security-check.sh
+        run: bash scripts/security-check.sh
+
+  # ===============================================================
+  # BARREIRA 2 — workflows: SHA fixo e actionlint
+  # ===============================================================
+  # Derruba quando:
+  #   - um uses: aponta para uma action de terceiros por tag ou branch
+  #     (@v4, @main) em vez do SHA completo do commit, ou sem o comentário
+  #     com a versão. Por quê: uma tag pode ser movida para outro commit
+  #     por quem controla (ou invadiu) o repositório da action, e o código
+  #     novo rodaria aqui sem revisão; o SHA não muda;
+  #   - o actionlint acha erro de sintaxe do YAML do Actions, expressão
+  #     ${{ }} inválida, contexto inexistente, input ou output de job
+  #     errado, permissão desconhecida, runner inválido, valor não
+  #     confiável (título de PR, mensagem de commit) usado direto num run:
+  #     ou achado do shellcheck nos blocos run:. Por quê: um workflow
+  #     quebrado só falha quando o evento dispara, às vezes só na main, na
+  #     hora de publicar a imagem.
+  actionlint:
+    name: Workflows (SHA fixo e actionlint)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      # Aceita três formas de uses: (sem aspas): caminho local (./...);
+      # action ou workflow de outro repositório com @<SHA de 40 caracteres>
+      # seguido de "# <versão>"; imagem docker:// com @sha256:<digest>.
+      - name: Conferir que toda action está fixada por SHA
+        run: |
+          ok_local='uses:[[:space:]]+\./'
+          ok_sha='uses:[[:space:]]+[A-Za-z0-9_.-]+/[A-Za-z0-9_./-]+@[0-9a-f]{40}[[:space:]]+#[[:space:]]*[^[:space:]]'
+          ok_docker='uses:[[:space:]]+docker://[^[:space:]@]+@sha256:[0-9a-f]{64}([[:space:]]|$)'
+          # Linhas com a chave uses: (com ou sem o "- " do passo). Linhas
+          # de comentário começam com # e ficam de fora.
+          found="$(grep -rnE --include='*.yml' --include='*.yaml' \
+            '^[[:space:]]*(-[[:space:]]+)?uses:' .github/workflows || true)"
+          bad="$(printf '%s\n' "$found" \
+            | grep -vE "$ok_local" | grep -vE "$ok_sha" | grep -vE "$ok_docker" \
+            | grep -vE '^$' || true)"
+          if [[ -n "$bad" ]]; then
+            echo "::error::uses: sem SHA completo e comentário da versão (ou imagem sem digest):"
+            printf '%s\n' "$bad"
+            exit 1
+          fi
+          echo "Todas as $(printf '%s\n' "$found" | grep -c 'uses:') referências uses: estão fixadas."
+
+      # Lê .github/workflows/ inteiro, inclusive os reutilizáveis. O
+      # actionlint acha o projeto pela pasta .git, que o checkout cria.
+      # !cancelled(): roda mesmo se a conferência acima falhar, para uma
+      # rodada mostrar todos os problemas, e não só o primeiro.
+      - name: actionlint
+        if: ${{ !cancelled() }}
+        run: docker run --rm -v "$GITHUB_WORKSPACE:/repo:ro" -w /repo "$ACTIONLINT_IMAGE" -color
+
+  # ===============================================================
+  # BARREIRA 3 — shellcheck nos scripts versionados
+  # ===============================================================
+  # Derruba com achado do shellcheck em qualquer *.sh do Git (aspas
+  # faltando, variável não definida, comando com retorno ignorado...). Por
+  # quê: estes scripts rodam no CI (varredura, teste do Compose) e na
+  # máquina de quem opera (variáveis do repositório); um erro de shell
+  # costuma falhar em silêncio.
+  shellcheck:
+    name: shellcheck (scripts)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: shellcheck
+        run: |
+          # Lista só os arquivos versionados; -z protege nomes com espaço.
+          # A lista passa por um arquivo para que uma falha do git derrube
+          # o passo (o código de saída de um <(...) seria ignorado).
+          list="$RUNNER_TEMP/scripts.lst"
+          git ls-files -z -- '*.sh' > "$list"
+          mapfile -d '' -t scripts < "$list"
+          if [[ ${#scripts[@]} -eq 0 ]]; then
+            echo "Nenhum script .sh versionado."
+            exit 0
+          fi
+          printf 'Verificando: %s\n' "${scripts[@]}"
+          docker run --rm -v "$GITHUB_WORKSPACE:/mnt:ro" -w /mnt "$SHELLCHECK_IMAGE" "${scripts[@]}"

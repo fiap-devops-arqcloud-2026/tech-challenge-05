@@ -1,0 +1,43 @@
+# =================================================================
+# Sobreposição de tracing local: OpenTelemetry Collector + serviços
+# exportando spans por OTLP/HTTP.
+# =================================================================
+# Uso:
+#   docker compose -f docker-compose.yaml -f docker-compose.otel.yaml up --build
+#   docker compose -f docker-compose.yaml -f docker-compose.otel.yaml logs otel-collector
+#
+# O Collector local só imprime os spans no próprio log (exporter "debug"):
+# serve para provar a instrumentação sem conta de APM. Na AWS, o Collector do
+# cluster envia os traces ao New Relic.
+# =================================================================
+
+services:
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.163.2
+    command: ["--config=/etc/otelcol/config.yaml"]
+    volumes:
+      - ./compose/otel-collector.yaml:/etc/otelcol/config.yaml:ro
+    ports:
+      - "${OTLP_HTTP_PORT:-4318}:4318"
+
+  # Os serviços só ligam o tracing quando recebem o endpoint OTLP.
+  ngo-service:
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+    depends_on:
+      otel-collector:
+        condition: service_started
+
+  donation-service:
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+    depends_on:
+      otel-collector:
+        condition: service_started
+
+  volunteer-service:
+    environment:
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4318
+    depends_on:
+      otel-collector:
+        condition: service_started

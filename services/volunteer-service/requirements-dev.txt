@@ -1,0 +1,5 @@
+# Dependências só para testes (não entram na imagem de produção).
+# O Moto simula o DynamoDB em memória: os testes não tocam a AWS.
+-r requirements.txt
+pytest==9.2.0
+moto[dynamodb]==5.2.5

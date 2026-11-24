@@ -1,0 +1,109 @@
+# =================================================================
+# INTEGRAÇÃO PONTA A PONTA — Docker Compose no runner Linux
+# =================================================================
+# Roda o mesmo teste que se roda na máquina de quem desenvolve:
+#   WITH_OTEL=1 bash scripts/test-compose.sh
+# O script:
+#   1. constrói as três imagens e sobe PostgreSQL, o emulador da AWS
+#      (Moto), o OpenTelemetry Collector local e os três serviços,
+#      esperando o healthcheck de cada um;
+#   2. percorre o fluxo ONG -> doação -> voluntário e confere que a doação
+#      chegou à fila SQS do emulador, com o traceparent na mensagem;
+#   3. confere no log do Collector spans dos três serviços e /health fora
+#      dos traces;
+#   4. derruba tudo e apaga os volumes, passando ou falhando. Na falha,
+#      imprime antes o fim do log dos serviços.
+#
+# Barreira: derruba quando algum serviço não fica saudável, quando uma
+# etapa do fluxo devolve status ou corpo inesperado, quando a mensagem não
+# chega à fila ou quando faltam spans. Por quê: os testes unitários de cada
+# serviço usam banco e AWS simulados; só este teste prova os três juntos,
+# com PostgreSQL de verdade, fila, tabela e tracing.
+#
+# Sem AWS e sem segredo: o Moto aceita credenciais fictícias e todos os
+# valores do Compose são locais (docker-compose.yaml).
+# =================================================================
+
+name: Integração (Docker Compose)
+
+on:
+  pull_request:
+    branches: [dev, main]
+    # Só o que o teste lê: código e Dockerfiles dos serviços, os arquivos
+    # do Compose, os scripts do teste e este workflow. Mudança só de
+    # documentação (inclusive os README dos serviços, que não entram nas
+    # imagens) ou de Terraform não muda o resultado e não gasta os minutos
+    # do ensaio.
+    paths:
+      - "services/**"
+      - "!services/**/*.md"
+      - "compose/**"
+      - "docker-compose.yaml"
+      - "docker-compose.otel.yaml"
+      - "scripts/test-compose.sh"
+      - "scripts/integration/**"
+      - ".github/workflows/compose-integration.yml"
+  push:
+    branches: [dev, main]
+    # Mesma lista do pull_request.
+    paths:
+      - "services/**"
+      - "!services/**/*.md"
+      - "compose/**"
+      - "docker-compose.yaml"
+      - "docker-compose.otel.yaml"
+      - "scripts/test-compose.sh"
+      - "scripts/integration/**"
+      - ".github/workflows/compose-integration.yml"
+  # Botão "Run workflow" na aba Actions, para reexecutar sem commit.
+  workflow_dispatch:
+
+# Teto de permissões do GITHUB_TOKEN: só leitura do código.
+permissions:
+  contents: read
+
+# Um grupo por workflow e ref. Num PR ou na dev, um push novo cancela a
+# rodada anterior da mesma branch ou do mesmo PR. Na main, a rodada em
+# andamento nunca é cancelada: o push seguinte espera a vez (com vários
+# pushes seguidos, o GitHub mantém na fila só o mais recente).
+concurrency:
+  group: compose-integration-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+# bash com -e e -o pipefail em todos os passos run.
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  compose:
+    name: Fluxo dos três serviços com tracing
+    # Versão fixa da imagem do runner (Docker, Compose e Python 3 já vêm
+    # instalados): o ubuntu-latest muda de versão sem aviso.
+    runs-on: ubuntu-24.04
+    # Build das três imagens, pull das imagens de apoio e o fluxo levam
+    # poucos minutos; o limite evita um job preso consumindo a fila.
+    timeout-minutes: 25
+    permissions:
+      contents: read
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Nada aqui faz push: o token não fica gravado no .git do runner.
+          persist-credentials: false
+
+      # Registra no log as versões usadas, para comparar com a máquina local
+      # quando algo passa lá e falha aqui.
+      - name: Versões do Docker, do Compose e do Python
+        run: |
+          docker version --format 'Docker {{.Server.Version}}'
+          docker compose version
+          python3 --version
+
+      # O script usa python3 (biblioteca padrão apenas) para o teste do
+      # fluxo e derruba o ambiente sozinho, inclusive na falha.
+      - name: Subir, testar o fluxo e conferir os spans
+        env:
+          WITH_OTEL: "1"
+        run: bash scripts/test-compose.sh
