@@ -6,6 +6,17 @@ TL;DR: C0 e C1 concluídas em 2026-11-20. C2 em andamento em 2026-11-21: Terrafo
 
 Formato: entrada nova no topo, sem apagar as anteriores. Cada entrada termina com "Estado p/ próximo agente". Horários em America/Sao_Paulo (UTC-03:00).
 
+## 2026-11-23 23:10 — Claude — Primeira execução do CI no GitHub: tudo verde
+
+Feito:
+- O push da C3 (`721b9bb`) travou por mais de 4 h no `git-credential-manager`: push que altera `.github/workflows/` exige o escopo `workflow`, e o gerenciador esperava uma autorização numa janela invisível. Encerrei só os processos daquele push (iniciados às 18:35) e refiz com o token do `gh` naquele comando, sem mudar a configuração (`git -c credential.helper= -c 'credential.helper=!gh auth git-credential' push origin dev`). Chegou em segundos. Registrado no LEIA-PRIMEIRO.
+- Primeira execução real dos workflows, num push na `dev`, com 7 execuções e todas `success`:
+  - Terraform (verificação offline): 11 jobs ([run 45307505576](https://github.com/fiap-devops-arqcloud-2026/tech-challenge-05/actions/runs/45307505576));
+  - ngo-service, donation-service e volunteer-service (CI/CD): 5 jobs verdes cada (testes, lint, SAST, SCA, imagem), com "Publicar no ECR" e "GitOps" pulados, como esperado fora da `main` ([45307506028](https://github.com/fiap-devops-arqcloud-2026/tech-challenge-05/actions/runs/45307506028), [45307505817](https://github.com/fiap-devops-arqcloud-2026/tech-challenge-05/actions/runs/45307505817), [45307506022](https://github.com/fiap-devops-arqcloud-2026/tech-challenge-05/actions/runs/45307506022));
+  - GitOps (validação dos manifestos), Repositório (3 jobs) e Integração (Docker Compose) ([45307505676](https://github.com/fiap-devops-arqcloud-2026/tech-challenge-05/actions/runs/45307505676), [45307505847](https://github.com/fiap-devops-arqcloud-2026/tech-challenge-05/actions/runs/45307505847), [45307505662](https://github.com/fiap-devops-arqcloud-2026/tech-challenge-05/actions/runs/45307505662)).
+- Matriz do plano: REQ-OBR-08, 09 e 31 em "execução no CI"; REQ-OBR-10 parcial (o push no ECR depende da infra).
+Estado p/ próximo agente: C3 concluída. Próximo passo, que é do usuário (P-004): autorizar a fase AWS. Começa pelo plano do bootstrap (somente leitura, estado local com `backend_override.tf`), depois o apply do bootstrap e a migração do estado, depois a base com o NAT desligado, depois as Variables do GitHub e o PR para a `main`, que publica as imagens. O cluster só numa janela combinada. O e-mail dos alertas do Budget precisa de aprovação do usuário (dado pessoal).
+
 ## 2026-11-23 18:40 — Claude — C3 pronta e ensaiada; integração com a C4
 
 Feito:

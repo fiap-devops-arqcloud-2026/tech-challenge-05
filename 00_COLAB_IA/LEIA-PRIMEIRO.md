@@ -40,6 +40,7 @@ IDs: D-### decisões, P-### pendências que dependem de alguém, F-### achados. 
 - Nunca usar `git add .` nem `git add -A`: adicionar arquivo por arquivo, pelo caminho.
 - Fluxo: `dev` → PR → `main` com `gh pr merge --merge`. Nunca usar `--delete-branch` (apagaria a `dev`). PR e merge na `main` pedem autorização específica (D-006).
 - Commits curados e push na `origin/dev` fazem parte do fluxo aprovado. Mensagens no padrão Conventional Commits, em português.
+- Push que altera `.github/workflows/` exige token com o escopo `workflow`. Em 2026-11-23, um push assim travou por horas no `git-credential-manager`, que tentava renovar a autorização numa janela invisível. Se o push não terminar em poucos minutos, encerre-o e use o token do `gh`, que tem o escopo `workflow`, só naquele comando: `git -c credential.helper= -c 'credential.helper=!gh auth git-credential' push origin dev`.
 
 ### AWS e Terraform
 

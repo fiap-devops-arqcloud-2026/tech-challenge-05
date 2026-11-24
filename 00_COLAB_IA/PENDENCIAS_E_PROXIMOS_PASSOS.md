@@ -38,7 +38,7 @@ Herdado da implementação para as próximas camadas:
   - [x] Ensaio local de cada gate nos 3 serviços, nas mesmas versões e digests do CI, todos verdes depois de três correções: errcheck no donation, W391 no ngo e pylint com as dependências instaladas (nota 9,47). actionlint sem achados. Compose 13/13 depois das correções.
   - [x] Robô do GitOps simulado num clone descartável: 132 conferências, 0 falhas (idempotência, três robôs concorrentes, conflito de rebase, revert, trava contra versão antiga e contra mudança fora da linha `image`).
   - [x] `docs/CI-CD.md` (o que roda em cada evento, gates, OIDC de 15 min, robô, como voltar uma versão, reprodução local) e `scripts/github/set-repo-variables.sh` (não executado).
-  - [ ] Commit da C3 e a primeira execução no GitHub (push na `dev`).
+  - [x] Commit da C3 (`721b9bb`) e primeira execução no GitHub (push na `dev`, 2026-11-23). Os 7 workflows passaram: Terraform 11 jobs, cada serviço 5 jobs (publicação e robô pulados, como esperado na `dev`), GitOps, Repositório (3 jobs) e Compose, somando 31 jobs verdes.
   - [ ] Prova de que as barreiras derrubam, numa branch descartável (roteiro em `docs/CI-CD.md`).
   - [ ] Depois do apply da base: `scripts/github/set-repo-variables.sh` (grava Variables no GitHub; pede autorização) e a primeira publicação no ECR num push na `main`.
   - Observações: o Trivy acha 8 CRITICAL no Alpine da imagem oficial do Kustomize 5.8.3 (o binário tem 0), usada só em ferramenta com `--network none`; trocar o digest quando sair imagem corrigida. O govulncheck aponta GO-2022-0646 e GO-2022-0635 no aws-sdk-go v1 (S3 Crypto, não chamado; sem correção na v1).

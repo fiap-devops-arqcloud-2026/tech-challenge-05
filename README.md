@@ -77,7 +77,7 @@ Principais escolhas:
 | C0 | Fundação do repositório | ✅ pronta |
 | C1 | Serviços e contêineres (Dockerfiles, testes, OpenTelemetry, Compose) | ✅ pronta |
 | C2 | Infraestrutura como Código (Terraform) | ✅ código pronto e validado offline; não aplicado na AWS |
-| C3 | CI/CD DevSecOps (GitHub Actions) | ⏳ pipelines prontos e ensaiados localmente; primeira execução no GitHub em curso |
+| C3 | CI/CD DevSecOps (GitHub Actions) | ✅ pronta: 7 workflows verdes no GitHub; publicação no ECR depois da infra |
 | C4 | GitOps e deploy (ArgoCD) | ⏳ manifestos validados localmente; falta rodar no cluster |
 | C5 | Observabilidade e APM | pendente |
 | C6 | SRE: SLIs, SLOs, Error Budget e MTTR | pendente |
