@@ -19,7 +19,7 @@ TL;DR: Onze camadas, da fundação (C0) aos entregáveis (C10), cobrindo só os 
 |---|---|---|---|---|
 | C0 | Fundação do repositório e colaboração | 01, 28, 46, 47 | — | ✅ concluída (2026-11-20) |
 | C1 | Serviços e contêineres | 04, 05, 08, 13 | C0 | ✅ concluída (2026-11-20) |
-| C2 | Infraestrutura como Código (Terraform) | 03, 06, 07, 19, 29 | C0 | ⏳ código validado (88 testes, CI verde); bootstrap aplicado em 2026-11-24; base, cluster e k8s aguardam autorização |
+| C2 | Infraestrutura como Código (Terraform) | 03, 06, 07, 19, 29 | C0 | ⏳ código validado (88 testes, CI verde); bootstrap e base aplicados (2026-11-24); cluster e k8s aguardam a janela combinada |
 | C3 | CI/CD DevSecOps (GitHub Actions) | 02, 08, 09, 10, 31 | C1, C2 | ✅ concluída (2026-11-23): 7 workflows verdes na primeira execução no GitHub (31 jobs); publicação no ECR depende da infra |
 | C4 | GitOps e deploy (ArgoCD) | 02, 06, 11, 30 | C2, C3 | ⏳ manifestos validados localmente (2026-11-22); falta o CI e a AWS |
 | C5 | Observabilidade e APM | 04, 12, 13 | C1, C4 | pendente |
@@ -173,11 +173,11 @@ Evidência esperada segundo o mapa: ● exigido, ◐ parcial ou recomendado. A c
 |---|---|---|---|:-:|:-:|:-:|---|
 | [REQ-OBR-01](../docs/requisitos/README.md#req-obr-01) | Regra de Ouro: aplicar as Fases 1–4 | p. 2 | C0, C10 | ● | ● | ● | pendente |
 | [REQ-OBR-02](../docs/requisitos/README.md#req-obr-02) | Zero deploy manual via kubectl | p. 2 | C3, C4 | ● | ● |  | parcial: Job de schema, deploy só pelo ArgoCD e robô do CI que grava a tag no Git (C3/C4, simulado); falta rodar na AWS |
-| [REQ-OBR-03](../docs/requisitos/README.md#req-obr-03) | Zero infraestrutura “clicada” no console | p. 2 | C2 | ● | ● |  | parcial: bootstrap aplicado por código (bucket de estado e Budget, 2026-11-24); provedor OIDC da Fase 4 adotado por import; demais raízes prontas, não aplicadas |
+| [REQ-OBR-03](../docs/requisitos/README.md#req-obr-03) | Zero infraestrutura “clicada” no console | p. 2 | C2 | ● | ● |  | parcial: bootstrap e base aplicados por código (2026-11-24); provedor OIDC da Fase 4 adotado por import; cluster e k8s prontos, não aplicados |
 | [REQ-OBR-04](../docs/requisitos/README.md#req-obr-04) | Zero “voo cego”: monitoramento profundo | p. 2 | C1, C5 | ● | ● |  | parcial: logs JSON e traces locais (C1); stack no cluster na C5 |
 | [REQ-OBR-05](../docs/requisitos/README.md#req-obr-05) | Dockerfiles otimizados para os 3 serviços | p. 3 | C1 | ● | ◐ |  | ✅ código + verificação local (C1): multi-stage, não root, Trivy sem CRITICAL |
 | [REQ-OBR-06](../docs/requisitos/README.md#req-obr-06) | Kubernetes gerenciado (EKS, AKS ou GKE) | p. 3 | C2, C4 | ● | ● |  | pendente |
-| [REQ-OBR-07](../docs/requisitos/README.md#req-obr-07) | Terraform provisiona todo o ambiente | p. 3 | C2 | ● | ● |  | parcial: 4 raízes validadas offline e no CI; bootstrap aplicado; rede, bancos, fila e cluster aguardam autorização |
+| [REQ-OBR-07](../docs/requisitos/README.md#req-obr-07) | Terraform provisiona todo o ambiente | p. 3 | C2 | ● | ● |  | parcial: rede, SQS e DynamoDB criados pelo Terraform (2026-11-24); cluster EKS e RDS PostgreSQL aguardam a janela |
 | [REQ-OBR-08](../docs/requisitos/README.md#req-obr-08) | CI/CD automatizado com testes | p. 3 | C1, C3 | ● | ● |  | ✅ execução no CI (2026-11-23): testes dos 3 serviços verdes no GitHub Actions |
 | [REQ-OBR-09](../docs/requisitos/README.md#req-obr-09) | Scans SAST/SCA no pipeline | p. 3 | C3 | ● | ● |  | ✅ execução no CI (2026-11-23): gosec, bandit, govulncheck, pip-audit e Trivy verdes no GitHub Actions |
 | [REQ-OBR-10](../docs/requisitos/README.md#req-obr-10) | Build da imagem no pipeline | p. 3 | C2, C3 | ● | ● |  | parcial: build e Trivy da imagem verdes no CI (2026-11-23); push no ECR depende da infra aplicada |
@@ -189,7 +189,7 @@ Evidência esperada segundo o mapa: ● exigido, ◐ parcial ou recomendado. A c
 | [REQ-OBR-16](../docs/requisitos/README.md#req-obr-16) | Um SLO para cada SLI | p. 4 | C6 |  | ● | ● | pendente |
 | [REQ-OBR-17](../docs/requisitos/README.md#req-obr-17) | Dashboard SRE: SLOs e Error Budget | p. 4 | C6 | ◐ | ● | ◐ | pendente |
 | [REQ-OBR-18](../docs/requisitos/README.md#req-obr-18) | Relatório: como o MTTR é reduzido | p. 4 | C6, C10 |  | ◐ | ● | pendente |
-| [REQ-OBR-19](../docs/requisitos/README.md#req-obr-19) | Política de tags no Terraform | p. 4 | C2, C7 | ● | ● | ● | parcial: default_tags nas 4 raízes (testado); tags conferidas na AWS no bucket e no provedor OIDC (2026-11-24); ativação no faturamento na C7 |
+| [REQ-OBR-19](../docs/requisitos/README.md#req-obr-19) | Política de tags no Terraform | p. 4 | C2, C7 | ● | ● | ● | parcial: default_tags nas 4 raízes (testado); tags conferidas na AWS no bucket, provedor OIDC e VPC (2026-11-24); ativação no faturamento na C7 |
 | [REQ-OBR-20](../docs/requisitos/README.md#req-obr-20) | Rightsizing de requests/limits | p. 4 | C4, C5, C7 | ● | ◐ | ◐ | pendente |
 | [REQ-OBR-21](../docs/requisitos/README.md#req-obr-21) | Forecast de custos mensais | p. 4 | C7 |  | ● | ● | pendente |
 | [REQ-OBR-22](../docs/requisitos/README.md#req-obr-22) | ≥ 1 recomendação de otimização nativa | p. 4 | C7 |  | ● | ● | pendente |
