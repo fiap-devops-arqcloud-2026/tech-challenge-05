@@ -7,7 +7,7 @@ TL;DR: C0, C1 e C3 concluídas (CI verde no GitHub); C4 com os manifestos valida
 ## Fase AWS — ordem combinada (cada apply só com autorização do usuário, P-004)
 
 1. [x] Bootstrap aplicado em 2026-11-24 ("Pode fazer o bucket s3"): bucket `solidarytech-tfstate-<conta>-us-east-2-an` (versionado, AES256, os 4 bloqueios públicos, só TLS, `prevent_destroy`), Budget `solidarytech-mensal` (US$ 50, alertas ACTUAL a 50/80/100% e FORECASTED a 100%, para o e-mail informado pelo usuário) e provedor OIDC do GitHub importado (só as tags mudaram). Estado em `phase5/prod/bootstrap.tfstate`. Evidências locais em `02_TRABALHO/validacao-local-bootstrap-2026-11-24/`, ignorada pelo Git.
-2. [ ] Base com `enable_nat_gateway = false`: VPC, endpoints de gateway, 3 ECR, fila com DLQ, tabela, roles do CI e do self-healing. Sem NAT, o custo fixo fica perto de zero. O plano salvo é gerado e apresentado antes do apply.
+2. [ ] Base com `enable_nat_gateway = false`: VPC, endpoints de gateway, 3 ECR, fila com DLQ, tabela, roles do CI e do self-healing. Sem NAT, o custo fixo fica perto de zero. Plano salvo gerado em 2026-11-24 (`terraform/base/base.tfplan`, local): 36 a criar, 0 a mudar, 0 a destruir, sem NAT nem EIP. Aguarda a autorização do usuário.
 3. [ ] Variables do repositório com `scripts/github/set-repo-variables.sh`, a partir das saídas da base. Grava configuração no GitHub; pede autorização.
 4. [ ] PR `dev` → `main` e merge (pede autorização): os pipelines publicam as 3 imagens no ECR e o robô grava as tags no overlay.
 5. [ ] Tags de alocação de custo: `activate_cost_allocation_tags = true` no bootstrap, quando as chaves aparecerem no faturamento (até 24 h depois dos primeiros recursos tagueados).

@@ -6,6 +6,12 @@ TL;DR: C0, C1 e C3 concluídas (CI verde no GitHub); C2 validada e revisada; C4 
 
 Formato: entrada nova no topo, sem apagar as anteriores. Cada entrada termina com "Estado p/ próximo agente". Horários em America/Sao_Paulo (UTC-03:00).
 
+## 2026-11-24 12:05 — Claude — Plano salvo da base gerado (aguardando autorização)
+
+Feito: `terraform/base/backend.hcl` (cópia do bootstrap) e `terraform/base/terraform.tfvars` (conta real e `enable_nat_gateway = false`), ambos locais e ignorados; `init` com o backend S3 e `plan -out=base.tfplan` (somente leitura; o lock do S3 é criado e solto pelo próprio Terraform).
+Resultado: `Plan: 36 to add, 0 to change, 0 to destroy.` Nenhum NAT Gateway nem EIP. Recursos: VPC, 6 sub-redes (2 públicas, 2 privadas, 2 de banco), route tables, Internet Gateway, endpoints de gateway S3 e DynamoDB, 3 ECR com lifecycle, fila e DLQ, tabela DynamoDB, DB subnet group e 2 roles com policies inline. Trust só para `repo:fiap-devops-arqcloud-2026@287716251/tech-challenge-05@1454212968:ref:refs/heads/main` com `aud` `sts.amazonaws.com`; o CI só tem ações de push e pull no ECR, e o self-healing só `eks:DescribeCluster`. Tags obrigatórias presentes. Texto do plano em `02_TRABALHO/validacao-local-base-2026-11-24/` (ignorada).
+Estado p/ próximo agente: o plano `terraform/base/base.tfplan` está salvo, mas só vale enquanto nada mudar na conta e no código; na dúvida, gere de novo. Com a autorização do usuário: `terraform -chdir=terraform/base apply base.tfplan`, conferir as saídas e seguir a seção "Fase AWS" de PENDENCIAS (Variables do GitHub, PR para a `main`).
+
 ## 2026-11-24 11:50 — Claude — Bootstrap aplicado na AWS: primeiro recurso da Fase 5
 
 Pedido do usuário: "Pode fazer o bucket s3. O e-mail é [informado no chat]. Quais os proximos passos? Caso seus creditos estejam perto de acabar nunca se esqueça de atualizar o projeto antes para que o proximo agente ou voce retome de onde parou." O e-mail não está no repositório: fica só em `terraform/bootstrap/terraform.tfvars` (local, ignorado pelo Git) e no AWS Budgets.
